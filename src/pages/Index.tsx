@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import ArtistProfileCheck from '@/components/ArtistProfileCheck';
 import Home from './Home';
 
 const Index = () => {
@@ -21,7 +22,11 @@ const Index = () => {
     );
   }
 
-  return <Home />;
+  return (
+    <ArtistProfileCheck>
+      <Home />
+    </ArtistProfileCheck>
+  );
 };
 
 export default Index;

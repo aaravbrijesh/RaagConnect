@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Music, MapPin, Plus, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ import Nav from '@/components/Nav';
 export default function Artists() {
   const { user } = useAuth();
   const { canCreateArtistProfile } = useUserRoles(user?.id);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [artists, setArtists] = useState<any[]>([]);
@@ -33,7 +35,13 @@ export default function Artists() {
 
   useEffect(() => {
     fetchArtists();
-  }, []);
+    // Check if we should auto-open the create dialog
+    if (searchParams.get('create') === 'true') {
+      setOpen(true);
+      // Remove the query param
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const fetchArtists = async () => {
     // Fetch all artists first
