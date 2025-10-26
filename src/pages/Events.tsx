@@ -658,26 +658,26 @@ export default function Events() {
                     </Button>
                   </div>
 
-                  {/* Tabs for Discussion and Bookings */}
+                  {/* Tabs for Organizers/Admins, Announcements only for others */}
                   <div className="pt-6 border-t">
-                    <Tabs defaultValue="announcements">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                        {user && selectedEvent.user_id === user.id && (
+                    {user && (selectedEvent.user_id === user.id || isAdmin) ? (
+                      <Tabs defaultValue="announcements">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="announcements">Announcements</TabsTrigger>
                           <TabsTrigger value="bookings">Manage Bookings</TabsTrigger>
-                        )}
-                      </TabsList>
-                      
-                      <TabsContent value="announcements" className="mt-6">
-                        <EventDiscussion eventId={selectedEvent.id} organizerId={selectedEvent.user_id} />
-                      </TabsContent>
-                      
-                      {user && selectedEvent.user_id === user.id && (
+                        </TabsList>
+                        
+                        <TabsContent value="announcements" className="mt-6">
+                          <EventDiscussion eventId={selectedEvent.id} organizerId={selectedEvent.user_id} />
+                        </TabsContent>
+                        
                         <TabsContent value="bookings" className="mt-6">
                           <BookingManagement eventId={selectedEvent.id} />
                         </TabsContent>
-                      )}
-                    </Tabs>
+                      </Tabs>
+                    ) : (
+                      <EventDiscussion eventId={selectedEvent.id} organizerId={selectedEvent.user_id} />
+                    )}
                   </div>
                 </div>
               </>
