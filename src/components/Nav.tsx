@@ -1,17 +1,12 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import logo from '@/assets/logo.png';
-import { Button } from './ui/button';
-import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useNavigate, NavLink } from 'react-router-dom';
+import { Music2, Home, Users, Calendar, LogOut } from 'lucide-react';
+import logo from '@/assets/MusicConnectsLogo.png';
 
-interface NavProps {
-  selectedTab: string;
-  onTabClick: (tab: string) => void;
-}
-
-export default function Nav({ selectedTab, onTabClick }: NavProps) {
-  const { signOut, userRole } = useAuth();
+export default function Nav() {
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -19,77 +14,57 @@ export default function Nav({ selectedTab, onTabClick }: NavProps) {
     navigate('/login');
   };
 
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+      isActive
+        ? 'bg-primary text-primary-foreground'
+        : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
+    }`;
+
   return (
-    <nav className="sticky top-0 z-50 bg-card/60 backdrop-blur-xl border-b border-border/50 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Brand */}
-          <motion.div
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => onTabClick('home')}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <img src={logo} alt="Music Connects" className="h-12 w-12" />
-            <span className="text-xl font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
-              Music Connects
-            </span>
-          </motion.div>
-
-          {/* Navigation Links */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={selectedTab === 'home' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => onTabClick('home')}
-              className="rounded-full"
+    <nav className="border-b border-border/50 backdrop-blur-sm bg-background/95 sticky top-0 z-50 shadow-sm">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-8">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              Home
-            </Button>
-
-            <Button
-              variant={selectedTab === 'artists' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => onTabClick('artists')}
-              className="rounded-full"
-            >
-              Artists
-            </Button>
-
-            <Button
-              variant={selectedTab === 'events' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => onTabClick('events')}
-              className="rounded-full"
-            >
-              Events
-            </Button>
-
-            {userRole === 'admin' && (
-              <Button
-                variant={selectedTab === 'users' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => onTabClick('users')}
-                className="rounded-full"
-              >
-                Users
-              </Button>
-            )}
-
-            <div className="ml-4 flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">
-                Role: <span className="text-primary font-semibold">{userRole || 'viewer'}</span>
+              <img src={logo} alt="Music Connects" className="h-10 w-10" />
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Music Connects
               </span>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleSignOut}
-                className="rounded-full"
-              >
-                Sign Out
+            </button>
+
+            {user && (
+              <div className="hidden md:flex items-center gap-2">
+                <NavLink to="/" end className={navLinkClass}>
+                  <Home className="h-4 w-4" />
+                  Home
+                </NavLink>
+                <NavLink to="/artists" className={navLinkClass}>
+                  <Users className="h-4 w-4" />
+                  Artists
+                </NavLink>
+                <NavLink to="/events" className={navLinkClass}>
+                  <Calendar className="h-4 w-4" />
+                  Events
+                </NavLink>
+              </div>
+            )}
+          </div>
+
+          {user && (
+            <div className="flex items-center gap-4">
+              <span className="hidden sm:block text-sm text-muted-foreground">
+                {user.email}
+              </span>
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </nav>

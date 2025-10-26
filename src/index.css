@@ -48,6 +48,11 @@ All colors MUST be HSL.
     --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.5);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Additional gradients for enhanced visuals */
+    --gradient-hero: linear-gradient(135deg, hsl(217, 91%, 40%), hsl(217, 91%, 60%), hsl(280, 80%, 60%));
+    --gradient-card: linear-gradient(145deg, hsl(222, 47%, 11%), hsl(222, 47%, 14%));
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4);
   }
 
   .dark {
