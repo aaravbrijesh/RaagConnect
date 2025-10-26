@@ -14,7 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      artists: {
+        Row: {
+          bio: string | null
+          created_at: string
+          genre: string
+          id: string
+          image_url: string | null
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          genre: string
+          id?: string
+          image_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          genre?: string
+          id?: string
+          image_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          artist_id: string | null
+          created_at: string
+          date: string
+          id: string
+          image_url: string | null
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
+          paypal_handle: string | null
+          price: number | null
+          time: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          artist_id?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          image_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          paypal_handle?: string | null
+          price?: number | null
+          time: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          artist_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          image_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          paypal_handle?: string | null
+          price?: number | null
+          time?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
