@@ -1,0 +1,245 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Music, MapPin, Upload, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function CreateArtistProfile() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    genre: '',
+    locationName: '',
+    locationLat: null as number | null,
+    locationLng: null as number | null,
+    bio: ''
+  });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+  const handleLocationSearch = async () => {
+    if (!formData.locationName) return;
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setFormData({
+          ...formData,
+          locationLat: parseFloat(data[0].lat),
+          locationLng: parseFloat(data[0].lon)
+        });
+        toast.success('Location found!');
+      } else {
+        toast.error('Location not found');
+      }
+    } catch (error) {
+      toast.error('Failed to search location');
+    }
+  };
+
+  const handleCreateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast.error('You must be logged in');
+      return;
+    }
+
+    if (!formData.name || !formData.genre) {
+      toast.error('Please fill in name and specialization');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let imageUrl = null;
+
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('artist-images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('artist-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      const { error } = await supabase
+        .from('artists')
+        .insert({
+          user_id: user.id,
+          name: formData.name,
+          genre: formData.genre,
+          location_name: formData.locationName || null,
+          location_lat: formData.locationLat,
+          location_lng: formData.locationLng,
+          bio: formData.bio || null,
+          image_url: imageUrl
+        });
+
+      if (error) throw error;
+
+      toast.success('Profile created successfully!');
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-2xl"
+      >
+        <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-8 shadow-elegant border border-border/50">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Music className="h-6 w-6 text-primary" />
+                </div>
+                <h2 className="text-3xl font-bold">Create Your Artist Profile</h2>
+              </div>
+              <p className="text-muted-foreground">
+                Complete your profile to start showcasing your music
+              </p>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleSignOut}
+            >
+              Sign Out
+            </Button>
+          </div>
+
+          <form onSubmit={handleCreateProfile} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Artist Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter your artist name"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="genre">Specialization *</Label>
+              <Input
+                id="genre"
+                value={formData.genre}
+                onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                placeholder="e.g. Hindustani Vocal, Carnatic Violin, Tabla"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Examples: Khayal, Dhrupad, Thumri, Carnatic Vocal, Mridangam, Flute, Sarangi
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="location"
+                  value={formData.locationName}
+                  onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
+                  placeholder="e.g. Los Angeles, CA"
+                />
+                <Button type="button" onClick={handleLocationSearch} variant="outline">
+                  <MapPin className="h-4 w-4" />
+                </Button>
+              </div>
+              {formData.locationLat && formData.locationLng && (
+                <p className="text-xs text-muted-foreground">
+                  Coordinates: {formData.locationLat.toFixed(4)}, {formData.locationLng.toFixed(4)}
+                </p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                placeholder="Tell us about yourself and your musical journey..."
+                rows={4}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="image">Profile Image</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="cursor-pointer"
+                />
+                {imageFile && (
+                  <Badge variant="secondary">
+                    <Upload className="h-3 w-3 mr-1" />
+                    {imageFile.name}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              size="lg"
+              disabled={loading}
+            >
+              {loading ? 'Creating Profile...' : 'Create Profile & Continue'}
+            </Button>
+          </form>
+
+          <p className="text-xs text-center text-muted-foreground mt-4">
+            * Required fields
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}

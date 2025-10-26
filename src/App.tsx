@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import Artists from "./pages/Artists";
 import Events from "./pages/Events";
 import Admin from "./pages/Admin";
+import CreateArtistProfile from "./pages/CreateArtistProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/create-artist-profile" element={<CreateArtistProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
