@@ -64,8 +64,8 @@ export type Database = {
           created_at: string
           event_id: string
           id: string
-          paypal_order_id: string | null
-          paypal_payer_id: string | null
+          payment_method: string
+          proof_of_payment_url: string | null
           status: string
           updated_at: string
           user_id: string
@@ -77,8 +77,8 @@ export type Database = {
           created_at?: string
           event_id: string
           id?: string
-          paypal_order_id?: string | null
-          paypal_payer_id?: string | null
+          payment_method?: string
+          proof_of_payment_url?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -90,8 +90,8 @@ export type Database = {
           created_at?: string
           event_id?: string
           id?: string
-          paypal_order_id?: string | null
-          paypal_payer_id?: string | null
+          payment_method?: string
+          proof_of_payment_url?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -161,11 +161,14 @@ export type Database = {
           location_lat: number | null
           location_lng: number | null
           location_name: string | null
-          paypal_handle: string | null
+          payment_link: string | null
           price: number | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           time: string
           title: string
           updated_at: string
+          use_stripe_checkout: boolean | null
           user_id: string
         }
         Insert: {
@@ -177,11 +180,14 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
-          paypal_handle?: string | null
+          payment_link?: string | null
           price?: number | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           time: string
           title: string
           updated_at?: string
+          use_stripe_checkout?: boolean | null
           user_id: string
         }
         Update: {
@@ -193,11 +199,14 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
-          paypal_handle?: string | null
+          payment_link?: string | null
           price?: number | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           time?: string
           title?: string
           updated_at?: string
+          use_stripe_checkout?: boolean | null
           user_id?: string
         }
         Relationships: [

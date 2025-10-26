@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload, CreditCard, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,18 +8,25 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 import EventDiscussion from '@/components/EventDiscussion';
+import BookingModal from '@/components/BookingModal';
+import BookingManagement from '@/components/BookingManagement';
 
 export default function Events() {
   const { user } = useAuth();
   const { canCreateEvents } = useUserRoles(user?.id);
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -32,7 +39,8 @@ export default function Events() {
     locationLat: null as number | null,
     locationLng: null as number | null,
     price: '',
-    paypalHandle: ''
+    useStripeCheckout: false,
+    paymentLink: ''
   });
 
   useEffect(() => {
@@ -130,7 +138,8 @@ export default function Events() {
           location_lat: formData.locationLat,
           location_lng: formData.locationLng,
           price: formData.price ? parseFloat(formData.price) : null,
-          paypal_handle: formData.paypalHandle || null,
+          use_stripe_checkout: formData.useStripeCheckout,
+          payment_link: formData.paymentLink || null,
           image_url: imageUrl
         });
 
@@ -147,7 +156,8 @@ export default function Events() {
         locationLat: null,
         locationLng: null,
         price: '',
-        paypalHandle: ''
+        useStripeCheckout: false,
+        paymentLink: ''
       });
       setImageFile(null);
       fetchEvents();
@@ -256,29 +266,60 @@ export default function Events() {
                     )}
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price ($)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        placeholder="0.00"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price ($)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  <div className="space-y-4">
+                    <Label className="text-base">Payment Method</Label>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="paypal">PayPal Handle</Label>
-                      <Input
-                        id="paypal"
-                        value={formData.paypalHandle}
-                        onChange={(e) => setFormData({ ...formData, paypalHandle: e.target.value })}
-                        placeholder="@yourhandle"
+                    <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          <Label htmlFor="stripe" className="font-medium">Use Stripe Checkout</Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Stripe charges ~2.9% + $0.30 per transaction
+                        </p>
+                      </div>
+                      <Switch
+                        id="stripe"
+                        checked={formData.useStripeCheckout}
+                        onCheckedChange={(checked) => setFormData({ ...formData, useStripeCheckout: checked })}
                       />
                     </div>
+
+                    {!formData.useStripeCheckout && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <LinkIcon className="h-4 w-4" />
+                          <Label htmlFor="paymentLink">Payment Link</Label>
+                        </div>
+                        <Input
+                          id="paymentLink"
+                          value={formData.paymentLink}
+                          onChange={(e) => setFormData({ ...formData, paymentLink: e.target.value })}
+                          placeholder="https://paypal.me/yourhandle or https://venmo.com/..."
+                        />
+                        <Alert>
+                          <AlertDescription className="text-xs">
+                            Users will pay via this link and upload proof of payment. You'll review and approve bookings.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -388,16 +429,18 @@ export default function Events() {
                           className="min-w-32"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Handle booking
+                            setSelectedEvent(event);
+                            setBookingModalOpen(true);
                           }}
                         >
                           Book Now
                         </Button>
                       </div>
-                      {event.paypal_handle && (
-                        <p className="text-xs text-muted-foreground">
-                          PayPal: {event.paypal_handle}
-                        </p>
+                      {event.use_stripe_checkout && (
+                        <Badge variant="secondary" className="text-xs">
+                          <CreditCard className="h-3 w-3 mr-1" />
+                          Stripe
+                        </Badge>
                       )}
                     </CardContent>
                   </div>
@@ -462,26 +505,57 @@ export default function Events() {
                       </span>
                     </div>
 
-                    {selectedEvent.paypal_handle && (
-                      <p className="text-sm text-muted-foreground">
-                        Send payment to: <span className="font-mono">{selectedEvent.paypal_handle}</span>
-                      </p>
+                    {selectedEvent.use_stripe_checkout && (
+                      <Badge variant="secondary">
+                        <CreditCard className="h-4 w-4 mr-1" />
+                        Stripe Checkout
+                      </Badge>
                     )}
 
-                    <Button className="w-full mt-4" size="lg">
+                    <Button 
+                      className="w-full mt-4" 
+                      size="lg"
+                      onClick={() => setBookingModalOpen(true)}
+                    >
                       Book Tickets Now
                     </Button>
                   </div>
 
-                  {/* Discussion Forum */}
+                  {/* Tabs for Discussion and Bookings */}
                   <div className="pt-6 border-t">
-                    <EventDiscussion eventId={selectedEvent.id} />
+                    <Tabs defaultValue="discussion">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="discussion">Discussion</TabsTrigger>
+                        {user && selectedEvent.user_id === user.id && (
+                          <TabsTrigger value="bookings">Manage Bookings</TabsTrigger>
+                        )}
+                      </TabsList>
+                      
+                      <TabsContent value="discussion" className="mt-6">
+                        <EventDiscussion eventId={selectedEvent.id} />
+                      </TabsContent>
+                      
+                      {user && selectedEvent.user_id === user.id && (
+                        <TabsContent value="bookings" className="mt-6">
+                          <BookingManagement eventId={selectedEvent.id} />
+                        </TabsContent>
+                      )}
+                    </Tabs>
                   </div>
                 </div>
               </>
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Booking Modal */}
+        {selectedEvent && (
+          <BookingModal
+            event={selectedEvent}
+            open={bookingModalOpen}
+            onOpenChange={setBookingModalOpen}
+          />
+        )}
 
         {events.length === 0 && (
           <motion.div
