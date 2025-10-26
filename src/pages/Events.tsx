@@ -305,20 +305,20 @@ export default function Events() {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <LinkIcon className="h-4 w-4" />
-                          <Label htmlFor="paymentLink">Payment Handle</Label>
+                          <Label htmlFor="paymentLink">Payment Info</Label>
                         </div>
                         <Input
                           id="paymentLink"
                           value={formData.paymentLink}
                           onChange={(e) => setFormData({ ...formData, paymentLink: e.target.value })}
-                          placeholder="@yourhandle"
+                          placeholder="@venmo, $cashtag, email@zelle.com"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Your PayPal, Venmo, CashApp, or Zelle handle
+                          Venmo: @username • CashApp: $cashtag • Zelle: email/phone • PayPal: @username
                         </p>
                         <Alert>
                           <AlertDescription className="text-xs">
-                            Users will send payment to this handle and upload proof. You'll review and approve bookings.
+                            Users will send payment here and upload proof. You'll review and approve bookings.
                           </AlertDescription>
                         </Alert>
                       </div>

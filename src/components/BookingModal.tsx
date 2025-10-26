@@ -173,7 +173,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="space-y-2">
                     <p>Send payment to: <span className="font-mono font-semibold">{event.payment_link}</span></p>
-                    <p className="text-xs">Use PayPal, Venmo, CashApp, Zelle, or any payment app. After payment, upload your proof below.</p>
+                    <p className="text-xs">After sending payment, upload your proof (screenshot/receipt) below.</p>
                   </AlertDescription>
                 </Alert>
               )}
