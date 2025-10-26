@@ -45,7 +45,6 @@ export default function Artists() {
   }, [searchParams, setSearchParams]);
 
   const fetchArtists = async () => {
-    // Fetch all artists first
     const { data: artistsData, error: artistsError } = await supabase
       .from('artists')
       .select('*')
@@ -57,23 +56,7 @@ export default function Artists() {
       return;
     }
 
-    // Then filter by checking user_roles for each artist
-    if (artistsData) {
-      const artistsWithRoles = await Promise.all(
-        artistsData.map(async (artist) => {
-          const { data: roles } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', artist.user_id)
-            .eq('role', 'artist')
-            .single();
-          
-          return roles ? artist : null;
-        })
-      );
-      
-      setArtists(artistsWithRoles.filter(a => a !== null));
-    }
+    setArtists(artistsData || []);
   };
 
   const filteredArtists = artists.filter(artist =>
