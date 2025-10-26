@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageSquare, Reply, Trash2, User } from 'lucide-react';
+import { Megaphone, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
-interface Discussion {
+interface Announcement {
   id: string;
   event_id: string;
   user_id: string;
@@ -20,22 +21,24 @@ interface Discussion {
 
 interface EventDiscussionProps {
   eventId: string;
+  organizerId: string;
 }
 
-export default function EventDiscussion({ eventId }: EventDiscussionProps) {
+export default function EventDiscussion({ eventId, organizerId }: EventDiscussionProps) {
   const { user } = useAuth();
-  const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const { isAdmin } = useUserRoles(user?.id);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyMessage, setReplyMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const canPostAnnouncements = user && (user.id === organizerId || isAdmin);
+
   useEffect(() => {
-    fetchDiscussions();
+    fetchAnnouncements();
     
     // Subscribe to real-time updates
     const channel = supabase
-      .channel('event-discussions')
+      .channel('event-announcements')
       .on(
         'postgres_changes',
         {
@@ -45,7 +48,7 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
           filter: `event_id=eq.${eventId}`
         },
         () => {
-          fetchDiscussions();
+          fetchAnnouncements();
         }
       )
       .subscribe();
@@ -55,28 +58,29 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
     };
   }, [eventId]);
 
-  const fetchDiscussions = async () => {
+  const fetchAnnouncements = async () => {
     const { data, error } = await supabase
       .from('event_discussions')
       .select('*')
       .eq('event_id', eventId)
-      .order('created_at', { ascending: true });
+      .is('parent_id', null)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching discussions:', error);
+      console.error('Error fetching announcements:', error);
     } else {
-      setDiscussions(data || []);
+      setAnnouncements(data || []);
     }
   };
 
   const handlePostMessage = async () => {
-    if (!user) {
-      toast.error('Please sign in to post');
+    if (!canPostAnnouncements) {
+      toast.error('Only event organizers can post announcements');
       return;
     }
 
     if (!newMessage.trim()) {
-      toast.error('Please enter a message');
+      toast.error('Please enter an announcement');
       return;
     }
 
@@ -95,214 +99,98 @@ export default function EventDiscussion({ eventId }: EventDiscussionProps) {
       if (error) throw error;
 
       setNewMessage('');
-      toast.success('Message posted!');
+      toast.success('Announcement posted!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to post message');
+      toast.error(error.message || 'Failed to post announcement');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReply = async (parentId: string) => {
-    if (!user) {
-      toast.error('Please sign in to reply');
-      return;
-    }
-
-    if (!replyMessage.trim()) {
-      toast.error('Please enter a reply');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from('event_discussions')
-        .insert({
-          event_id: eventId,
-          user_id: user.id,
-          message: replyMessage.trim(),
-          parent_id: parentId
-        });
-
-      if (error) throw error;
-
-      setReplyMessage('');
-      setReplyingTo(null);
-      toast.success('Reply posted!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to post reply');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (discussionId: string) => {
+  const handleDelete = async (announcementId: string) => {
     if (!user) return;
 
     try {
       const { error } = await supabase
         .from('event_discussions')
         .delete()
-        .eq('id', discussionId)
+        .eq('id', announcementId)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      toast.success('Message deleted');
+      toast.success('Announcement deleted');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete message');
+      toast.error(error.message || 'Failed to delete announcement');
     }
-  };
-
-  const topLevelDiscussions = discussions.filter(d => !d.parent_id);
-
-  const getReplies = (parentId: string) => {
-    return discussions.filter(d => d.parent_id === parentId);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
-        <MessageSquare className="h-5 w-5 text-primary" />
-        <h3 className="text-xl font-bold">Discussion Forum</h3>
+        <Megaphone className="h-5 w-5 text-primary" />
+        <h3 className="text-xl font-bold">Event Announcements</h3>
       </div>
 
-      {/* New message input */}
-      {user && (
+      {/* New announcement input - only for organizers */}
+      {canPostAnnouncements && (
         <Card className="bg-card/50">
           <CardContent className="pt-6">
             <Textarea
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Share your thoughts about this concert..."
+              placeholder="Post an important update for attendees..."
               rows={3}
               className="mb-3"
             />
             <Button onClick={handlePostMessage} disabled={loading}>
-              {loading ? 'Posting...' : 'Post Message'}
+              {loading ? 'Posting...' : 'Post Announcement'}
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Display discussions */}
+      {/* Display announcements */}
       <div className="space-y-4">
-        {topLevelDiscussions.length === 0 ? (
+        {announcements.length === 0 ? (
           <Card className="bg-card/50">
             <CardContent className="pt-6 text-center text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No discussions yet. Be the first to share your thoughts!</p>
+              <Megaphone className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No announcements yet.</p>
+              {!canPostAnnouncements && (
+                <p className="text-sm mt-1">The organizer will post important updates here.</p>
+              )}
             </CardContent>
           </Card>
         ) : (
-          topLevelDiscussions.map((discussion) => (
-            <Card key={discussion.id} className="bg-card/50">
+          announcements.map((announcement) => (
+            <Card key={announcement.id} className="bg-card/50">
               <CardContent className="pt-6">
-                <div className="flex items-start gap-3 mb-3">
+                <div className="flex items-start gap-3">
                   <div className="bg-primary/10 rounded-full p-2">
-                    <User className="h-4 w-4 text-primary" />
+                    <Megaphone className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-sm">
-                        {discussion.user_id.substring(0, 8)}...
-                      </span>
+                      <span className="font-semibold text-sm">Event Organizer</span>
                       <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(discussion.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(announcement.created_at), { addSuffix: true })}
                       </span>
                     </div>
-                    <p className="text-sm">{discussion.message}</p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <p className="text-sm whitespace-pre-wrap">{announcement.message}</p>
+                    {user && user.id === announcement.user_id && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setReplyingTo(discussion.id)}
-                        className="h-7 text-xs"
+                        onClick={() => handleDelete(announcement.id)}
+                        className="h-7 text-xs text-destructive hover:text-destructive mt-2"
                       >
-                        <Reply className="h-3 w-3 mr-1" />
-                        Reply
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
                       </Button>
-                      {user && user.id === discussion.user_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(discussion.id)}
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Replies */}
-                {getReplies(discussion.id).map((reply) => (
-                  <div key={reply.id} className="ml-8 mt-3 pl-4 border-l-2 border-border/50">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-secondary/50 rounded-full p-1.5">
-                        <User className="h-3 w-3 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-xs">
-                            {reply.user_id.substring(0, 8)}...
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                        <p className="text-sm">{reply.message}</p>
-                        {user && user.id === reply.user_id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(reply.id)}
-                            className="h-6 text-xs text-destructive hover:text-destructive mt-1"
-                          >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Delete
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Reply input */}
-                {replyingTo === discussion.id && user && (
-                  <div className="ml-8 mt-3">
-                    <Textarea
-                      value={replyMessage}
-                      onChange={(e) => setReplyMessage(e.target.value)}
-                      placeholder="Write your reply..."
-                      rows={2}
-                      className="mb-2"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleReply(discussion.id)}
-                        disabled={loading}
-                      >
-                        {loading ? 'Posting...' : 'Post Reply'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setReplyingTo(null);
-                          setReplyMessage('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))

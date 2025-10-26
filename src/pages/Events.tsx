@@ -660,16 +660,16 @@ export default function Events() {
 
                   {/* Tabs for Discussion and Bookings */}
                   <div className="pt-6 border-t">
-                    <Tabs defaultValue="discussion">
+                    <Tabs defaultValue="announcements">
                       <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="discussion">Discussion</TabsTrigger>
+                        <TabsTrigger value="announcements">Announcements</TabsTrigger>
                         {user && selectedEvent.user_id === user.id && (
                           <TabsTrigger value="bookings">Manage Bookings</TabsTrigger>
                         )}
                       </TabsList>
                       
-                      <TabsContent value="discussion" className="mt-6">
-                        <EventDiscussion eventId={selectedEvent.id} />
+                      <TabsContent value="announcements" className="mt-6">
+                        <EventDiscussion eventId={selectedEvent.id} organizerId={selectedEvent.user_id} />
                       </TabsContent>
                       
                       {user && selectedEvent.user_id === user.id && (
