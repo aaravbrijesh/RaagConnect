@@ -47,6 +47,7 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
       .from('bookings')
       .select('*')
       .eq('event_id', eventId)
+      .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -87,7 +88,7 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
     return (
       <Card className="bg-card/50">
         <CardContent className="pt-6 text-center text-muted-foreground">
-          <p>No bookings yet for this event.</p>
+          <p>No pending bookings for this event.</p>
         </CardContent>
       </Card>
     );
@@ -96,7 +97,7 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold">Bookings ({bookings.length})</h3>
+        <h3 className="text-xl font-bold">Pending Bookings ({bookings.length})</h3>
       </div>
 
       {bookings.map((booking) => (
