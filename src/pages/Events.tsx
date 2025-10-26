@@ -373,7 +373,7 @@ export default function Events() {
                           <Label htmlFor="stripe" className="font-medium">Use Stripe Checkout</Label>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Stripe charges ~2.9% + $0.30 per transaction
+                          Stripe charges ~2.9% + $0.30 per transaction (rates subject to change)
                         </p>
                       </div>
                       <Switch
