@@ -172,17 +172,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="space-y-2">
-                    <p>Please send payment to the organizer first:</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => window.open(event.payment_link, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Open Payment Link
-                    </Button>
-                    <p className="text-xs">After payment, upload your proof below.</p>
+                    <p>Send payment to: <span className="font-mono font-semibold">{event.payment_link}</span></p>
+                    <p className="text-xs">Use PayPal, Venmo, CashApp, Zelle, or any payment app. After payment, upload your proof below.</p>
                   </AlertDescription>
                 </Alert>
               )}
