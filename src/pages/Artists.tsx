@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Music, MapPin, Plus, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ export default function Artists() {
   const { user } = useAuth();
   const { canCreateArtistProfile } = useUserRoles(user?.id);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [artists, setArtists] = useState<any[]>([]);
@@ -361,7 +362,11 @@ export default function Artists() {
                 
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">{artist.bio}</p>
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => navigate(`/artists/${artist.id}`)}
+                  >
                     View Profile
                   </Button>
                 </CardContent>
