@@ -1,20 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Music, MapPin, Calendar, ArrowLeft } from 'lucide-react';
+import { Music, MapPin, Calendar, ArrowLeft, Edit, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
 
 export default function ArtistDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [artist, setArtist] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    genre: '',
+    locationName: '',
+    locationLat: null as number | null,
+    locationLng: null as number | null,
+    bio: ''
+  });
 
   useEffect(() => {
     fetchArtistDetails();
@@ -33,6 +50,16 @@ export default function ArtistDetail() {
 
       if (artistError) throw artistError;
       setArtist(artistData);
+      
+      // Initialize form data
+      setFormData({
+        name: artistData.name,
+        genre: artistData.genre,
+        locationName: artistData.location_name || '',
+        locationLat: artistData.location_lat,
+        locationLng: artistData.location_lng,
+        bio: artistData.bio || ''
+      });
 
       // Fetch artist's events
       const { data: eventsData, error: eventsError } = await supabase
@@ -50,6 +77,96 @@ export default function ArtistDetail() {
       setLoading(false);
     }
   };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+  const handleLocationSearch = async () => {
+    if (!formData.locationName) return;
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setFormData({
+          ...formData,
+          locationLat: parseFloat(data[0].lat),
+          locationLng: parseFloat(data[0].lon)
+        });
+        toast.success('Location found!');
+      } else {
+        toast.error('Location not found');
+      }
+    } catch (error) {
+      toast.error('Failed to search location');
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user || !artist) return;
+
+    if (!formData.name || !formData.genre) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+
+    setEditLoading(true);
+
+    try {
+      let imageUrl = artist.image_url;
+
+      // Upload new image if provided
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('artist-images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('artist-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Update artist profile
+      const { error } = await supabase
+        .from('artists')
+        .update({
+          name: formData.name,
+          genre: formData.genre,
+          location_name: formData.locationName || null,
+          location_lat: formData.locationLat,
+          location_lng: formData.locationLng,
+          bio: formData.bio || null,
+          image_url: imageUrl
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Profile updated successfully!');
+      setEditOpen(false);
+      setImageFile(null);
+      fetchArtistDetails();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const isOwner = user && artist && user.id === artist.user_id;
 
   if (loading) {
     return (
@@ -112,13 +229,24 @@ export default function ArtistDetail() {
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6">
-                <h1 className="text-4xl md:text-5xl font-bold mb-2 text-foreground">
-                  {artist.name}
-                </h1>
-                <Badge className="bg-primary/90 backdrop-blur-sm text-lg px-4 py-1">
-                  {artist.genre}
-                </Badge>
+              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
+                <div>
+                  <h1 className="text-4xl md:text-5xl font-bold mb-2 text-foreground">
+                    {artist.name}
+                  </h1>
+                  <Badge className="bg-primary/90 backdrop-blur-sm text-lg px-4 py-1">
+                    {artist.genre}
+                  </Badge>
+                </div>
+                {isOwner && (
+                  <Button 
+                    onClick={() => setEditOpen(true)}
+                    className="gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Profile
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -193,6 +321,97 @@ export default function ArtistDetail() {
           )}
         </motion.div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Artist Profile</DialogTitle>
+            <DialogDescription>
+              Update your artist information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Artist Name</Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter artist name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-genre">Specialization</Label>
+              <Input
+                id="edit-genre"
+                value={formData.genre}
+                onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                placeholder="e.g. Hindustani Vocal, Carnatic Violin, Tabla"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-location">Location</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit-location"
+                  value={formData.locationName}
+                  onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
+                  placeholder="e.g. Los Angeles, CA"
+                />
+                <Button type="button" onClick={handleLocationSearch} variant="outline">
+                  <MapPin className="h-4 w-4" />
+                </Button>
+              </div>
+              {formData.locationLat && formData.locationLng && (
+                <p className="text-xs text-muted-foreground">
+                  Coordinates: {formData.locationLat.toFixed(4)}, {formData.locationLng.toFixed(4)}
+                </p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-bio">Bio</Label>
+              <Textarea
+                id="edit-bio"
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                placeholder="Tell us about yourself..."
+                rows={4}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-image">Update Image</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="edit-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="cursor-pointer"
+                />
+                {imageFile && (
+                  <Badge variant="secondary">
+                    <Upload className="h-3 w-3 mr-1" />
+                    {imageFile.name}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateProfile} disabled={editLoading}>
+              {editLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
