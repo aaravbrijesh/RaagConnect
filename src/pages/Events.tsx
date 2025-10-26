@@ -5,16 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
+import EventDiscussion from '@/components/EventDiscussion';
 
 export default function Events() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -325,7 +328,10 @@ export default function Events() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index }}
             >
-              <Card className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group">
+              <Card 
+                className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group cursor-pointer"
+                onClick={() => setSelectedEvent(event)}
+              >
                 <div className="flex flex-col md:flex-row">
                   <div className="relative w-full md:w-64 h-48 overflow-hidden">
                     {event.image_url ? (
@@ -374,7 +380,13 @@ export default function Events() {
                           </span>
                         </div>
                         
-                        <Button className="min-w-32">
+                        <Button 
+                          className="min-w-32"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle booking
+                          }}
+                        >
                           Book Now
                         </Button>
                       </div>
@@ -390,6 +402,82 @@ export default function Events() {
             </motion.div>
           ))}
         </div>
+
+        {/* Event Details & Discussion Sheet */}
+        <Sheet open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+          <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+            {selectedEvent && (
+              <>
+                <SheetHeader>
+                  <SheetTitle className="text-2xl">{selectedEvent.title}</SheetTitle>
+                  <SheetDescription>
+                    {selectedEvent.artists?.name || 'Various Artists'}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-6 space-y-6">
+                  {/* Event image */}
+                  {selectedEvent.image_url && (
+                    <div className="relative h-64 rounded-lg overflow-hidden">
+                      <img
+                        src={selectedEvent.image_url}
+                        alt={selectedEvent.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Event details */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      <span className="font-medium">
+                        {new Date(selectedEvent.date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          month: 'long', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-primary" />
+                      <span className="font-medium">{selectedEvent.time}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <span className="font-medium">{selectedEvent.location_name || 'Location TBA'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <Ticket className="h-5 w-5 text-primary" />
+                      <span className="text-2xl font-bold">
+                        {selectedEvent.price ? `$${selectedEvent.price}` : 'Free Entry'}
+                      </span>
+                    </div>
+
+                    {selectedEvent.paypal_handle && (
+                      <p className="text-sm text-muted-foreground">
+                        Send payment to: <span className="font-mono">{selectedEvent.paypal_handle}</span>
+                      </p>
+                    )}
+
+                    <Button className="w-full mt-4" size="lg">
+                      Book Tickets Now
+                    </Button>
+                  </div>
+
+                  {/* Discussion Forum */}
+                  <div className="pt-6 border-t">
+                    <EventDiscussion eventId={selectedEvent.id} />
+                  </div>
+                </div>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
 
         {events.length === 0 && (
           <motion.div
