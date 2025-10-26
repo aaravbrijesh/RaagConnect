@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload, CreditCard, Link as LinkIcon } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload, CreditCard, Link as LinkIcon, Edit } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,8 @@ export default function Events() {
   const { user } = useAuth();
   const { canCreateEvents } = useUserRoles(user?.id);
   const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
@@ -94,6 +96,31 @@ export default function Events() {
     }
   };
 
+  const handleOpenEdit = (event: any) => {
+    setEditingEvent(event);
+    setEditMode(true);
+    
+    // Parse payment info
+    const paymentInfo = event.payment_link ? JSON.parse(event.payment_link) : {};
+    
+    setFormData({
+      title: event.title,
+      artistId: event.artist_id || '',
+      date: event.date,
+      time: event.time,
+      locationName: event.location_name || '',
+      locationLat: event.location_lat,
+      locationLng: event.location_lng,
+      price: event.price?.toString() || '',
+      useStripeCheckout: event.use_stripe_checkout,
+      venmo: paymentInfo.venmo || '',
+      cashapp: paymentInfo.cashapp || '',
+      zelle: paymentInfo.zelle || '',
+      paypal: paymentInfo.paypal || ''
+    });
+    setOpen(true);
+  };
+
   const handleCreateEvent = async () => {
     if (!user) {
       toast.error('You must be logged in to create an event');
@@ -108,7 +135,7 @@ export default function Events() {
     setLoading(true);
 
     try {
-      let imageUrl = null;
+      let imageUrl = editMode ? editingEvent?.image_url : null;
 
       // Upload image if provided
       if (imageFile) {
@@ -136,28 +163,53 @@ export default function Events() {
         paypal: formData.paypal || null
       });
 
-      // Create event
-      const { error } = await supabase
-        .from('events')
-        .insert({
-          user_id: user.id,
-          title: formData.title,
-          artist_id: formData.artistId || null,
-          date: formData.date,
-          time: formData.time,
-          location_name: formData.locationName || null,
-          location_lat: formData.locationLat,
-          location_lng: formData.locationLng,
-          price: formData.price ? parseFloat(formData.price) : null,
-          use_stripe_checkout: formData.useStripeCheckout,
-          payment_link: paymentInfo,
-          image_url: imageUrl
-        });
+      if (editMode && editingEvent) {
+        // Update event
+        const { error } = await supabase
+          .from('events')
+          .update({
+            title: formData.title,
+            artist_id: formData.artistId || null,
+            date: formData.date,
+            time: formData.time,
+            location_name: formData.locationName || null,
+            location_lat: formData.locationLat,
+            location_lng: formData.locationLng,
+            price: formData.price ? parseFloat(formData.price) : null,
+            use_stripe_checkout: formData.useStripeCheckout,
+            payment_link: paymentInfo,
+            image_url: imageUrl
+          })
+          .eq('id', editingEvent.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success('Event updated successfully!');
+      } else {
+        // Create event
+        const { error } = await supabase
+          .from('events')
+          .insert({
+            user_id: user.id,
+            title: formData.title,
+            artist_id: formData.artistId || null,
+            date: formData.date,
+            time: formData.time,
+            location_name: formData.locationName || null,
+            location_lat: formData.locationLat,
+            location_lng: formData.locationLng,
+            price: formData.price ? parseFloat(formData.price) : null,
+            use_stripe_checkout: formData.useStripeCheckout,
+            payment_link: paymentInfo,
+            image_url: imageUrl
+          });
 
-      toast.success('Event created successfully!');
+        if (error) throw error;
+        toast.success('Event created successfully!');
+      }
+
       setOpen(false);
+      setEditMode(false);
+      setEditingEvent(null);
       setFormData({
         title: '',
         artistId: '',
@@ -176,7 +228,7 @@ export default function Events() {
       setImageFile(null);
       fetchEvents();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create event');
+      toast.error(error.message || `Failed to ${editMode ? 'update' : 'create'} event`);
     } finally {
       setLoading(false);
     }
@@ -212,9 +264,9 @@ export default function Events() {
                 </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Create New Concert</DialogTitle>
+                  <DialogTitle>{editMode ? 'Edit Concert' : 'Create New Concert'}</DialogTitle>
                   <DialogDescription>
-                    Schedule a Hindustani or Carnatic music performance
+                    {editMode ? 'Update your concert details' : 'Schedule a Hindustani or Carnatic music performance'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -392,11 +444,15 @@ export default function Events() {
                 </div>
                 
                 <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setOpen(false);
+                    setEditMode(false);
+                    setEditingEvent(null);
+                  }}>
                     Cancel
                   </Button>
                   <Button onClick={handleCreateEvent} disabled={loading}>
-                    {loading ? 'Creating...' : 'Create Event'}
+                    {loading ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Event' : 'Create Event')}
                   </Button>
                 </div>
               </DialogContent>
@@ -505,10 +561,28 @@ export default function Events() {
             {selectedEvent && (
               <>
                 <SheetHeader>
-                  <SheetTitle className="text-2xl">{selectedEvent.title}</SheetTitle>
-                  <SheetDescription>
-                    {selectedEvent.artists?.name || 'Various Artists'}
-                  </SheetDescription>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <SheetTitle className="text-2xl">{selectedEvent.title}</SheetTitle>
+                      <SheetDescription>
+                        {selectedEvent.artists?.name || 'Various Artists'}
+                      </SheetDescription>
+                    </div>
+                    {user && selectedEvent.user_id === user.id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => {
+                          setSelectedEvent(null);
+                          handleOpenEdit(selectedEvent);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit Event
+                      </Button>
+                    )}
+                  </div>
                 </SheetHeader>
 
                 <div className="mt-6 space-y-6">
