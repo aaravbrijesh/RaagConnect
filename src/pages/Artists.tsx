@@ -7,62 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Nav from '@/components/Nav';
 
-const mockArtists = [
-  {
-    id: 1,
-    name: 'The Midnight Waves',
-    genre: 'Rock',
-    location: 'Los Angeles, CA',
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
-    bio: 'High-energy rock band with a modern edge'
-  },
-  {
-    id: 2,
-    name: 'Luna Martinez',
-    genre: 'Jazz',
-    location: 'New York, NY',
-    rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400',
-    bio: 'Smooth jazz vocalist with international acclaim'
-  },
-  {
-    id: 3,
-    name: 'Electric Dreams',
-    genre: 'Electronic',
-    location: 'Miami, FL',
-    rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400',
-    bio: 'Cutting-edge electronic music producers'
-  },
-  {
-    id: 4,
-    name: 'Sarah Chen',
-    genre: 'Classical',
-    location: 'San Francisco, CA',
-    rating: 5.0,
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    bio: 'World-renowned pianist and composer'
-  },
-  {
-    id: 5,
-    name: 'The Folk Collective',
-    genre: 'Folk',
-    location: 'Nashville, TN',
-    rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400',
-    bio: 'Authentic folk music with modern storytelling'
-  },
-  {
-    id: 6,
-    name: 'DJ Pulse',
-    genre: 'Hip Hop',
-    location: 'Atlanta, GA',
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
-    bio: 'Chart-topping hip hop artist and producer'
-  }
-];
+const mockArtists: any[] = [];
 
 export default function Artists() {
   const [searchQuery, setSearchQuery] = useState('');
