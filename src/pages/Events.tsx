@@ -1,35 +1,157 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Filter, Plus } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
 
-const mockEvents: any[] = [];
-
 export default function Events() {
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     title: '',
-    artist: '',
+    artistId: '',
     date: '',
     time: '',
-    location: '',
+    locationName: '',
+    locationLat: null as number | null,
+    locationLng: null as number | null,
     price: '',
-    image: '',
-    category: 'Concert'
+    paypalHandle: ''
   });
 
-  const filteredEvents = categoryFilter === 'all'
-    ? mockEvents
-    : mockEvents.filter(event => event.category === categoryFilter);
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*, artists(*)')
+      .order('date', { ascending: true });
+    
+    if (error) {
+      toast.error('Failed to load events');
+      console.error(error);
+    } else {
+      setEvents(data || []);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+  const handleLocationSearch = async () => {
+    if (!formData.locationName) return;
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setFormData({
+          ...formData,
+          locationLat: parseFloat(data[0].lat),
+          locationLng: parseFloat(data[0].lon)
+        });
+        toast.success('Location found!');
+      } else {
+        toast.error('Location not found');
+      }
+    } catch (error) {
+      toast.error('Failed to search location');
+    }
+  };
+
+  const handleCreateEvent = async () => {
+    if (!user) {
+      toast.error('You must be logged in to create an event');
+      return;
+    }
+
+    if (!formData.title || !formData.date || !formData.time) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let imageUrl = null;
+
+      // Upload image if provided
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('event-images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('event-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Create event
+      const { error } = await supabase
+        .from('events')
+        .insert({
+          user_id: user.id,
+          title: formData.title,
+          artist_id: formData.artistId || null,
+          date: formData.date,
+          time: formData.time,
+          location_name: formData.locationName || null,
+          location_lat: formData.locationLat,
+          location_lng: formData.locationLng,
+          price: formData.price ? parseFloat(formData.price) : null,
+          paypal_handle: formData.paypalHandle || null,
+          image_url: imageUrl
+        });
+
+      if (error) throw error;
+
+      toast.success('Event created successfully!');
+      setOpen(false);
+      setFormData({
+        title: '',
+        artistId: '',
+        date: '',
+        time: '',
+        locationName: '',
+        locationLat: null,
+        locationLng: null,
+        price: '',
+        paypalHandle: ''
+      });
+      setImageFile(null);
+      fetchEvents();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create event');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -77,12 +199,12 @@ export default function Events() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="artist">Artist</Label>
+                    <Label htmlFor="artist">Artist (Optional)</Label>
                     <Input
                       id="artist"
-                      value={formData.artist}
-                      onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                      placeholder="Select or enter artist name"
+                      value={formData.artistId}
+                      onChange={(e) => setFormData({ ...formData, artistId: e.target.value })}
+                      placeholder="Artist ID (leave blank if none)"
                     />
                   </div>
                   
@@ -110,12 +232,22 @@ export default function Events() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="e.g. Blue Note Jazz Club, NY"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="location"
+                        value={formData.locationName}
+                        onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
+                        placeholder="e.g. Blue Note Jazz Club, NY"
+                      />
+                      <Button type="button" onClick={handleLocationSearch} variant="outline">
+                        <MapPin className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {formData.locationLat && formData.locationLng && (
+                      <p className="text-xs text-muted-foreground">
+                        Coordinates: {formData.locationLat.toFixed(4)}, {formData.locationLng.toFixed(4)}
+                      </p>
+                    )}
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -133,29 +265,33 @@ export default function Events() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="category">Category</Label>
-                      <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                        <SelectTrigger id="category">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Concert">Concert</SelectItem>
-                          <SelectItem value="Festival">Festival</SelectItem>
-                          <SelectItem value="Club Night">Club Night</SelectItem>
-                          <SelectItem value="Classical">Classical</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="paypal">PayPal Handle</Label>
+                      <Input
+                        id="paypal"
+                        value={formData.paypalHandle}
+                        onChange={(e) => setFormData({ ...formData, paypalHandle: e.target.value })}
+                        placeholder="@yourhandle"
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="image">Image URL</Label>
-                    <Input
-                      id="image"
-                      value={formData.image}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      placeholder="https://..."
-                    />
+                    <Label htmlFor="image">Event Image</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="cursor-pointer"
+                      />
+                      {imageFile && (
+                        <Badge variant="secondary">
+                          <Upload className="h-3 w-3 mr-1" />
+                          {imageFile.name}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -163,11 +299,8 @@ export default function Events() {
                   <Button variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={() => {
-                    console.log('Create event:', formData);
-                    setOpen(false);
-                  }}>
-                    Create Event
+                  <Button onClick={handleCreateEvent} disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Event'}
                   </Button>
                 </div>
               </DialogContent>
@@ -179,25 +312,13 @@ export default function Events() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8 flex items-center gap-4"
+          className="mb-8"
         >
-          <Filter className="h-5 w-5 text-muted-foreground" />
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-48 bg-card/50 backdrop-blur-sm border-border/50">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Events</SelectItem>
-              <SelectItem value="Concert">Concerts</SelectItem>
-              <SelectItem value="Festival">Festivals</SelectItem>
-              <SelectItem value="Club Night">Club Nights</SelectItem>
-              <SelectItem value="Classical">Classical</SelectItem>
-            </SelectContent>
-          </Select>
+          <p className="text-muted-foreground">Showing {events.length} upcoming events</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredEvents.map((event, index) => (
+          {events.map((event, index) => (
             <motion.div
               key={event.id}
               initial={{ opacity: 0, y: 20 }}
@@ -207,31 +328,26 @@ export default function Events() {
               <Card className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group">
                 <div className="flex flex-col md:flex-row">
                   <div className="relative w-full md:w-64 h-48 overflow-hidden">
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
+                    {event.image_url ? (
+                      <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <Calendar className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent" />
-                    <Badge className="absolute top-4 left-4 bg-primary/90 backdrop-blur-sm">
-                      {event.category}
-                    </Badge>
-                    {event.availability === 'Sold Out' && (
-                      <Badge className="absolute bottom-4 left-4 bg-destructive/90 backdrop-blur-sm">
-                        Sold Out
-                      </Badge>
-                    )}
-                    {event.availability === 'Limited' && (
-                      <Badge className="absolute bottom-4 left-4 bg-yellow-500/90 backdrop-blur-sm">
-                        Limited Tickets
-                      </Badge>
-                    )}
                   </div>
                   
                   <div className="flex-1">
                     <CardHeader>
                       <CardTitle className="text-xl">{event.title}</CardTitle>
-                      <CardDescription className="text-base">{event.artist}</CardDescription>
+                      <CardDescription className="text-base">
+                        {event.artists?.name || 'Various Artists'}
+                      </CardDescription>
                     </CardHeader>
                     
                     <CardContent className="space-y-3">
@@ -247,22 +363,26 @@ export default function Events() {
                       
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-primary" />
-                        <span>{event.location}</span>
+                        <span>{event.location_name || 'Location TBA'}</span>
                       </div>
                       
                       <div className="flex items-center justify-between pt-4 border-t border-border/50">
                         <div className="flex items-center gap-2">
                           <Ticket className="h-5 w-5 text-primary" />
-                          <span className="text-2xl font-bold">${event.price}</span>
+                          <span className="text-2xl font-bold">
+                            {event.price ? `$${event.price}` : 'Free'}
+                          </span>
                         </div>
                         
-                        <Button 
-                          disabled={event.availability === 'Sold Out'}
-                          className="min-w-32"
-                        >
-                          {event.availability === 'Sold Out' ? 'Sold Out' : 'Book Now'}
+                        <Button className="min-w-32">
+                          Book Now
                         </Button>
                       </div>
+                      {event.paypal_handle && (
+                        <p className="text-xs text-muted-foreground">
+                          PayPal: {event.paypal_handle}
+                        </p>
+                      )}
                     </CardContent>
                   </div>
                 </div>
@@ -271,7 +391,7 @@ export default function Events() {
           ))}
         </div>
 
-        {filteredEvents.length === 0 && (
+        {events.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

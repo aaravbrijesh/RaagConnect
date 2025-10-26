@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Music, MapPin, Star, Plus } from 'lucide-react';
+import { Search, Music, MapPin, Plus, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,26 +8,148 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
 
-const mockArtists: any[] = [];
-
 export default function Artists() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [artists, setArtists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     genre: '',
-    location: '',
-    bio: '',
-    image: '',
-    rating: '5.0'
+    locationName: '',
+    locationLat: null as number | null,
+    locationLng: null as number | null,
+    bio: ''
   });
 
-  const filteredArtists = mockArtists.filter(artist =>
+  useEffect(() => {
+    fetchArtists();
+  }, []);
+
+  const fetchArtists = async () => {
+    const { data, error } = await supabase
+      .from('artists')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to load artists');
+      console.error(error);
+    } else {
+      setArtists(data || []);
+    }
+  };
+
+  const filteredArtists = artists.filter(artist =>
     artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     artist.genre.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+  const handleLocationSearch = async () => {
+    if (!formData.locationName) return;
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setFormData({
+          ...formData,
+          locationLat: parseFloat(data[0].lat),
+          locationLng: parseFloat(data[0].lon)
+        });
+        toast.success('Location found!');
+      } else {
+        toast.error('Location not found');
+      }
+    } catch (error) {
+      toast.error('Failed to search location');
+    }
+  };
+
+  const handleCreateArtist = async () => {
+    if (!user) {
+      toast.error('You must be logged in to create an artist');
+      return;
+    }
+
+    if (!formData.name || !formData.genre) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let imageUrl = null;
+
+      // Upload image if provided
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('artist-images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('artist-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Create artist
+      const { error } = await supabase
+        .from('artists')
+        .insert({
+          user_id: user.id,
+          name: formData.name,
+          genre: formData.genre,
+          location_name: formData.locationName || null,
+          location_lat: formData.locationLat,
+          location_lng: formData.locationLng,
+          bio: formData.bio || null,
+          image_url: imageUrl
+        });
+
+      if (error) throw error;
+
+      toast.success('Artist created successfully!');
+      setOpen(false);
+      setFormData({
+        name: '',
+        genre: '',
+        locationName: '',
+        locationLat: null,
+        locationLng: null,
+        bio: ''
+      });
+      setImageFile(null);
+      fetchArtists();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create artist');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -86,12 +208,22 @@ export default function Artists() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="e.g. Los Angeles, CA"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="location"
+                        value={formData.locationName}
+                        onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
+                        placeholder="e.g. Los Angeles, CA"
+                      />
+                      <Button type="button" onClick={handleLocationSearch} variant="outline">
+                        <MapPin className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {formData.locationLat && formData.locationLng && (
+                      <p className="text-xs text-muted-foreground">
+                        Coordinates: {formData.locationLat.toFixed(4)}, {formData.locationLng.toFixed(4)}
+                      </p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -106,26 +238,22 @@ export default function Artists() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="image">Image URL</Label>
-                    <Input
-                      id="image"
-                      value={formData.image}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="rating">Rating (1-5)</Label>
-                    <Input
-                      id="rating"
-                      type="number"
-                      min="1"
-                      max="5"
-                      step="0.1"
-                      value={formData.rating}
-                      onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-                    />
+                    <Label htmlFor="image">Artist Image</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="cursor-pointer"
+                      />
+                      {imageFile && (
+                        <Badge variant="secondary">
+                          <Upload className="h-3 w-3 mr-1" />
+                          {imageFile.name}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -133,11 +261,8 @@ export default function Artists() {
                   <Button variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={() => {
-                    console.log('Create artist:', formData);
-                    setOpen(false);
-                  }}>
-                    Create Artist
+                  <Button onClick={handleCreateArtist} disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Artist'}
                   </Button>
                 </div>
               </DialogContent>
@@ -173,11 +298,17 @@ export default function Artists() {
             >
               <Card className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group">
                 <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={artist.image}
-                    alt={artist.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+                  {artist.image_url ? (
+                    <img
+                      src={artist.image_url}
+                      alt={artist.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <Music className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
                   <Badge className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm">
                     {artist.genre}
@@ -185,19 +316,13 @@ export default function Artists() {
                 </div>
                 
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Music className="h-5 w-5 text-primary" />
-                      {artist.name}
-                    </span>
-                    <span className="flex items-center gap-1 text-sm font-normal">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      {artist.rating}
-                    </span>
+                  <CardTitle className="flex items-center gap-2">
+                    <Music className="h-5 w-5 text-primary" />
+                    {artist.name}
                   </CardTitle>
                   <CardDescription className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    {artist.location}
+                    {artist.location_name || 'Location not specified'}
                   </CardDescription>
                 </CardHeader>
                 
