@@ -570,7 +570,7 @@ export default function Events() {
         </div>
 
         {/* Event Details & Discussion Sheet */}
-        <Sheet open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+        <Sheet open={!!selectedEvent && !bookingModalOpen} onOpenChange={(open) => !open && setSelectedEvent(null)}>
           <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
             {selectedEvent && (
               <>
