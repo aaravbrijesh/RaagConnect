@@ -56,6 +56,56 @@ export type Database = {
         }
         Relationships: []
       }
+      bookings: {
+        Row: {
+          amount: number
+          attendee_email: string
+          attendee_name: string
+          created_at: string
+          event_id: string
+          id: string
+          paypal_order_id: string | null
+          paypal_payer_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          attendee_email: string
+          attendee_name: string
+          created_at?: string
+          event_id: string
+          id?: string
+          paypal_order_id?: string | null
+          paypal_payer_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          attendee_email?: string
+          attendee_name?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          paypal_order_id?: string | null
+          paypal_payer_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_discussions: {
         Row: {
           created_at: string
