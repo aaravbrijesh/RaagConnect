@@ -28,7 +28,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              Where Music Connects
+              Where Classical Music Connects
             </motion.h1>
             <motion.p
               className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto"
@@ -36,7 +36,7 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              Discover amazing artists, book unforgettable events, and be part of a vibrant music community
+              Discover maestros of Hindustani and Carnatic traditions, attend divine performances, and celebrate India's rich musical heritage
             </motion.p>
           </div>
 
@@ -57,7 +57,7 @@ export default function Home() {
                     <Music2 className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="text-2xl font-bold mb-2">Discover Artists</h3>
-                  <p className="text-muted-foreground">Browse talented musicians from every genre</p>
+                  <p className="text-muted-foreground">Connect with virtuosos of Indian classical music</p>
                 </motion.button>
 
                 <motion.button
@@ -68,8 +68,8 @@ export default function Home() {
                   <div className="bg-primary/10 rounded-xl p-4 w-fit mb-4 group-hover:bg-primary/20 transition-colors">
                     <Calendar className="w-8 h-8 text-primary" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">Upcoming Events</h3>
-                  <p className="text-muted-foreground">Book tickets to amazing live performances</p>
+                  <h3 className="text-2xl font-bold mb-2">Upcoming Concerts</h3>
+                  <p className="text-muted-foreground">Experience the soul of classical music traditions</p>
                 </motion.button>
 
                 <motion.button
@@ -80,7 +80,7 @@ export default function Home() {
                     <Users className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="text-2xl font-bold mb-2">Join Community</h3>
-                  <p className="text-muted-foreground">Connect with fellow music lovers</p>
+                  <p className="text-muted-foreground">Connect with rasika and fellow devotees of classical music</p>
                 </motion.button>
               </motion.div>
 
@@ -95,7 +95,7 @@ export default function Home() {
                   <h2 className="text-2xl font-bold">Welcome back, {user?.email?.split('@')[0]}!</h2>
                 </div>
                 <p className="text-muted-foreground mb-6">
-                  Ready to explore? Check out our featured artists and upcoming events.
+                  Ready to explore? Discover maestros and attend soulful concerts.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="flex items-center gap-3 bg-card/50 rounded-lg p-4">
@@ -109,7 +109,7 @@ export default function Home() {
                     <Calendar className="w-8 h-8 text-primary" />
                     <div>
                       <p className="font-semibold text-xl">25+</p>
-                      <p className="text-sm text-muted-foreground">Events</p>
+                      <p className="text-sm text-muted-foreground">Concerts</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 bg-card/50 rounded-lg p-4">
@@ -130,7 +130,7 @@ export default function Home() {
               transition={{ delay: 0.6 }}
             >
               <p className="text-lg text-muted-foreground mb-8">
-                Sign in to explore artists, book events, and join our community
+                Sign in to discover maestros, attend concerts, and celebrate classical music
               </p>
               <Button
                 size="lg"

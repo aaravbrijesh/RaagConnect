@@ -81,7 +81,7 @@ export default function Register() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            Join Music Connects today
+            Join the classical music community
           </motion.p>
 
           <form onSubmit={handleRegister} className="space-y-4">

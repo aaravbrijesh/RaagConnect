@@ -32,7 +32,7 @@ export default function Nav() {
             >
               <img src={logo} alt="Music Connects" className="h-10 w-10" />
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Music Connects
+                Sangeet Samagam
               </span>
             </button>
 
@@ -48,7 +48,7 @@ export default function Nav() {
                 </NavLink>
                 <NavLink to="/events" className={navLinkClass}>
                   <Calendar className="h-4 w-4" />
-                  Events
+                  Concerts
                 </NavLink>
               </div>
             )}

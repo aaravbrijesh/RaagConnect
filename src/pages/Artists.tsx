@@ -167,7 +167,7 @@ export default function Artists() {
                 Discover Artists
               </h1>
               <p className="text-muted-foreground text-lg">
-                Find and connect with talented musicians
+                Find maestros of Hindustani and Carnatic classical music
               </p>
             </div>
             
@@ -197,13 +197,16 @@ export default function Artists() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="genre">Genre</Label>
+                    <Label htmlFor="genre">Specialization</Label>
                     <Input
                       id="genre"
                       value={formData.genre}
                       onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                      placeholder="e.g. Rock, Jazz, Electronic"
+                      placeholder="e.g. Hindustani Vocal, Carnatic Violin, Tabla, Veena, Sitar"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Examples: Khayal, Dhrupad, Thumri, Carnatic Vocal, Mridangam, Flute, Sarangi
+                    </p>
                   </div>
                   
                   <div className="space-y-2">
@@ -280,7 +283,7 @@ export default function Artists() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
             <Input
               type="text"
-              placeholder="Search by artist name or genre..."
+              placeholder="Search by artist name or specialization..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-12 bg-card/50 backdrop-blur-sm border-border/50"

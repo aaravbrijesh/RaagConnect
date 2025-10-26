@@ -64,7 +64,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            🎶 Music Connects
+            🎵 Sangeet Samagam
           </motion.h2>
 
           <motion.p
@@ -73,7 +73,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            Sign in to access your dashboard
+            Sign in to discover classical music
           </motion.p>
 
           <form onSubmit={handleEmailLogin} className="space-y-4">

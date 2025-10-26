@@ -166,10 +166,10 @@ export default function Events() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                Upcoming Events
+                Upcoming Concerts
               </h1>
               <p className="text-muted-foreground text-lg">
-                Book tickets to amazing live performances
+                Experience the divine tradition of Indian classical music
               </p>
             </div>
             
@@ -182,19 +182,19 @@ export default function Events() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Create New Event</DialogTitle>
+                  <DialogTitle>Create New Concert</DialogTitle>
                   <DialogDescription>
-                    Add a new event to your platform
+                    Schedule a Hindustani or Carnatic music performance
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="title">Event Title</Label>
+                    <Label htmlFor="title">Concert Title</Label>
                     <Input
                       id="title"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Enter event title"
+                      placeholder="e.g. Raga Yaman Recital, Thyagaraja Aradhana"
                     />
                   </div>
                   
@@ -237,7 +237,7 @@ export default function Events() {
                         id="location"
                         value={formData.locationName}
                         onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
-                        placeholder="e.g. Blue Note Jazz Club, NY"
+                        placeholder="e.g. Shanmukhananda Hall, Mumbai or Narada Gana Sabha, Chennai"
                       />
                       <Button type="button" onClick={handleLocationSearch} variant="outline">
                         <MapPin className="h-4 w-4" />
