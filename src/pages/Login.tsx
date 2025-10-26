@@ -64,7 +64,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            🎵 Sangeet Samagam
+            🎵 Music Connects
           </motion.h2>
 
           <motion.p

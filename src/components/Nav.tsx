@@ -32,7 +32,7 @@ export default function Nav() {
             >
               <img src={logo} alt="Music Connects" className="h-10 w-10" />
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Sangeet Samagam
+                Music Connects
               </span>
             </button>
 
