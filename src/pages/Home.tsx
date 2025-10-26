@@ -1,14 +1,40 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Music2, Calendar, Users, Sparkles, TrendingUp, Award } from 'lucide-react';
 import Nav from '@/components/Nav';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Home() {
   const { isSignedIn, user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    artists: 0,
+    events: 0,
+    members: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [artistsResult, eventsResult, profilesResult] = await Promise.all([
+        supabase.from('artists').select('*', { count: 'exact', head: true }),
+        supabase.from('events').select('*', { count: 'exact', head: true }),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      ]);
+
+      setStats({
+        artists: artistsResult.count || 0,
+        events: eventsResult.count || 0,
+        members: profilesResult.count || 0,
+      });
+    };
+
+    if (isSignedIn) {
+      fetchStats();
+    }
+  }, [isSignedIn]);
 
   return (
     <div className="min-h-screen">
@@ -101,21 +127,21 @@ export default function Home() {
                   <div className="flex items-center gap-3 bg-card/50 rounded-lg p-4">
                     <TrendingUp className="w-8 h-8 text-primary" />
                     <div>
-                      <p className="font-semibold text-xl">50+</p>
+                      <p className="font-semibold text-xl">{stats.artists}</p>
                       <p className="text-sm text-muted-foreground">Artists</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 bg-card/50 rounded-lg p-4">
                     <Calendar className="w-8 h-8 text-primary" />
                     <div>
-                      <p className="font-semibold text-xl">25+</p>
+                      <p className="font-semibold text-xl">{stats.events}</p>
                       <p className="text-sm text-muted-foreground">Concerts</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 bg-card/50 rounded-lg p-4">
                     <Award className="w-8 h-8 text-primary" />
                     <div>
-                      <p className="font-semibold text-xl">1000+</p>
+                      <p className="font-semibold text-xl">{stats.members}</p>
                       <p className="text-sm text-muted-foreground">Members</p>
                     </div>
                   </div>
