@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload, CreditCard, Link as LinkIcon, Edit } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload, CreditCard, Link as LinkIcon, Edit, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,7 @@ export default function Events() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     artistId: '',
@@ -253,7 +254,22 @@ export default function Events() {
                 Experience the divine tradition of Indian classical music
               </p>
             </div>
-            
+          </div>
+
+          <div className="max-w-md mt-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search events by title or location..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end -mt-8">
             {canCreateEvents && (
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
@@ -467,11 +483,21 @@ export default function Events() {
           transition={{ delay: 0.2 }}
           className="mb-8"
         >
-          <p className="text-muted-foreground">Showing {events.length} upcoming events</p>
+          <p className="text-muted-foreground">
+            Showing {events.filter(event => 
+              event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              event.location_name?.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length} upcoming events
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {events.map((event, index) => (
+          {events
+            .filter(event => 
+              event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              event.location_name?.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((event, index) => (
             <motion.div
               key={event.id}
               initial={{ opacity: 0, y: 20 }}
@@ -568,6 +594,19 @@ export default function Events() {
             </motion.div>
           ))}
         </div>
+
+        {events.filter(event => 
+          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.location_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        ).length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <p className="text-muted-foreground text-lg">No events found matching "{searchTerm}"</p>
+          </motion.div>
+        )}
 
         {/* Event Details & Discussion Sheet */}
         <Sheet open={!!selectedEvent && !bookingModalOpen} onOpenChange={(open) => !open && setSelectedEvent(null)}>
