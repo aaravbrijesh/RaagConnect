@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, ExternalLink, AlertCircle } from 'lucide-react';
+import { Upload, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -24,6 +24,10 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
     name: '',
     email: ''
   });
+
+  // Parse payment info from JSON
+  const paymentInfo = event.payment_link ? JSON.parse(event.payment_link) : {};
+  const hasPaymentInfo = paymentInfo.venmo || paymentInfo.cashapp || paymentInfo.zelle || paymentInfo.paypal;
 
   const handleProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -168,12 +172,38 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </>
           ) : (
             <>
-              {event.payment_link && (
+              {hasPaymentInfo && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="space-y-2">
-                    <p>Send payment to: <span className="font-mono font-semibold">{event.payment_link}</span></p>
-                    <p className="text-xs">After sending payment, upload your proof (screenshot/receipt) below.</p>
+                  <AlertDescription>
+                    <p className="font-medium mb-2">Send payment to:</p>
+                    <div className="space-y-1 text-sm">
+                      {paymentInfo.venmo && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="w-20">Venmo</Badge>
+                          <span className="font-mono font-semibold">{paymentInfo.venmo}</span>
+                        </div>
+                      )}
+                      {paymentInfo.cashapp && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="w-20">Cash App</Badge>
+                          <span className="font-mono font-semibold">{paymentInfo.cashapp}</span>
+                        </div>
+                      )}
+                      {paymentInfo.zelle && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="w-20">Zelle</Badge>
+                          <span className="font-mono font-semibold">{paymentInfo.zelle}</span>
+                        </div>
+                      )}
+                      {paymentInfo.paypal && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="w-20">PayPal</Badge>
+                          <span className="font-mono font-semibold">{paymentInfo.paypal}</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs mt-2">After sending payment, upload your proof below.</p>
                   </AlertDescription>
                 </Alert>
               )}

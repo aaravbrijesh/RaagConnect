@@ -40,7 +40,10 @@ export default function Events() {
     locationLng: null as number | null,
     price: '',
     useStripeCheckout: false,
-    paymentLink: ''
+    venmo: '',
+    cashapp: '',
+    zelle: '',
+    paypal: ''
   });
 
   useEffect(() => {
@@ -125,6 +128,14 @@ export default function Events() {
         imageUrl = publicUrl;
       }
 
+      // Create payment info JSON if not using Stripe
+      const paymentInfo = formData.useStripeCheckout ? null : JSON.stringify({
+        venmo: formData.venmo || null,
+        cashapp: formData.cashapp || null,
+        zelle: formData.zelle || null,
+        paypal: formData.paypal || null
+      });
+
       // Create event
       const { error } = await supabase
         .from('events')
@@ -139,7 +150,7 @@ export default function Events() {
           location_lng: formData.locationLng,
           price: formData.price ? parseFloat(formData.price) : null,
           use_stripe_checkout: formData.useStripeCheckout,
-          payment_link: formData.paymentLink || null,
+          payment_link: paymentInfo,
           image_url: imageUrl
         });
 
@@ -157,7 +168,10 @@ export default function Events() {
         locationLng: null,
         price: '',
         useStripeCheckout: false,
-        paymentLink: ''
+        venmo: '',
+        cashapp: '',
+        zelle: '',
+        paypal: ''
       });
       setImageFile(null);
       fetchEvents();
@@ -302,23 +316,55 @@ export default function Events() {
                     </div>
 
                     {!formData.useStripeCheckout && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <LinkIcon className="h-4 w-4" />
-                          <Label htmlFor="paymentLink">Payment Info</Label>
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">Payment Methods</Label>
+                        <p className="text-xs text-muted-foreground">Add one or more payment options</p>
+                        
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="venmo" className="text-sm">Venmo</Label>
+                            <Input
+                              id="venmo"
+                              value={formData.venmo}
+                              onChange={(e) => setFormData({ ...formData, venmo: e.target.value })}
+                              placeholder="@username"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="cashapp" className="text-sm">Cash App</Label>
+                            <Input
+                              id="cashapp"
+                              value={formData.cashapp}
+                              onChange={(e) => setFormData({ ...formData, cashapp: e.target.value })}
+                              placeholder="$cashtag"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="zelle" className="text-sm">Zelle</Label>
+                            <Input
+                              id="zelle"
+                              value={formData.zelle}
+                              onChange={(e) => setFormData({ ...formData, zelle: e.target.value })}
+                              placeholder="email@example.com or phone"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="paypal" className="text-sm">PayPal</Label>
+                            <Input
+                              id="paypal"
+                              value={formData.paypal}
+                              onChange={(e) => setFormData({ ...formData, paypal: e.target.value })}
+                              placeholder="@username"
+                            />
+                          </div>
                         </div>
-                        <Input
-                          id="paymentLink"
-                          value={formData.paymentLink}
-                          onChange={(e) => setFormData({ ...formData, paymentLink: e.target.value })}
-                          placeholder="@venmo, $cashtag, email@zelle.com"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Venmo: @username • CashApp: $cashtag • Zelle: email/phone • PayPal: @username
-                        </p>
+
                         <Alert>
                           <AlertDescription className="text-xs">
-                            Users will send payment here and upload proof. You'll review and approve bookings.
+                            Users will send payment using one of these methods and upload proof. You'll review and approve bookings.
                           </AlertDescription>
                         </Alert>
                       </div>
