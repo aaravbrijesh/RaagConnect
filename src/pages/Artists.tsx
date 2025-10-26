@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Music, MapPin, Plus, Upload } from 'lucide-react';
+import { Search, Music, MapPin, Plus, Upload, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ export default function Artists() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingArtist, setEditingArtist] = useState<any | null>(null);
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -94,6 +96,20 @@ export default function Artists() {
     }
   };
 
+  const handleOpenEdit = (artist: any) => {
+    setEditingArtist(artist);
+    setEditMode(true);
+    setFormData({
+      name: artist.name,
+      genre: artist.genre,
+      locationName: artist.location_name || '',
+      locationLat: artist.location_lat,
+      locationLng: artist.location_lng,
+      bio: artist.bio || ''
+    });
+    setOpen(true);
+  };
+
   const handleCreateArtist = async () => {
     if (!user) {
       toast.error('You must be logged in to create an artist');
@@ -108,7 +124,7 @@ export default function Artists() {
     setLoading(true);
 
     try {
-      let imageUrl = null;
+      let imageUrl = editMode ? editingArtist?.image_url : null;
 
       // Upload image if provided
       if (imageFile) {
@@ -128,24 +144,45 @@ export default function Artists() {
         imageUrl = publicUrl;
       }
 
-      // Create artist
-      const { error } = await supabase
-        .from('artists')
-        .insert({
-          user_id: user.id,
-          name: formData.name,
-          genre: formData.genre,
-          location_name: formData.locationName || null,
-          location_lat: formData.locationLat,
-          location_lng: formData.locationLng,
-          bio: formData.bio || null,
-          image_url: imageUrl
-        });
+      if (editMode && editingArtist) {
+        // Update artist
+        const { error } = await supabase
+          .from('artists')
+          .update({
+            name: formData.name,
+            genre: formData.genre,
+            location_name: formData.locationName || null,
+            location_lat: formData.locationLat,
+            location_lng: formData.locationLng,
+            bio: formData.bio || null,
+            image_url: imageUrl
+          })
+          .eq('id', editingArtist.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success('Artist updated successfully!');
+      } else {
+        // Create artist
+        const { error } = await supabase
+          .from('artists')
+          .insert({
+            user_id: user.id,
+            name: formData.name,
+            genre: formData.genre,
+            location_name: formData.locationName || null,
+            location_lat: formData.locationLat,
+            location_lng: formData.locationLng,
+            bio: formData.bio || null,
+            image_url: imageUrl
+          });
 
-      toast.success('Artist created successfully!');
+        if (error) throw error;
+        toast.success('Artist created successfully!');
+      }
+
       setOpen(false);
+      setEditMode(false);
+      setEditingArtist(null);
       setFormData({
         name: '',
         genre: '',
@@ -157,7 +194,7 @@ export default function Artists() {
       setImageFile(null);
       fetchArtists();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create artist');
+      toast.error(error.message || `Failed to ${editMode ? 'update' : 'create'} artist`);
     } finally {
       setLoading(false);
     }
@@ -193,9 +230,9 @@ export default function Artists() {
                 </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Create New Artist</DialogTitle>
+                  <DialogTitle>{editMode ? 'Edit Artist' : 'Create New Artist'}</DialogTitle>
                   <DialogDescription>
-                    Add a new artist to your platform
+                    {editMode ? 'Update artist profile' : 'Add a new artist to your platform'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -274,11 +311,15 @@ export default function Artists() {
                 </div>
                 
                 <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setOpen(false);
+                    setEditMode(false);
+                    setEditingArtist(null);
+                  }}>
                     Cancel
                   </Button>
                   <Button onClick={handleCreateArtist} disabled={loading}>
-                    {loading ? 'Creating...' : 'Create Artist'}
+                    {loading ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Artist' : 'Create Artist')}
                   </Button>
                 </div>
               </DialogContent>
@@ -330,6 +371,20 @@ export default function Artists() {
                   <Badge className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm">
                     {artist.genre}
                   </Badge>
+                  {user && artist.user_id === user.id && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="absolute top-4 left-4 gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(artist);
+                      }}
+                    >
+                      <Edit className="h-3 w-3" />
+                      Edit
+                    </Button>
+                  )}
                 </div>
                 
                 <CardHeader>

@@ -496,6 +496,20 @@ export default function Events() {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent" />
+                    {user && event.user_id === user.id && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="absolute top-2 right-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEdit(event);
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                        Edit
+                      </Button>
+                    )}
                   </div>
                   
                   <div className="flex-1">
