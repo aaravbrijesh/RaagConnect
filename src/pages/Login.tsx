@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Login() {
   const { signInWithEmail, signInWithGoogle, authMessage, authLoading, isSignedIn } = useAuth();
@@ -46,6 +47,38 @@ export default function Login() {
       await signInWithGoogle();
     } catch (err) {
       // Error handled by context
+    }
+  };
+
+  const handleTestLogin = async (email: string, password: string, role: string) => {
+    try {
+      // First try to login
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (loginError) {
+        // If login fails, register the user
+        toast.info(`Creating test ${role} account...`);
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { role }
+          }
+        });
+        
+        if (signUpError) throw signUpError;
+        
+        // Now login with the new account
+        const { error: loginError2 } = await supabase.auth.signInWithPassword({ email, password });
+        if (loginError2) throw loginError2;
+        
+        toast.success(`Logged in as test ${role}!`);
+      } else {
+        toast.success(`Logged in as test ${role}!`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || `Failed to login as ${role}`);
     }
   };
 
@@ -137,10 +170,7 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setEmail('viewer@test.com');
-                  setPassword('viewer123');
-                }}
+                onClick={() => handleTestLogin('viewer@test.com', 'viewer123', 'viewer')}
                 disabled={authLoading}
                 className="text-xs"
               >
@@ -150,10 +180,7 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setEmail('artist@test.com');
-                  setPassword('artist123');
-                }}
+                onClick={() => handleTestLogin('artist@test.com', 'artist123', 'artist')}
                 disabled={authLoading}
                 className="text-xs"
               >
@@ -163,10 +190,7 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setEmail('organizer@test.com');
-                  setPassword('organizer123');
-                }}
+                onClick={() => handleTestLogin('organizer@test.com', 'organizer123', 'organizer')}
                 disabled={authLoading}
                 className="text-xs"
               >
@@ -176,10 +200,7 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setEmail('admin@test.com');
-                  setPassword('admin123');
-                }}
+                onClick={() => handleTestLogin('admin@test.com', 'admin123', 'admin')}
                 disabled={authLoading}
                 className="text-xs"
               >
