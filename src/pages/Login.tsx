@@ -58,7 +58,7 @@ export default function Login() {
       if (loginError) {
         // If login fails, register the user
         toast.info(`Creating test ${role} account...`);
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -69,13 +69,37 @@ export default function Login() {
         
         if (signUpError) throw signUpError;
         
+        // Wait a bit for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Now login with the new account
         const { error: loginError2 } = await supabase.auth.signInWithPassword({ email, password });
         if (loginError2) throw loginError2;
         
         toast.success(`Logged in as test ${role}!`);
+        
+        // Redirect artists to profile creation
+        if (role === 'artist') {
+          setTimeout(() => navigate('/create-artist-profile'), 500);
+        }
       } else {
         toast.success(`Logged in as test ${role}!`);
+        
+        // Check if artist needs profile
+        if (role === 'artist') {
+          const { data } = await supabase.auth.getUser();
+          if (data.user) {
+            const { data: profile } = await supabase
+              .from('artists')
+              .select('id')
+              .eq('user_id', data.user.id)
+              .maybeSingle();
+            
+            if (!profile) {
+              setTimeout(() => navigate('/create-artist-profile'), 500);
+            }
+          }
+        }
       }
     } catch (err: any) {
       toast.error(err.message || `Failed to login as ${role}`);
