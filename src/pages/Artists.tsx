@@ -17,7 +17,7 @@ import Nav from '@/components/Nav';
 
 export default function Artists() {
   const { user } = useAuth();
-  const { canCreateArtistProfile } = useUserRoles(user?.id);
+  const { canCreateArtistProfile, isAdmin } = useUserRoles(user?.id);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -371,7 +371,7 @@ export default function Artists() {
                   <Badge className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm">
                     {artist.genre}
                   </Badge>
-                  {user && artist.user_id === user.id && (
+                  {(user?.id === artist.user_id || isAdmin) && (
                     <Button
                       variant="secondary"
                       size="sm"

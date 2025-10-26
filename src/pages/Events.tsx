@@ -23,7 +23,7 @@ import BookingManagement from '@/components/BookingManagement';
 
 export default function Events() {
   const { user } = useAuth();
-  const { canCreateEvents } = useUserRoles(user?.id);
+  const { canCreateEvents, isAdmin } = useUserRoles(user?.id);
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
@@ -496,7 +496,7 @@ export default function Events() {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent" />
-                    {user && event.user_id === user.id && (
+                    {(user?.id === event.user_id || isAdmin) && (
                       <Button
                         variant="secondary"
                         size="sm"
