@@ -11,10 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 
 export default function Artists() {
   const { user } = useAuth();
+  const { canCreateArtistProfile } = useUserRoles(user?.id);
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [artists, setArtists] = useState<any[]>([]);
@@ -34,16 +36,34 @@ export default function Artists() {
   }, []);
 
   const fetchArtists = async () => {
-    const { data, error } = await supabase
+    // Fetch all artists first
+    const { data: artistsData, error: artistsError } = await supabase
       .from('artists')
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) {
+    if (artistsError) {
       toast.error('Failed to load artists');
-      console.error(error);
-    } else {
-      setArtists(data || []);
+      console.error(artistsError);
+      return;
+    }
+
+    // Then filter by checking user_roles for each artist
+    if (artistsData) {
+      const artistsWithRoles = await Promise.all(
+        artistsData.map(async (artist) => {
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', artist.user_id)
+            .eq('role', 'artist')
+            .single();
+          
+          return roles ? artist : null;
+        })
+      );
+      
+      setArtists(artistsWithRoles.filter(a => a !== null));
     }
   };
 
@@ -171,13 +191,14 @@ export default function Artists() {
               </p>
             </div>
             
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg" className="gap-2">
-                  <Plus className="h-5 w-5" />
-                  Create Artist
-                </Button>
-              </DialogTrigger>
+            {canCreateArtistProfile && (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="gap-2">
+                    <Plus className="h-5 w-5" />
+                    Create Artist
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Artist</DialogTitle>
@@ -270,7 +291,8 @@ export default function Artists() {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
+          )}
+        </div>
         </motion.div>
 
         <motion.div

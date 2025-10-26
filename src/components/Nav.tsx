@@ -1,12 +1,14 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { Music2, Home, Users, Calendar, LogOut } from 'lucide-react';
+import { Music2, Home, Users, Calendar, LogOut, Shield } from 'lucide-react';
 import logo from '@/assets/MusicConnectsLogo.png';
 
 export default function Nav() {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRoles(user?.id);
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -50,6 +52,12 @@ export default function Nav() {
                   <Calendar className="h-4 w-4" />
                   Concerts
                 </NavLink>
+                {isAdmin && (
+                  <NavLink to="/admin" className={navLinkClass}>
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </NavLink>
+                )}
               </div>
             )}
           </div>

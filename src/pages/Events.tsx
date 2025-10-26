@@ -11,11 +11,13 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 import EventDiscussion from '@/components/EventDiscussion';
 
 export default function Events() {
   const { user } = useAuth();
+  const { canCreateEvents } = useUserRoles(user?.id);
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -176,13 +178,14 @@ export default function Events() {
               </p>
             </div>
             
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg" className="gap-2">
-                  <Plus className="h-5 w-5" />
-                  Create Event
-                </Button>
-              </DialogTrigger>
+            {canCreateEvents && (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="gap-2">
+                    <Plus className="h-5 w-5" />
+                    Create Event
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Concert</DialogTitle>
@@ -308,7 +311,8 @@ export default function Events() {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
+          )}
+        </div>
         </motion.div>
 
         <motion.div
