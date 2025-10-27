@@ -68,6 +68,7 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
       if (error) throw error;
 
       toast.success(`Booking ${status}!`);
+      await fetchBookings();
     } catch (error: any) {
       toast.error(error.message || 'Failed to update booking');
     } finally {
