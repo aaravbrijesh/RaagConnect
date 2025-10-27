@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Music, Calendar, Users, ArrowRight, Play, Star } from 'lucide-react';
+import { Music, Calendar, Users, ArrowRight, Play, Star, MapPin } from 'lucide-react';
 import Nav from '@/components/Nav';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 type Event = {
   id: string;
@@ -13,7 +15,10 @@ type Event = {
   date: string;
   time: string;
   location_name: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
   price: number | null;
+  distance?: number;
 };
 
 type Artist = {
@@ -25,32 +30,121 @@ type Artist = {
 export default function Home() {
   const { isSignedIn, user } = useAuth();
   const navigate = useNavigate();
-  const [nextEvent, setNextEvent] = useState<Event | null>(null);
+  const [eventsThisWeek, setEventsThisWeek] = useState<Event[]>([]);
+  const [nearbyEvents, setNearbyEvents] = useState<Event[]>([]);
   const [recentArtists, setRecentArtists] = useState<Artist[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
 
   useEffect(() => {
-    const fetchData = async () => {
-      const [eventResult, artistsResult] = await Promise.all([
-        supabase
-          .from('events')
-          .select('*')
-          .gte('date', new Date().toISOString().split('T')[0])
-          .order('date', { ascending: true })
-          .limit(1)
-          .single(),
-        supabase
-          .from('artists')
-          .select('id, name, genre')
-          .order('created_at', { ascending: false })
-          .limit(6),
-      ]);
-
-      if (eventResult.data) setNextEvent(eventResult.data);
-      if (artistsResult.data) setRecentArtists(artistsResult.data);
-    };
-
-    fetchData();
+    fetchEventsThisWeek();
+    fetchArtists();
+    
+    // Check if location permission was previously granted
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        setLocationPermission(result.state);
+        if (result.state === 'granted') {
+          requestLocation();
+        }
+      });
+    }
   }, []);
+
+  useEffect(() => {
+    if (userLocation) {
+      fetchNearbyEvents();
+    }
+  }, [userLocation]);
+
+  const fetchEventsThisWeek = async () => {
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    const { data } = await supabase
+      .from('events')
+      .select('*')
+      .gte('date', today.toISOString().split('T')[0])
+      .lte('date', nextWeek.toISOString().split('T')[0])
+      .order('date', { ascending: true })
+      .limit(4);
+
+    if (data) setEventsThisWeek(data);
+  };
+
+  const fetchNearbyEvents = async () => {
+    if (!userLocation) return;
+
+    const { data } = await supabase
+      .from('events')
+      .select('*')
+      .gte('date', new Date().toISOString().split('T')[0])
+      .not('location_lat', 'is', null)
+      .not('location_lng', 'is', null)
+      .order('date', { ascending: true });
+
+    if (data) {
+      // Calculate distance and sort by proximity
+      const eventsWithDistance = data.map(event => ({
+        ...event,
+        distance: calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          event.location_lat!,
+          event.location_lng!
+        )
+      }));
+
+      const nearby = eventsWithDistance
+        .filter(e => e.distance < 50) // Within 50 miles
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 4);
+
+      setNearbyEvents(nearby);
+    }
+  };
+
+  const fetchArtists = async () => {
+    const { data } = await supabase
+      .from('artists')
+      .select('id, name, genre')
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (data) setRecentArtists(data);
+  };
+
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const requestLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setLocationPermission('granted');
+          toast.success('Location access granted! Showing nearby events.');
+        },
+        (error) => {
+          setLocationPermission('denied');
+          toast.error('Location access denied. Enable it to see nearby events.');
+        }
+      );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,50 +200,120 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Next Event Highlight */}
-      {nextEvent && (
+      {/* Events This Week */}
+      {eventsThisWeek.length > 0 && (
+        <section className="container mx-auto px-4 py-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">Events This Week</h2>
+              <p className="text-muted-foreground">Don't miss these upcoming performances</p>
+            </div>
+            <Button variant="ghost" onClick={() => navigate('/events')}>
+              View All
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {eventsThisWeek.map((event, index) => (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/events')}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-sm text-primary mb-3">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">{event.title}</h3>
+                    {event.location_name && (
+                      <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {event.location_name}
+                      </p>
+                    )}
+                    {event.price && (
+                      <p className="text-sm font-semibold text-primary">${event.price}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Nearby Events Section */}
+      {locationPermission === 'prompt' && (
         <section className="container mx-auto px-4 py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-12 overflow-hidden"
+            className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-12 overflow-hidden text-center"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
             <div className="relative">
-              <div className="flex items-center gap-2 text-sm text-primary mb-4">
-                <Play className="w-4 h-4" />
-                <span className="font-semibold">NEXT CONCERT</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">{nextEvent.title}</h2>
-              <div className="flex flex-wrap gap-6 text-muted-foreground mb-8">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  <span>
-                    {new Date(nextEvent.date).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </span>
-                </div>
-                {nextEvent.location_name && (
-                  <div className="flex items-center gap-2">
-                    <Music className="w-5 h-5" />
-                    <span>{nextEvent.location_name}</span>
-                  </div>
-                )}
-              </div>
-              <Button
-                size="lg"
-                onClick={() => navigate('/events')}
-                className="h-12 px-8"
-              >
-                View Details
-                <ArrowRight className="ml-2 w-4 h-4" />
+              <MapPin className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Discover Events Near You</h2>
+              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+                Share your location to see concerts happening in your area
+              </p>
+              <Button size="lg" onClick={requestLocation} className="h-12 px-8">
+                Share Location
+                <MapPin className="ml-2 w-4 h-4" />
               </Button>
             </div>
           </motion.div>
+        </section>
+      )}
+
+      {nearbyEvents.length > 0 && (
+        <section className="container mx-auto px-4 py-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">Events Near You</h2>
+              <p className="text-muted-foreground">Performances happening in your area</p>
+            </div>
+            <Button variant="ghost" onClick={() => navigate('/events')}>
+              View All
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {nearbyEvents.map((event, index) => (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/events')}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-sm text-primary mb-3">
+                      <MapPin className="w-4 h-4" />
+                      <span>{Math.round(event.distance)} mi away</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">{event.title}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <Calendar className="w-3 h-3" />
+                      <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                    {event.location_name && (
+                      <p className="text-sm text-muted-foreground mb-2">{event.location_name}</p>
+                    )}
+                    {event.price && (
+                      <p className="text-sm font-semibold text-primary">${event.price}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </section>
       )}
 

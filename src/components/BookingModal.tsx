@@ -89,7 +89,32 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
       if (bookingError) throw bookingError;
 
-      toast.success('Booking submitted! Awaiting organizer confirmation.');
+      // Create Google Calendar link
+      const eventDate = new Date(`${event.date}T${event.time}`);
+      const endDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours duration
+      
+      const formatDateForGoogle = (date: Date) => {
+        return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      };
+
+      const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatDateForGoogle(eventDate)}/${formatDateForGoogle(endDate)}&details=${encodeURIComponent(`Booking confirmed for ${event.title}`)}&location=${encodeURIComponent(event.location_name || '')}`;
+
+      toast.success(
+        <div>
+          <p className="font-semibold mb-2">Booking submitted!</p>
+          <p className="text-sm mb-2">Awaiting organizer confirmation.</p>
+          <a 
+            href={calendarUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:underline text-sm font-medium inline-flex items-center gap-1"
+          >
+            Add to Google Calendar →
+          </a>
+        </div>,
+        { duration: 8000 }
+      );
+
       onOpenChange(false);
       setFormData({ name: '', email: '' });
       setProofFile(null);
