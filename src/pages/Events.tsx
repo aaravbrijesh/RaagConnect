@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload, CreditCard, Link as LinkIcon, Edit, Search } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Link as LinkIcon, Edit, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,7 +41,6 @@ export default function Events() {
     locationLat: null as number | null,
     locationLng: null as number | null,
     price: '',
-    useStripeCheckout: false,
     venmo: '',
     cashapp: '',
     zelle: '',
@@ -113,7 +111,6 @@ export default function Events() {
       locationLat: event.location_lat,
       locationLng: event.location_lng,
       price: event.price?.toString() || '',
-      useStripeCheckout: event.use_stripe_checkout,
       venmo: paymentInfo.venmo || '',
       cashapp: paymentInfo.cashapp || '',
       zelle: paymentInfo.zelle || '',
@@ -156,8 +153,8 @@ export default function Events() {
         imageUrl = publicUrl;
       }
 
-      // Create payment info JSON if not using Stripe
-      const paymentInfo = formData.useStripeCheckout ? null : JSON.stringify({
+      // Create payment info JSON
+      const paymentInfo = JSON.stringify({
         venmo: formData.venmo || null,
         cashapp: formData.cashapp || null,
         zelle: formData.zelle || null,
@@ -177,7 +174,6 @@ export default function Events() {
             location_lat: formData.locationLat,
             location_lng: formData.locationLng,
             price: formData.price ? parseFloat(formData.price) : null,
-            use_stripe_checkout: formData.useStripeCheckout,
             payment_link: paymentInfo,
             image_url: imageUrl
           })
@@ -199,7 +195,6 @@ export default function Events() {
             location_lat: formData.locationLat,
             location_lng: formData.locationLng,
             price: formData.price ? parseFloat(formData.price) : null,
-            use_stripe_checkout: formData.useStripeCheckout,
             payment_link: paymentInfo,
             image_url: imageUrl
           });
@@ -220,7 +215,6 @@ export default function Events() {
         locationLat: null,
         locationLng: null,
         price: '',
-        useStripeCheckout: false,
         venmo: '',
         cashapp: '',
         zelle: '',
@@ -364,31 +358,10 @@ export default function Events() {
                   <Separator className="my-4" />
 
                   <div className="space-y-4">
-                    <Label className="text-base">Payment Method</Label>
+                    <Label className="text-base">Payment Methods</Label>
+                    <p className="text-sm text-muted-foreground">Add one or more payment options for attendees</p>
                     
-                    <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          <Label htmlFor="stripe" className="font-medium">Use Stripe Checkout</Label>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Stripe charges ~2.9% + $0.30 per transaction (rates subject to change)
-                        </p>
-                      </div>
-                      <Switch
-                        id="stripe"
-                        checked={formData.useStripeCheckout}
-                        onCheckedChange={(checked) => setFormData({ ...formData, useStripeCheckout: checked })}
-                      />
-                    </div>
-
-                    {!formData.useStripeCheckout && (
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">Payment Methods</Label>
-                        <p className="text-xs text-muted-foreground">Add one or more payment options</p>
-                        
-                        <div className="space-y-3">
+                    <div className="space-y-3">
                           <div className="space-y-2">
                             <Label htmlFor="venmo" className="text-sm">Venmo</Label>
                             <Input
@@ -435,9 +408,7 @@ export default function Events() {
                             Users will send payment using one of these methods and upload proof. You'll review and approve bookings.
                           </AlertDescription>
                         </Alert>
-                      </div>
-                    )}
-                  </div>
+                    </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="image">Event Image</Label>
@@ -581,12 +552,6 @@ export default function Events() {
                           Book Now
                         </Button>
                       </div>
-                      {event.use_stripe_checkout && (
-                        <Badge variant="secondary" className="text-xs">
-                          <CreditCard className="h-3 w-3 mr-1" />
-                          Stripe
-                        </Badge>
-                      )}
                     </CardContent>
                   </div>
                 </div>
@@ -681,14 +646,7 @@ export default function Events() {
                       </span>
                     </div>
 
-                    {selectedEvent.use_stripe_checkout && (
-                      <Badge variant="secondary">
-                        <CreditCard className="h-4 w-4 mr-1" />
-                        Stripe Checkout
-                      </Badge>
-                    )}
-
-                    <Button 
+                    <Button
                       className="w-full mt-4" 
                       size="lg"
                       onClick={() => setBookingModalOpen(true)}

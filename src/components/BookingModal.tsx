@@ -125,44 +125,6 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
     }
   };
 
-  const handleStripeCheckout = async () => {
-    if (!user) {
-      toast.error('Please sign in to book');
-      return;
-    }
-
-    if (!formData.name || !formData.email) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('create-booking-checkout', {
-        body: {
-          eventId: event.id,
-          attendeeName: formData.name,
-          attendeeEmail: formData.email,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        // Open Stripe checkout in new tab
-        window.open(data.url, '_blank');
-        onOpenChange(false);
-        toast.success('Redirecting to Stripe checkout...');
-      }
-    } catch (error: any) {
-      console.error('Stripe checkout error:', error);
-      toast.error(error.message || 'Failed to create checkout session');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -202,89 +164,69 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </div>
           </div>
 
-          {event.use_stripe_checkout ? (
-            <>
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  You will be redirected to Stripe to complete your payment securely.
-                </AlertDescription>
-              </Alert>
-              <Button 
-                onClick={handleStripeCheckout} 
-                disabled={loading}
-                className="w-full"
-              >
-                {loading ? 'Processing...' : 'Pay with Stripe'}
-              </Button>
-            </>
-          ) : (
-            <>
-              {hasPaymentInfo && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <p className="font-medium mb-2">Send payment to:</p>
-                    <div className="space-y-1 text-sm">
-                      {paymentInfo.venmo && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="w-20">Venmo</Badge>
-                          <span className="font-mono font-semibold">{paymentInfo.venmo}</span>
-                        </div>
-                      )}
-                      {paymentInfo.cashapp && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="w-20">Cash App</Badge>
-                          <span className="font-mono font-semibold">{paymentInfo.cashapp}</span>
-                        </div>
-                      )}
-                      {paymentInfo.zelle && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="w-20">Zelle</Badge>
-                          <span className="font-mono font-semibold">{paymentInfo.zelle}</span>
-                        </div>
-                      )}
-                      {paymentInfo.paypal && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="w-20">PayPal</Badge>
-                          <span className="font-mono font-semibold">{paymentInfo.paypal}</span>
-                        </div>
-                      )}
+          {hasPaymentInfo && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <p className="font-medium mb-2">Send payment to:</p>
+                <div className="space-y-1 text-sm">
+                  {paymentInfo.venmo && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="w-20">Venmo</Badge>
+                      <span className="font-mono font-semibold">{paymentInfo.venmo}</span>
                     </div>
-                    <p className="text-xs mt-2">After sending payment, upload your proof below.</p>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="proof">Proof of Payment</Label>
-                <Input
-                  id="proof"
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleProofUpload}
-                  className="cursor-pointer"
-                />
-                {proofFile && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Upload className="h-3 w-3" />
-                    {proofFile.name}
-                  </Badge>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Upload a screenshot or receipt (max 5MB)
-                </p>
-              </div>
-
-              <Button 
-                onClick={handleDirectPaymentBooking} 
-                disabled={loading || !proofFile}
-                className="w-full"
-              >
-                {loading ? 'Submitting...' : 'Submit Booking'}
-              </Button>
-            </>
+                  )}
+                  {paymentInfo.cashapp && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="w-20">Cash App</Badge>
+                      <span className="font-mono font-semibold">{paymentInfo.cashapp}</span>
+                    </div>
+                  )}
+                  {paymentInfo.zelle && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="w-20">Zelle</Badge>
+                      <span className="font-mono font-semibold">{paymentInfo.zelle}</span>
+                    </div>
+                  )}
+                  {paymentInfo.paypal && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="w-20">PayPal</Badge>
+                      <span className="font-mono font-semibold">{paymentInfo.paypal}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs mt-2">After sending payment, upload your proof below.</p>
+              </AlertDescription>
+            </Alert>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="proof">Proof of Payment</Label>
+            <Input
+              id="proof"
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handleProofUpload}
+              className="cursor-pointer"
+            />
+            {proofFile && (
+              <Badge variant="secondary" className="gap-1">
+                <Upload className="h-3 w-3" />
+                {proofFile.name}
+              </Badge>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Upload a screenshot or receipt (max 5MB)
+            </p>
+          </div>
+
+          <Button 
+            onClick={handleDirectPaymentBooking} 
+            disabled={loading || !proofFile}
+            className="w-full"
+          >
+            {loading ? 'Submitting...' : 'Submit Booking'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
