@@ -50,61 +50,6 @@ export default function Login() {
     }
   };
 
-  const handleTestLogin = async (email: string, password: string, role: string) => {
-    try {
-      // First try to login
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (loginError) {
-        // If login fails, register the user
-        toast.info(`Creating test ${role} account...`);
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { role }
-          }
-        });
-        
-        if (signUpError) throw signUpError;
-        
-        // Wait a bit for the trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Now login with the new account
-        const { error: loginError2 } = await supabase.auth.signInWithPassword({ email, password });
-        if (loginError2) throw loginError2;
-        
-        toast.success(`Logged in as test ${role}!`);
-        
-        // Redirect artists to profile creation
-        if (role === 'artist') {
-          setTimeout(() => navigate('/create-artist-profile'), 500);
-        }
-      } else {
-        toast.success(`Logged in as test ${role}!`);
-        
-        // Check if artist needs profile
-        if (role === 'artist') {
-          const { data } = await supabase.auth.getUser();
-          if (data.user) {
-            const { data: profile } = await supabase
-              .from('artists')
-              .select('id')
-              .eq('user_id', data.user.id)
-              .maybeSingle();
-            
-            if (!profile) {
-              setTimeout(() => navigate('/create-artist-profile'), 500);
-            }
-          }
-        }
-      }
-    } catch (err: any) {
-      toast.error(err.message || `Failed to login as ${role}`);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -178,60 +123,6 @@ export default function Login() {
               </Button>
             </motion.div>
           </form>
-
-          <div className="mt-6">
-            <div className="relative mb-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/50"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Test Accounts (Dev Only)</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleTestLogin('viewer@test.com', 'viewer123', 'viewer')}
-                disabled={authLoading}
-                className="text-xs"
-              >
-                👁️ Viewer
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleTestLogin('artist@test.com', 'artist123', 'artist')}
-                disabled={authLoading}
-                className="text-xs"
-              >
-                🎵 Artist
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleTestLogin('organizer@test.com', 'organizer123', 'organizer')}
-                disabled={authLoading}
-                className="text-xs"
-              >
-                📅 Organizer
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleTestLogin('admin@test.com', 'admin123', 'admin')}
-                disabled={authLoading}
-                className="text-xs"
-              >
-                👑 Admin
-              </Button>
-            </div>
-          </div>
 
           <div className="mt-6 space-y-4">
             <div className="relative">

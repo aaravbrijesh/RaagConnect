@@ -136,8 +136,31 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       return;
     }
 
-    toast.info('Stripe integration coming soon!');
-    // TODO: Implement Stripe checkout
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-booking-checkout', {
+        body: {
+          eventId: event.id,
+          attendeeName: formData.name,
+          attendeeEmail: formData.email,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open Stripe checkout in new tab
+        window.open(data.url, '_blank');
+        onOpenChange(false);
+        toast.success('Redirecting to Stripe checkout...');
+      }
+    } catch (error: any) {
+      console.error('Stripe checkout error:', error);
+      toast.error(error.message || 'Failed to create checkout session');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
