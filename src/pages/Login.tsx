@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function Login() {
-  const { signInWithEmail, signInWithGoogle, authMessage, authLoading, isSignedIn } = useAuth();
+  const { signInWithEmail, signInWithGoogle, continueAsGuest, authMessage, authLoading, isSignedIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
@@ -50,6 +50,10 @@ export default function Login() {
     }
   };
 
+  const handleGuestContinue = () => {
+    continueAsGuest();
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -142,6 +146,16 @@ export default function Login() {
               className="w-full rounded-full"
             >
               Sign in with Google
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleGuestContinue}
+              disabled={authLoading}
+              className="w-full rounded-full"
+            >
+              Continue as Guest
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
