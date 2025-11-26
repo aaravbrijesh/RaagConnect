@@ -70,7 +70,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            🎵 Music Connects
+            🎵 Raag Link
           </motion.h2>
 
           <motion.p
