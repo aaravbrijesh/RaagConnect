@@ -70,17 +70,33 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            🎵 Raag Link
+            🎵 Raag Connects
           </motion.h2>
 
           <motion.p
-            className="text-center text-muted-foreground mb-8"
+            className="text-center text-muted-foreground mb-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
             Sign in to discover classical music
           </motion.p>
+
+          <motion.div
+            className="bg-muted/50 rounded-lg p-4 mb-6 text-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35 }}
+          >
+            <p className="font-semibold mb-2 text-foreground">Test Accounts:</p>
+            <div className="space-y-1 text-muted-foreground">
+              <p><strong>Admin:</strong> admin@test.com</p>
+              <p><strong>Organizer:</strong> organizer@test.com</p>
+              <p><strong>Artist:</strong> artist@test.com</p>
+              <p><strong>Viewer:</strong> viewer@test.com</p>
+              <p className="mt-2 text-xs">Password: password123</p>
+            </div>
+          </motion.div>
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <motion.div
