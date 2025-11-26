@@ -8,80 +8,82 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 38 50% 98%;
-    --foreground: 28 35% 10%;
+    --background: 35 30% 94%;
+    --foreground: 28 35% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 28 35% 10%;
+    --card: 35 40% 97%;
+    --card-foreground: 28 35% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 28 35% 10%;
+    --popover: 35 40% 97%;
+    --popover-foreground: 28 35% 15%;
 
     --primary: 25 95% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 35 40% 97%;
     --primary-glow: 25 95% 70%;
 
-    --secondary: 35 25% 90%;
-    --secondary-foreground: 28 35% 10%;
+    --secondary: 35 30% 88%;
+    --secondary-foreground: 28 35% 15%;
 
-    --muted: 35 25% 92%;
-    --muted-foreground: 28 25% 40%;
+    --muted: 35 30% 90%;
+    --muted-foreground: 28 25% 45%;
 
     --accent: 45 93% 47%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 35 40% 97%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 35 40% 97%;
 
-    --border: 35 25% 85%;
-    --input: 35 25% 85%;
+    --border: 35 25% 82%;
+    --input: 35 30% 90%;
     --ring: 25 95% 53%;
 
     --radius: 0.75rem;
     
     --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 35 40% 97%;
 
     --gradient-primary: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(45, 93%, 47%));
-    --gradient-light: linear-gradient(180deg, hsl(38, 50%, 98%), hsl(38, 50%, 95%));
-    --shadow-glow: 0 0 40px hsl(25 95% 53% / 0.3);
-    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.1);
+    --gradient-warm: linear-gradient(180deg, hsl(35, 30%, 94%), hsl(35, 35%, 90%));
+    --shadow-glow: 0 0 40px hsl(25 95% 53% / 0.25);
+    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.12);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* Additional gradients for Indian classical aesthetic */
+    /* Indian classical aesthetic patterns */
     --gradient-hero: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(45, 93%, 47%), hsl(10, 80%, 55%));
-    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(38, 50%, 98%));
-    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.08);
+    --gradient-card: linear-gradient(145deg, hsl(35, 40%, 97%), hsl(35, 35%, 94%));
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.1);
+    --pattern-dots: radial-gradient(hsl(25 95% 55% / 0.05) 1px, transparent 1px);
+    --pattern-mandala: radial-gradient(circle at center, hsl(25 95% 55% / 0.03) 0%, transparent 70%);
   }
 
   .dark {
-    --background: 38 50% 98%;
-    --foreground: 28 35% 10%;
+    --background: 35 30% 94%;
+    --foreground: 28 35% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 28 35% 10%;
+    --card: 35 40% 97%;
+    --card-foreground: 28 35% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 28 35% 10%;
+    --popover: 35 40% 97%;
+    --popover-foreground: 28 35% 15%;
 
     --primary: 25 95% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 35 40% 97%;
 
-    --secondary: 35 25% 90%;
-    --secondary-foreground: 28 35% 10%;
+    --secondary: 35 30% 88%;
+    --secondary-foreground: 28 35% 15%;
 
-    --muted: 35 25% 92%;
-    --muted-foreground: 28 25% 40%;
+    --muted: 35 30% 90%;
+    --muted-foreground: 28 25% 45%;
 
     --accent: 45 93% 47%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 35 40% 97%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 35 40% 97%;
 
-    --border: 35 25% 85%;
-    --input: 35 25% 85%;
+    --border: 35 25% 82%;
+    --input: 35 30% 90%;
     --ring: 25 95% 53%;
   }
 }
@@ -97,7 +99,25 @@ All colors MUST be HSL.
   }
   
   body {
-    background: linear-gradient(to bottom, hsl(38, 50%, 98%), hsl(38, 50%, 95%));
+    background: 
+      var(--pattern-dots),
+      var(--pattern-mandala),
+      linear-gradient(135deg, hsl(35, 30%, 94%) 0%, hsl(35, 35%, 90%) 100%);
+    background-size: 20px 20px, 400px 400px, 100% 100%;
+    background-position: 0 0, center center, 0 0;
     min-height: 100vh;
+    position: relative;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: linear-gradient(180deg, hsl(25 95% 55% / 0.05) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
   }
 }
