@@ -10,6 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { z } from 'zod';
+
+// Validation schema for artist profile
+const artistProfileSchema = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" }),
+  genre: z.string().trim().min(1, { message: "Specialization is required" }).max(100, { message: "Specialization must be less than 100 characters" }),
+  bio: z.string().max(2000, { message: "Bio must be less than 2000 characters" }).optional(),
+  locationName: z.string().max(200, { message: "Location must be less than 200 characters" }).optional(),
+});
 
 export default function CreateArtistProfile() {
   const { user, signOut } = useAuth();
@@ -63,8 +72,16 @@ export default function CreateArtistProfile() {
       return;
     }
 
-    if (!formData.name || !formData.genre) {
-      toast.error('Please fill in name and specialization');
+    // Validate form data
+    const validation = artistProfileSchema.safeParse({
+      name: formData.name,
+      genre: formData.genre,
+      bio: formData.bio || undefined,
+      locationName: formData.locationName || undefined
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
