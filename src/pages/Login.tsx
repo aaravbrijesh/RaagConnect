@@ -6,6 +6,12 @@ import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().trim().email('Invalid email address').max(255, 'Email too long'),
+  password: z.string().min(6, 'Password must be at least 6 characters').max(100, 'Password too long')
+});
 
 export default function Login() {
   const { signInWithEmail, signInWithGoogle, continueAsGuest, authMessage, authLoading, isSignedIn } = useAuth();
@@ -31,12 +37,16 @@ export default function Login() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
+    
+    const validation = loginSchema.safeParse({ email: email.trim(), password });
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
+    
     try {
-      await signInWithEmail(email, password);
+      await signInWithEmail(validation.data.email, validation.data.password);
     } catch (err) {
       // Error handled by context
     }
