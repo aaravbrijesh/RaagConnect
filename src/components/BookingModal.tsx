@@ -9,6 +9,12 @@ import { Upload, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+const bookingSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(100, 'Name too long'),
+  email: z.string().trim().email('Invalid email address').max(255, 'Email too long')
+});
 
 interface BookingModalProps {
   event: any;
@@ -46,8 +52,14 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       return;
     }
 
-    if (!formData.name || !formData.email) {
-      toast.error('Please fill in all fields');
+    const validation = bookingSchema.safeParse({
+      name: formData.name.trim(),
+      email: formData.email.trim()
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
@@ -73,14 +85,14 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         .from('event-images')
         .getPublicUrl(fileName);
 
-      // Create booking
+      // Create booking with validated data
       const { error: bookingError } = await supabase
         .from('bookings')
         .insert({
           event_id: event.id,
           user_id: user.id,
-          attendee_name: formData.name,
-          attendee_email: formData.email,
+          attendee_name: validation.data.name,
+          attendee_email: validation.data.email,
           amount: event.price || 0,
           payment_method: 'direct',
           proof_of_payment_url: publicUrl,

@@ -9,6 +9,16 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Music, Eye, Calendar } from 'lucide-react';
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  email: z.string().trim().email('Invalid email address').max(255, 'Email too long'),
+  password: z.string().min(6, 'Password must be at least 6 characters').max(100, 'Password too long'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword']
+});
 
 export default function Register() {
   const { registerUser, signInWithGoogle, authMessage, authLoading } = useAuth();
@@ -35,23 +45,20 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password || !confirmPassword) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+    const validation = registerSchema.safeParse({ 
+      email: email.trim(), 
+      password, 
+      confirmPassword 
+    });
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
     try {
-      await registerUser(email, password, role);
+      await registerUser(validation.data.email, validation.data.password, role);
       if (role === 'artist') {
         // Don't navigate to login, go straight to profile creation
         navigate('/create-artist-profile');

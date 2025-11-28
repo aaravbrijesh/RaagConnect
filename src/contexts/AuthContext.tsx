@@ -26,11 +26,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authLoading, setAuthLoading] = useState(true);
   const [authMessage, setAuthMessage] = useState('');
 
-  // TODO: Implement proper role fetching after types are generated
   const fetchUserRole = async (userId: string): Promise<string> => {
-    // Temporarily return viewer until types are generated
-    // This will be updated automatically after the database types are generated
-    return 'viewer';
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return 'viewer';
+      }
+      
+      return data?.role || 'viewer';
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      return 'viewer';
+    }
   };
 
   useEffect(() => {
