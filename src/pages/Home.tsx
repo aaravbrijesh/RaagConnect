@@ -159,8 +159,18 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&postalcode=${encodeURIComponent(zipCode)}&country=US`
+        `https://nominatim.openstreetmap.org/search?format=json&postalcode=${encodeURIComponent(zipCode)}&country=US&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'RaagConnect/1.0'
+          }
+        }
       );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch location');
+      }
+      
       const data = await response.json();
       
       if (data && data.length > 0) {
@@ -174,7 +184,8 @@ export default function Home() {
         toast.error('Zip code not found. Please try again.');
       }
     } catch (error) {
-      toast.error('Failed to lookup zip code');
+      console.error('Zip code lookup error:', error);
+      toast.error('Failed to lookup zip code. Please try again.');
     }
   };
 
