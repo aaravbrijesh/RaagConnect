@@ -21,7 +21,7 @@ const registerSchema = z.object({
 });
 
 export default function Register() {
-  const { registerUser, signInWithGoogle, authMessage, authLoading } = useAuth();
+  const { registerUser, signInWithGoogle, authMessage, authLoading, user, session } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,6 +29,13 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<'viewer' | 'artist' | 'organizer'>('viewer');
   const navigate = useNavigate();
+
+  // Redirect authenticated users away from register page
+  useEffect(() => {
+    if (user && session) {
+      navigate('/');
+    }
+  }, [user, session, navigate]);
 
   useEffect(() => {
     if (authMessage) {
@@ -175,56 +182,62 @@ export default function Register() {
             >
               <Label>I am a...</Label>
               <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer')}>
-                <Card className={`cursor-pointer transition-all ${role === 'viewer' ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'}`}>
-                  <CardHeader className="p-4" onClick={() => setRole('viewer')}>
-                    <div className="flex items-start gap-3">
-                      <RadioGroupItem value="viewer" id="viewer" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Eye className="h-4 w-4 text-primary" />
-                          <CardTitle className="text-base">Viewer</CardTitle>
+                <label htmlFor="viewer">
+                  <Card className={`cursor-pointer transition-all ${role === 'viewer' ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'}`}>
+                    <CardHeader className="p-4">
+                      <div className="flex items-start gap-3">
+                        <RadioGroupItem value="viewer" id="viewer" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Eye className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-base">Viewer</CardTitle>
+                          </div>
+                          <CardDescription className="mt-1">
+                            Discover and book classical music events
+                          </CardDescription>
                         </div>
-                        <CardDescription className="mt-1">
-                          Discover and book classical music events
-                        </CardDescription>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
+                    </CardHeader>
+                  </Card>
+                </label>
 
-                <Card className={`cursor-pointer transition-all ${role === 'artist' ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'}`}>
-                  <CardHeader className="p-4" onClick={() => setRole('artist')}>
-                    <div className="flex items-start gap-3">
-                      <RadioGroupItem value="artist" id="artist" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Music className="h-4 w-4 text-primary" />
-                          <CardTitle className="text-base">Artist</CardTitle>
+                <label htmlFor="artist">
+                  <Card className={`cursor-pointer transition-all ${role === 'artist' ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'}`}>
+                    <CardHeader className="p-4">
+                      <div className="flex items-start gap-3">
+                        <RadioGroupItem value="artist" id="artist" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Music className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-base">Artist</CardTitle>
+                          </div>
+                          <CardDescription className="mt-1">
+                            Create your profile and showcase your music
+                          </CardDescription>
                         </div>
-                        <CardDescription className="mt-1">
-                          Create your profile and showcase your music
-                        </CardDescription>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
+                    </CardHeader>
+                  </Card>
+                </label>
 
-                <Card className={`cursor-pointer transition-all ${role === 'organizer' ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'}`}>
-                  <CardHeader className="p-4" onClick={() => setRole('organizer')}>
-                    <div className="flex items-start gap-3">
-                      <RadioGroupItem value="organizer" id="organizer" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-primary" />
-                          <CardTitle className="text-base">Organizer</CardTitle>
+                <label htmlFor="organizer">
+                  <Card className={`cursor-pointer transition-all ${role === 'organizer' ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'}`}>
+                    <CardHeader className="p-4">
+                      <div className="flex items-start gap-3">
+                        <RadioGroupItem value="organizer" id="organizer" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-base">Organizer</CardTitle>
+                          </div>
+                          <CardDescription className="mt-1">
+                            Create and manage classical music events
+                          </CardDescription>
                         </div>
-                        <CardDescription className="mt-1">
-                          Create and manage classical music events
-                        </CardDescription>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
+                    </CardHeader>
+                  </Card>
+                </label>
               </RadioGroup>
             </motion.div>
 
