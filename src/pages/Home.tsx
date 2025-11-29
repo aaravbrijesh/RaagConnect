@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate } from 'react-router-dom';
-import { Music, Calendar, Users, ArrowRight, Play, Star, MapPin } from 'lucide-react';
+import { Music, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import Nav from '@/components/Nav';
 import EventsMap from '@/components/EventsMap';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,27 +25,16 @@ type Event = {
   distance?: number;
 };
 
-type Artist = {
-  id: string;
-  name: string;
-  genre: string;
-};
-
 export default function Home() {
   const { isSignedIn, user } = useAuth();
   const navigate = useNavigate();
-  const [eventsThisWeek, setEventsThisWeek] = useState<Event[]>([]);
   const [nearbyEvents, setNearbyEvents] = useState<Event[]>([]);
-  const [recentArtists, setRecentArtists] = useState<Artist[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
   const [zipCode, setZipCode] = useState('');
   const [radius, setRadius] = useState(50);
 
   useEffect(() => {
-    fetchEventsThisWeek();
-    fetchArtists();
-    
     // Check if location permission was previously granted
     if (navigator.permissions) {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
@@ -62,22 +51,6 @@ export default function Home() {
       fetchNearbyEvents();
     }
   }, [userLocation, radius]);
-
-  const fetchEventsThisWeek = async () => {
-    const today = new Date();
-    const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
-
-    const { data } = await supabase
-      .from('events')
-      .select('*')
-      .gte('date', today.toISOString().split('T')[0])
-      .lte('date', nextWeek.toISOString().split('T')[0])
-      .order('date', { ascending: true })
-      .limit(4);
-
-    if (data) setEventsThisWeek(data);
-  };
 
   const fetchNearbyEvents = async () => {
     if (!userLocation) return;
@@ -111,15 +84,6 @@ export default function Home() {
     }
   };
 
-  const fetchArtists = async () => {
-    const { data } = await supabase
-      .from('artists')
-      .select('id, name, genre')
-      .order('created_at', { ascending: false })
-      .limit(6);
-
-    if (data) setRecentArtists(data);
-  };
 
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 3959; // Earth's radius in miles
@@ -282,52 +246,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Events This Week */}
-      {eventsThisWeek.length > 0 && (
-        <section className="container mx-auto px-4 py-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-2">Events This Week</h2>
-              <p className="text-muted-foreground">Don't miss these upcoming performances</p>
-            </div>
-            <Button variant="ghost" onClick={() => navigate('/events')}>
-              View All
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {eventsThisWeek.map((event, index) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/events')}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 text-sm text-primary mb-3">
-                      <Calendar className="w-4 h-4" />
-                      <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                    </div>
-                    <h3 className="font-bold text-lg mb-2">{event.title}</h3>
-                    {event.location_name && (
-                      <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {event.location_name}
-                      </p>
-                    )}
-                    {event.price && (
-                      <p className="text-sm font-semibold text-primary">${event.price}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Nearby Events Section */}
       {locationPermission === 'prompt' && (
         <section className="container mx-auto px-4 py-16">
@@ -465,88 +383,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Quick Stats */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <Music className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Discover Artists</h3>
-            <p className="text-muted-foreground">
-              Explore maestros of classical music traditions
-            </p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-center"
-          >
-            <Calendar className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Attend Concerts</h3>
-            <p className="text-muted-foreground">
-              Book tickets to live performances
-            </p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-center"
-          >
-            <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Join Community</h3>
-            <p className="text-muted-foreground">
-              Connect with fellow music enthusiasts
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Featured Artists */}
-      {recentArtists.length > 0 && (
-        <section className="container mx-auto px-4 py-16">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-2">Featured Artists</h2>
-              <p className="text-muted-foreground">Masters of their craft</p>
-            </div>
-            <Button variant="ghost" onClick={() => navigate('/artists')}>
-              View All
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {recentArtists.map((artist, index) => (
-              <motion.div
-                key={artist.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                whileHover={{ y: -5 }}
-                onClick={() => navigate(`/artists/${artist.id}`)}
-                className="cursor-pointer group"
-              >
-                <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl mb-3 flex items-center justify-center group-hover:from-primary/20 group-hover:to-accent/20 transition-colors">
-                  <Music className="w-12 h-12 text-primary/40" />
-                </div>
-                <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
-                  {artist.name}
-                </h3>
-                <p className="text-xs text-muted-foreground">{artist.genre}</p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* CTA Section */}
       {isSignedIn && (
         <section className="container mx-auto px-4 py-20">
@@ -556,7 +392,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto"
           >
-            <Star className="w-12 h-12 text-primary mx-auto mb-6" />
+            <Music className="w-12 h-12 text-primary mx-auto mb-6" />
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Welcome back, {user?.email?.split('@')[0]}
             </h2>
