@@ -19,10 +19,12 @@ import Nav from '@/components/Nav';
 import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
+import { useNavigate } from 'react-router-dom';
 
 export default function Events() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { canCreateEvents, isAdmin } = useUserRoles(user?.id);
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
@@ -120,8 +122,9 @@ export default function Events() {
   };
 
   const handleCreateEvent = async () => {
-    if (!user) {
-      toast.error('You must be logged in to create an event');
+    if (!user || !session) {
+      toast.error('Please sign in to create an event');
+      setOpen(false);
       return;
     }
 
@@ -265,7 +268,14 @@ export default function Events() {
 
           <div className="flex items-center justify-end -mt-8">
             {canCreateEvents && (
-              <Dialog open={open} onOpenChange={setOpen}>
+              <Dialog open={open} onOpenChange={(newOpen) => {
+                if (newOpen && (!user || !session)) {
+                  toast.error('Please sign in to create an event');
+                  navigate('/login');
+                  return;
+                }
+                setOpen(newOpen);
+              }}>
                 <DialogTrigger asChild>
                   <Button size="lg" className="gap-2">
                     <Plus className="h-5 w-5" />
@@ -545,6 +555,11 @@ export default function Events() {
                           className="min-w-32"
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (!user || !session) {
+                              toast.error('Please sign in to book this event');
+                              navigate('/login');
+                              return;
+                            }
                             setSelectedEvent(event);
                             setBookingModalOpen(true);
                           }}

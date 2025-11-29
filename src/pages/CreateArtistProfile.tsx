@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Music, MapPin, Upload, ArrowLeft } from 'lucide-react';
@@ -21,7 +21,7 @@ const artistProfileSchema = z.object({
 });
 
 export default function CreateArtistProfile() {
-  const { user, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -33,6 +33,13 @@ export default function CreateArtistProfile() {
     locationLng: null as number | null,
     bio: ''
   });
+
+  useEffect(() => {
+    if (!user || !session) {
+      toast.error('Please sign in to create an artist profile');
+      navigate('/login');
+    }
+  }, [user, session, navigate]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

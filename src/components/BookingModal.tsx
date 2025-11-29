@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 
 const bookingSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name too long'),
@@ -23,7 +24,8 @@ interface BookingModalProps {
 }
 
 export default function BookingModal({ event, open, onOpenChange }: BookingModalProps) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
@@ -47,8 +49,10 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   };
 
   const handleDirectPaymentBooking = async () => {
-    if (!user) {
-      toast.error('Please sign in to book');
+    if (!user || !session) {
+      toast.error('Please sign in to book this event');
+      onOpenChange(false);
+      navigate('/login');
       return;
     }
 
