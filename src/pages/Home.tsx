@@ -115,21 +115,14 @@ export default function Home() {
         setLocationPermission('granted');
         toast.success('Location found! Showing nearby events.');
       },
-      (error) => {
+      () => {
         toast.dismiss('location-loading');
-        
-        if (error.code === 1) {
-          toast.error('Location access denied. Please enter your zip code instead.', { duration: 5000 });
-        } else if (error.code === 2) {
-          toast.error('Location unavailable. Please enter your zip code instead.', { duration: 5000 });
-        } else {
-          toast.error('Unable to get location. Please enter your zip code instead.', { duration: 5000 });
-        }
+        toast.error('Please enter your zip code instead.', { duration: 5000 });
       },
       {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0
+        enableHighAccuracy: false,
+        timeout: 20000,
+        maximumAge: 300000
       }
     );
   };
@@ -338,7 +331,19 @@ export default function Home() {
       )}
 
       {userLocation && nearbyEvents.length === 0 && (
-        <section className="container mx-auto px-4 py-16">
+        <section className="container mx-auto px-4 pb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Events Near You</h2>
+          
+          {/* Show map even with no events */}
+          <div className="mb-8">
+            <EventsMap 
+              events={[]}
+              userLocation={userLocation}
+              radius={radius}
+              onEventClick={(eventId) => navigate(`/events`)}
+            />
+          </div>
+          
           <Card className="p-8 text-center">
             <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">No Events Found</h3>
