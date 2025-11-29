@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { useNavigate } from 'react-router-dom';
 import { Music, Calendar, Users, ArrowRight, Play, Star, MapPin } from 'lucide-react';
 import Nav from '@/components/Nav';
+import EventsMap from '@/components/EventsMap';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -366,6 +367,17 @@ export default function Home() {
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </div>
+          
+          {/* Interactive Map */}
+          <div className="mb-12">
+            <EventsMap 
+              events={nearbyEvents}
+              userLocation={userLocation!}
+              radius={radius}
+              onEventClick={(eventId) => navigate(`/events`)}
+            />
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {nearbyEvents.map((event, index) => (
               <motion.div
@@ -379,7 +391,7 @@ export default function Home() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 text-sm text-primary mb-3">
                       <MapPin className="w-4 h-4" />
-                      <span>{Math.round(event.distance)} mi away</span>
+                      <span>{Math.round(event.distance!)} mi away</span>
                     </div>
                     <h3 className="font-bold text-lg mb-2">{event.title}</h3>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
