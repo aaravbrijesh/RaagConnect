@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,8 +26,9 @@ export default function CreateArtistProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [genreSelection, setGenreSelection] = useState('');
-  const [customGenre, setCustomGenre] = useState('');
+  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [customSpecialization, setCustomSpecialization] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     genre: '',
@@ -83,7 +84,17 @@ export default function CreateArtistProfile() {
     }
 
     // Determine final genre value
-    const finalGenre = genreSelection === 'other' ? customGenre.trim() : genreSelection;
+    const specializations = [...selectedSpecializations];
+    if (showCustomInput && customSpecialization.trim()) {
+      specializations.push(customSpecialization.trim());
+    }
+    
+    if (specializations.length === 0) {
+      toast.error('Please select at least one specialization');
+      return;
+    }
+    
+    const finalGenre = specializations.join(', ');
 
     // Validate form data
     const validation = artistProfileSchema.safeParse({
@@ -202,41 +213,70 @@ export default function CreateArtistProfile() {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="genre">Specialization *</Label>
-              <Select value={genreSelection} onValueChange={(value) => {
-                setGenreSelection(value);
-                if (value !== 'other') {
-                  setCustomGenre('');
-                }
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your specialization" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Tabla">Tabla</SelectItem>
-                  <SelectItem value="Sitar">Sitar</SelectItem>
-                  <SelectItem value="Hindustani Vocals (Khayal)">Hindustani Vocals (Khayal)</SelectItem>
-                  <SelectItem value="Hindustani Vocals (Dhrupad)">Hindustani Vocals (Dhrupad)</SelectItem>
-                  <SelectItem value="Hindustani Vocals (Thumri)">Hindustani Vocals (Thumri)</SelectItem>
-                  <SelectItem value="Carnatic Vocals">Carnatic Vocals</SelectItem>
-                  <SelectItem value="Violin (Carnatic)">Violin (Carnatic)</SelectItem>
-                  <SelectItem value="Mridangam">Mridangam</SelectItem>
-                  <SelectItem value="Flute">Flute</SelectItem>
-                  <SelectItem value="Veena">Veena</SelectItem>
-                  <SelectItem value="Sarangi">Sarangi</SelectItem>
-                  <SelectItem value="Harmonium">Harmonium</SelectItem>
-                  <SelectItem value="Santoor">Santoor</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              {genreSelection === 'other' && (
+            <div className="space-y-3">
+              <Label>Specialization(s) *</Label>
+              <p className="text-sm text-muted-foreground">Select all that apply</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  'Tabla',
+                  'Sitar',
+                  'Hindustani Vocals',
+                  'Carnatic Vocals',
+                  'Violin (Carnatic)',
+                  'Mridangam',
+                  'Flute',
+                  'Veena',
+                  'Sarangi',
+                  'Harmonium',
+                  'Santoor',
+                ].map((spec) => (
+                  <div key={spec} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={spec}
+                      checked={selectedSpecializations.includes(spec)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedSpecializations([...selectedSpecializations, spec]);
+                        } else {
+                          setSelectedSpecializations(selectedSpecializations.filter(s => s !== spec));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={spec} className="cursor-pointer font-normal">
+                      {spec}
+                    </Label>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="other"
+                    checked={showCustomInput}
+                    onCheckedChange={(checked) => setShowCustomInput(!!checked)}
+                  />
+                  <Label htmlFor="other" className="cursor-pointer font-normal">
+                    Other
+                  </Label>
+                </div>
+              </div>
+              {showCustomInput && (
                 <Input
-                  value={customGenre}
-                  onChange={(e) => setCustomGenre(e.target.value)}
+                  value={customSpecialization}
+                  onChange={(e) => setCustomSpecialization(e.target.value)}
                   placeholder="Enter your specialization"
-                  required
+                  className="mt-2"
                 />
+              )}
+              {selectedSpecializations.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedSpecializations.map((spec) => (
+                    <Badge key={spec} variant="secondary">
+                      {spec}
+                    </Badge>
+                  ))}
+                  {showCustomInput && customSpecialization.trim() && (
+                    <Badge variant="secondary">{customSpecialization.trim()}</Badge>
+                  )}
+                </div>
               )}
             </div>
             
