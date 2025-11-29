@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +26,8 @@ export default function CreateArtistProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [genreSelection, setGenreSelection] = useState('');
+  const [customGenre, setCustomGenre] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     genre: '',
@@ -79,10 +82,13 @@ export default function CreateArtistProfile() {
       return;
     }
 
+    // Determine final genre value
+    const finalGenre = genreSelection === 'other' ? customGenre.trim() : genreSelection;
+
     // Validate form data
     const validation = artistProfileSchema.safeParse({
       name: formData.name,
-      genre: formData.genre,
+      genre: finalGenre,
       bio: formData.bio || undefined,
       locationName: formData.locationName || undefined
     });
@@ -119,7 +125,7 @@ export default function CreateArtistProfile() {
         .insert({
           user_id: user.id,
           name: formData.name,
-          genre: formData.genre,
+          genre: finalGenre,
           location_name: formData.locationName || null,
           location_lat: formData.locationLat,
           location_lng: formData.locationLng,
@@ -128,6 +134,17 @@ export default function CreateArtistProfile() {
         });
 
       if (error) throw error;
+
+      // Update user's full_name in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ full_name: formData.name })
+        .eq('user_id', user.id);
+
+      if (profileError) {
+        console.error('Failed to update profile name:', profileError);
+        // Don't fail the whole process if this fails
+      }
 
       toast.success('Profile created successfully!');
       navigate('/');
@@ -187,16 +204,40 @@ export default function CreateArtistProfile() {
             
             <div className="space-y-2">
               <Label htmlFor="genre">Specialization *</Label>
-              <Input
-                id="genre"
-                value={formData.genre}
-                onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                placeholder="e.g. Hindustani Vocal, Carnatic Violin, Tabla"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Examples: Khayal, Dhrupad, Thumri, Carnatic Vocal, Mridangam, Flute, Sarangi
-              </p>
+              <Select value={genreSelection} onValueChange={(value) => {
+                setGenreSelection(value);
+                if (value !== 'other') {
+                  setCustomGenre('');
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your specialization" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Tabla">Tabla</SelectItem>
+                  <SelectItem value="Sitar">Sitar</SelectItem>
+                  <SelectItem value="Hindustani Vocals (Khayal)">Hindustani Vocals (Khayal)</SelectItem>
+                  <SelectItem value="Hindustani Vocals (Dhrupad)">Hindustani Vocals (Dhrupad)</SelectItem>
+                  <SelectItem value="Hindustani Vocals (Thumri)">Hindustani Vocals (Thumri)</SelectItem>
+                  <SelectItem value="Carnatic Vocals">Carnatic Vocals</SelectItem>
+                  <SelectItem value="Violin (Carnatic)">Violin (Carnatic)</SelectItem>
+                  <SelectItem value="Mridangam">Mridangam</SelectItem>
+                  <SelectItem value="Flute">Flute</SelectItem>
+                  <SelectItem value="Veena">Veena</SelectItem>
+                  <SelectItem value="Sarangi">Sarangi</SelectItem>
+                  <SelectItem value="Harmonium">Harmonium</SelectItem>
+                  <SelectItem value="Santoor">Santoor</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {genreSelection === 'other' && (
+                <Input
+                  value={customGenre}
+                  onChange={(e) => setCustomGenre(e.target.value)}
+                  placeholder="Enter your specialization"
+                  required
+                />
+              )}
             </div>
             
             <div className="space-y-2">

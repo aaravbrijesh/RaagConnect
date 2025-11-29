@@ -50,9 +50,13 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
   const handleDirectPaymentBooking = async () => {
     if (!user || !session) {
-      toast.error('Please sign in to book this event');
+      toast.error('Please sign in to book this event', {
+        action: {
+          label: 'Sign In',
+          onClick: () => navigate('/login')
+        }
+      });
       onOpenChange(false);
-      navigate('/login');
       return;
     }
 

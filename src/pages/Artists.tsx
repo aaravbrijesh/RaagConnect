@@ -220,14 +220,28 @@ export default function Artists() {
               </p>
             </div>
             
-            {canCreateArtistProfile && (
-              <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="gap-2">
-                    <Plus className="h-5 w-5" />
-                    Create Artist
-                  </Button>
-                </DialogTrigger>
+            <Dialog open={open} onOpenChange={(newOpen) => {
+              if (newOpen && !user) {
+                toast.error('Please sign in to create an artist profile', {
+                  action: {
+                    label: 'Sign In',
+                    onClick: () => navigate('/login')
+                  }
+                });
+                return;
+              }
+              if (newOpen && !canCreateArtistProfile) {
+                toast.error('You need artist or organizer role to create profiles');
+                return;
+              }
+              setOpen(newOpen);
+            }}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="gap-2">
+                  <Plus className="h-5 w-5" />
+                  Create Artist
+                </Button>
+              </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editMode ? 'Edit Artist' : 'Create New Artist'}</DialogTitle>
@@ -324,8 +338,7 @@ export default function Artists() {
                 </div>
               </DialogContent>
             </Dialog>
-          )}
-        </div>
+          </div>
         </motion.div>
 
         <motion.div

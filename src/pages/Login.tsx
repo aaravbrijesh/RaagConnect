@@ -83,7 +83,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            🎵 Raag Connects
+            🎵 Raag Connect
           </motion.h2>
 
           <motion.p
