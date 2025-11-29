@@ -161,8 +161,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const continueAsGuest = () => {
-    // Simple guest implementation - just navigate to home
-    setIsSignedIn(false);
+    // Allow guest to access the app without authentication
+    setIsSignedIn(true);
+    setUser(null);
+    setSession(null);
+    setUserRole('viewer');
   };
 
   return (
