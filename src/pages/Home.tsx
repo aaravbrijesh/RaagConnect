@@ -107,7 +107,6 @@ export default function Home() {
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log('Location acquired:', position.coords);
         toast.dismiss('location-loading');
         setUserLocation({
           lat: position.coords.latitude,
@@ -118,23 +117,20 @@ export default function Home() {
       },
       (error) => {
         toast.dismiss('location-loading');
-        console.error('Geolocation error:', error.code, error.message);
         setLocationPermission('denied');
         
-        let errorMessage = '';
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMessage = 'Location access denied. Please check your browser permissions or enter your zip code below.';
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorMessage = 'Location unavailable. Please enter your zip code below.';
-        } else if (error.code === error.TIMEOUT) {
-          errorMessage = 'Location request timed out. Please enter your zip code below.';
+        if (error.code === 1) {
+          toast.error('Location access denied. Please enter your zip code below.', { duration: 5000 });
+        } else if (error.code === 2) {
+          toast.error('Location unavailable. Please enter your zip code below.', { duration: 5000 });
+        } else {
+          toast.error('Location request timed out. Please enter your zip code below.', { duration: 5000 });
         }
-        toast.error(errorMessage, { duration: 5000 });
       },
       {
         enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 300000
+        timeout: 10000,
+        maximumAge: 60000
       }
     );
   };
@@ -146,7 +142,6 @@ export default function Home() {
       return;
     }
 
-    // Validate US zip code format (5 digits or 5+4 digits)
     const zipRegex = /^\d{5}(-\d{4})?$/;
     if (!zipRegex.test(trimmedZip)) {
       toast.error('Please enter a valid US zip code (e.g., 12345)');
@@ -154,64 +149,49 @@ export default function Home() {
     }
 
     const cleanZip = trimmedZip.split('-')[0];
-    console.log('Looking up zip code:', cleanZip);
     toast.loading('Looking up zip code...', { id: 'zip-loading' });
 
-    // Try multiple geocoding services for reliability
-    const geocodeServices = [
-      // Service 1: Nominatim
-      async () => {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?postalcode=${cleanZip}&country=US&format=json&limit=1`,
-          {
-            headers: {
-              'User-Agent': 'RaagConnect/1.0'
-            }
-          }
-        );
+    try {
+      // Primary: Zippopotam.us (reliable, free, no API key)
+      const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
+      
+      if (response.ok) {
         const data = await response.json();
-        if (data && data.length > 0) {
-          return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        if (data && data.places && data.places.length > 0) {
+          const location = {
+            lat: parseFloat(data.places[0].latitude),
+            lng: parseFloat(data.places[0].longitude)
+          };
+          
+          toast.dismiss('zip-loading');
+          setUserLocation(location);
+          setLocationPermission('granted');
+          toast.success('Location found! Showing nearby events.');
+          return;
         }
-        throw new Error('No results from Nominatim');
-      },
-      // Service 2: geocode.maps.co (free, no API key)
-      async () => {
-        const response = await fetch(
-          `https://geocode.maps.co/search?postalcode=${cleanZip}&country=us&format=json`
-        );
-        const data = await response.json();
-        if (data && data.length > 0) {
-          return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-        }
-        throw new Error('No results from geocode.maps.co');
       }
-    ];
-
-    // Try services in sequence until one succeeds
-    for (let i = 0; i < geocodeServices.length; i++) {
-      try {
-        console.log(`Trying geocoding service ${i + 1}...`);
-        const location = await geocodeServices[i]();
-        console.log('Location found:', location);
-        
+      
+      // Fallback: Nominatim
+      const nomResponse = await fetch(
+        `https://nominatim.openstreetmap.org/search?postalcode=${cleanZip}&country=US&format=json&limit=1`,
+        { headers: { 'User-Agent': 'RaagConnect/1.0' } }
+      );
+      const nomData = await nomResponse.json();
+      
+      if (nomData && nomData.length > 0) {
+        const location = { lat: parseFloat(nomData[0].lat), lng: parseFloat(nomData[0].lon) };
         toast.dismiss('zip-loading');
         setUserLocation(location);
         setLocationPermission('granted');
         toast.success('Location found! Showing nearby events.');
         return;
-      } catch (error) {
-        console.error(`Service ${i + 1} failed:`, error);
-        // Continue to next service
       }
+      
+      throw new Error('No results');
+    } catch (error) {
+      toast.dismiss('zip-loading');
+      toast.error('Unable to find this zip code. Please verify it is correct.', { duration: 5000 });
     }
-
-    // All services failed
-    toast.dismiss('zip-loading');
-    console.error('All geocoding services failed for zip:', cleanZip);
-    toast.error('Unable to find this zip code. Please verify it is correct or try sharing your location instead.', {
-      duration: 5000
-    });
   };
 
   return (
