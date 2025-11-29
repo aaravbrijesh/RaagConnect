@@ -117,20 +117,19 @@ export default function Home() {
       },
       (error) => {
         toast.dismiss('location-loading');
-        setLocationPermission('denied');
         
         if (error.code === 1) {
-          toast.error('Location access denied. Please enter your zip code below.', { duration: 5000 });
+          toast.error('Location access denied. Please enter your zip code instead.', { duration: 5000 });
         } else if (error.code === 2) {
-          toast.error('Location unavailable. Please enter your zip code below.', { duration: 5000 });
+          toast.error('Location unavailable. Please enter your zip code instead.', { duration: 5000 });
         } else {
-          toast.error('Location request timed out. Please enter your zip code below.', { duration: 5000 });
+          toast.error('Unable to get location. Please enter your zip code instead.', { duration: 5000 });
         }
       },
       {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 60000
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
       }
     );
   };
@@ -249,7 +248,7 @@ export default function Home() {
       </section>
 
       {/* Nearby Events Section */}
-      {locationPermission === 'prompt' && (
+      {!userLocation && (
         <section className="container mx-auto px-4 py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -305,20 +304,35 @@ export default function Home() {
       )}
 
       {userLocation && (
-        <section className="container mx-auto px-4 pb-8">
-          <div className="max-w-md mx-auto bg-card/80 backdrop-blur-xl rounded-2xl p-6 border border-border/50">
-            <Label className="text-sm font-medium mb-2 block">Search Radius: {radius} miles</Label>
-            <Slider
-              value={[radius]}
-              onValueChange={(value) => setRadius(value[0])}
-              min={10}
-              max={200}
-              step={10}
-              className="mb-2"
-            />
-            <p className="text-xs text-muted-foreground text-center">
-              Adjust to see events within {radius} miles
-            </p>
+        <section className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-6 border border-border/50 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-sm font-medium">Search Radius: {radius} miles</Label>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setUserLocation(null);
+                    setNearbyEvents([]);
+                    setZipCode('');
+                  }}
+                >
+                  Change Location
+                </Button>
+              </div>
+              <Slider
+                value={[radius]}
+                onValueChange={(value) => setRadius(value[0])}
+                min={10}
+                max={200}
+                step={10}
+                className="mb-2"
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                Drag to adjust search distance
+              </p>
+            </div>
           </div>
         </section>
       )}
@@ -338,8 +352,8 @@ export default function Home() {
         </section>
       )}
 
-      {nearbyEvents.length > 0 && (
-        <section className="container mx-auto px-4 py-16">
+      {userLocation && nearbyEvents.length > 0 && (
+        <section className="container mx-auto px-4 pb-16">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-2">Events Near You</h2>
@@ -355,7 +369,7 @@ export default function Home() {
           <div className="mb-12">
             <EventsMap 
               events={nearbyEvents}
-              userLocation={userLocation!}
+              userLocation={userLocation}
               radius={radius}
               onEventClick={(eventId) => navigate(`/events`)}
             />
