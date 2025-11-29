@@ -1,36 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { z } from 'zod';
-import { Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+import { Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
-  email: z.string().trim().email('Invalid email address').max(255, 'Email too long'),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(100, 'Password too long')
+  email: z.string().trim().email("Invalid email address").max(255, "Email too long"),
+  password: z.string().min(6, "Password must be at least 6 characters").max(100, "Password too long"),
 });
 
 export default function Login() {
   const { signInWithEmail, signInWithGoogle, continueAsGuest, authMessage, authLoading, user, session } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Only redirect if user has an actual authenticated session (not guest)
     if (user && session) {
-      navigate('/');
+      navigate("/");
     }
   }, [user, session, navigate]);
 
   useEffect(() => {
     if (authMessage) {
-      if (authMessage.includes('successful')) {
+      if (authMessage.includes("successful")) {
         toast.success(authMessage);
       } else {
         toast.error(authMessage);
@@ -40,14 +40,14 @@ export default function Login() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validation = loginSchema.safeParse({ email: email.trim(), password });
     if (!validation.success) {
       const firstError = validation.error.errors[0];
       toast.error(firstError.message);
       return;
     }
-    
+
     try {
       await signInWithEmail(validation.data.email, validation.data.password);
     } catch (err) {
@@ -65,7 +65,7 @@ export default function Login() {
 
   const handleGuestContinue = () => {
     continueAsGuest();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -95,28 +95,8 @@ export default function Login() {
             Sign in to discover classical music
           </motion.p>
 
-          <motion.div
-            className="bg-muted/50 rounded-lg p-4 mb-6 text-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
-          >
-            <p className="font-semibold mb-2 text-foreground">Test Accounts:</p>
-            <div className="space-y-1 text-muted-foreground">
-              <p><strong>Admin:</strong> admin@test.com</p>
-              <p><strong>Organizer:</strong> organizer@test.com</p>
-              <p><strong>Artist:</strong> artist@test.com</p>
-              <p><strong>Viewer:</strong> viewer@test.com</p>
-              <p className="mt-2 text-xs">Password: password123</p>
-            </div>
-          </motion.div>
-
           <form onSubmit={handleEmailLogin} className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
               <Input
                 type="email"
                 value={email}
@@ -150,17 +130,9 @@ export default function Login() {
               </button>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              <Button
-                type="submit"
-                className="w-full rounded-full"
-                disabled={authLoading}
-              >
-                {authLoading ? 'Signing in...' : 'Sign In'}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+              <Button type="submit" className="w-full rounded-full" disabled={authLoading}>
+                {authLoading ? "Signing in..." : "Sign In"}
               </Button>
             </motion.div>
           </form>
@@ -196,10 +168,10 @@ export default function Login() {
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <button
                 type="button"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate("/register")}
                 className="text-primary hover:underline font-semibold"
               >
                 Sign up
