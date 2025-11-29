@@ -15,17 +15,18 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
-  const { signInWithEmail, signInWithGoogle, continueAsGuest, authMessage, authLoading, isSignedIn } = useAuth();
+  const { signInWithEmail, signInWithGoogle, continueAsGuest, authMessage, authLoading, user, session } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isSignedIn) {
+    // Only redirect if user has an actual authenticated session (not guest)
+    if (user && session) {
       navigate('/');
     }
-  }, [isSignedIn, navigate]);
+  }, [user, session, navigate]);
 
   useEffect(() => {
     if (authMessage) {
