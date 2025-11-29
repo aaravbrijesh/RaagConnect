@@ -78,31 +78,29 @@ export default function Nav() {
               </span>
             </button>
 
-            {user && (
-              <div className="hidden md:flex items-center gap-2">
-                <NavLink to="/" end className={navLinkClass}>
-                  <Home className="h-4 w-4" />
-                  Home
+            <div className="hidden md:flex items-center gap-2">
+              <NavLink to="/" end className={navLinkClass}>
+                <Home className="h-4 w-4" />
+                Home
+              </NavLink>
+              <NavLink to="/artists" className={navLinkClass}>
+                <Users className="h-4 w-4" />
+                Artists
+              </NavLink>
+              <NavLink to="/events" className={navLinkClass}>
+                <Calendar className="h-4 w-4" />
+                Concerts
+              </NavLink>
+              {isAdmin && (
+                <NavLink to="/admin" className={navLinkClass}>
+                  <Shield className="h-4 w-4" />
+                  Admin
                 </NavLink>
-                <NavLink to="/artists" className={navLinkClass}>
-                  <Users className="h-4 w-4" />
-                  Artists
-                </NavLink>
-                <NavLink to="/events" className={navLinkClass}>
-                  <Calendar className="h-4 w-4" />
-                  Concerts
-                </NavLink>
-                {isAdmin && (
-                  <NavLink to="/admin" className={navLinkClass}>
-                    <Shield className="h-4 w-4" />
-                    Admin
-                  </NavLink>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          {user && session && (
+          {session && user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -130,7 +128,7 @@ export default function Nav() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          {!user && (
+          {!session && (
             <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
               Sign In
             </Button>
