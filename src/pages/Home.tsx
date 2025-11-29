@@ -134,47 +134,83 @@ export default function Home() {
   };
 
   const requestLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setLocationPermission('granted');
-          toast.success('Location access granted! Showing nearby events.');
-        },
-        (error) => {
-          setLocationPermission('denied');
-          toast.error('Location access denied. Try entering your zip code instead.');
-        }
-      );
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser. Please enter your zip code.');
+      return;
     }
+
+    toast.loading('Getting your location...', { id: 'location-loading' });
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        toast.dismiss('location-loading');
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLocationPermission('granted');
+        toast.success('Location found! Showing nearby events.');
+      },
+      (error) => {
+        toast.dismiss('location-loading');
+        console.error('Geolocation error:', error);
+        setLocationPermission('denied');
+        
+        let errorMessage = 'Location access denied. ';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMessage += 'Please enable location permissions in your browser settings or enter your zip code.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMessage += 'Location information unavailable. Please enter your zip code.';
+        } else if (error.code === error.TIMEOUT) {
+          errorMessage += 'Location request timed out. Please try again or enter your zip code.';
+        }
+        toast.error(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   const handleZipCodeSubmit = async () => {
-    if (!zipCode.trim()) {
+    const trimmedZip = zipCode.trim();
+    if (!trimmedZip) {
       toast.error('Please enter a zip code');
       return;
     }
 
+    // Validate US zip code format (5 digits or 5+4 digits)
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    if (!zipRegex.test(trimmedZip)) {
+      toast.error('Please enter a valid US zip code (e.g., 12345 or 12345-6789)');
+      return;
+    }
+
+    toast.loading('Looking up zip code...', { id: 'zip-loading' });
+
     try {
+      // Use Nominatim API with proper parameters
+      const cleanZip = trimmedZip.split('-')[0]; // Use only 5-digit part
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&postalcode=${encodeURIComponent(zipCode)}&country=US&limit=1`,
+        `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(cleanZip)}&country=US&format=json&limit=1`,
         {
           headers: {
-            'User-Agent': 'RaagConnect/1.0'
+            'User-Agent': 'RaagConnect/1.0 (contact@raagconnect.com)'
           }
         }
       );
       
       if (!response.ok) {
-        throw new Error('Failed to fetch location');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('Zip code lookup response:', data);
       
       if (data && data.length > 0) {
+        toast.dismiss('zip-loading');
         setUserLocation({
           lat: parseFloat(data[0].lat),
           lng: parseFloat(data[0].lon)
@@ -182,11 +218,13 @@ export default function Home() {
         setLocationPermission('granted');
         toast.success('Location found! Showing nearby events.');
       } else {
-        toast.error('Zip code not found. Please try again.');
+        toast.dismiss('zip-loading');
+        toast.error('Zip code not found. Please verify and try again.');
       }
     } catch (error) {
+      toast.dismiss('zip-loading');
       console.error('Zip code lookup error:', error);
-      toast.error('Failed to lookup zip code. Please try again.');
+      toast.error('Unable to lookup zip code. Please try again or use location sharing.');
     }
   };
 
@@ -352,6 +390,21 @@ export default function Home() {
               Adjust to see events within {radius} miles
             </p>
           </div>
+        </section>
+      )}
+
+      {userLocation && nearbyEvents.length === 0 && (
+        <section className="container mx-auto px-4 py-16">
+          <Card className="p-8 text-center">
+            <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No Events Found</h3>
+            <p className="text-muted-foreground mb-4">
+              We couldn't find any events within {radius} miles of your location.
+            </p>
+            <Button variant="outline" onClick={() => setRadius(Math.min(200, radius + 50))}>
+              Expand Search Radius
+            </Button>
+          </Card>
         </section>
       )}
 
