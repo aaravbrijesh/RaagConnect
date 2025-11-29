@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { useNavigate } from 'react-router-dom';
 import { Music, Calendar, Users, ArrowRight, Play, Star, MapPin } from 'lucide-react';
 import Nav from '@/components/Nav';
@@ -35,6 +38,8 @@ export default function Home() {
   const [recentArtists, setRecentArtists] = useState<Artist[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  const [zipCode, setZipCode] = useState('');
+  const [radius, setRadius] = useState(50);
 
   useEffect(() => {
     fetchEventsThisWeek();
@@ -55,7 +60,7 @@ export default function Home() {
     if (userLocation) {
       fetchNearbyEvents();
     }
-  }, [userLocation]);
+  }, [userLocation, radius]);
 
   const fetchEventsThisWeek = async () => {
     const today = new Date();
@@ -97,7 +102,7 @@ export default function Home() {
       }));
 
       const nearby = eventsWithDistance
-        .filter(e => e.distance < 50) // Within 50 miles
+        .filter(e => e.distance < radius)
         .sort((a, b) => a.distance - b.distance)
         .slice(0, 4);
 
@@ -140,9 +145,36 @@ export default function Home() {
         },
         (error) => {
           setLocationPermission('denied');
-          toast.error('Location access denied. Enable it to see nearby events.');
+          toast.error('Location access denied. Try entering your zip code instead.');
         }
       );
+    }
+  };
+
+  const handleZipCodeSubmit = async () => {
+    if (!zipCode.trim()) {
+      toast.error('Please enter a zip code');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&postalcode=${encodeURIComponent(zipCode)}&country=US`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setUserLocation({
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        });
+        setLocationPermission('granted');
+        toast.success('Location found! Showing nearby events.');
+      } else {
+        toast.error('Zip code not found. Please try again.');
+      }
+    } catch (error) {
+      toast.error('Failed to lookup zip code');
     }
   };
 
@@ -253,21 +285,61 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-12 overflow-hidden text-center"
+            className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-12 overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-            <div className="relative">
+            <div className="relative max-w-2xl mx-auto">
               <MapPin className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Discover Events Near You</h2>
-              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                Share your location to see concerts happening in your area
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">Discover Events Near You</h2>
+              <p className="text-muted-foreground mb-8 text-center">
+                Share your location or enter your zip code to see concerts happening in your area
               </p>
-              <Button size="lg" onClick={requestLocation} className="h-12 px-8">
-                Share Location
-                <MapPin className="ml-2 w-4 h-4" />
-              </Button>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-6">
+                  <h3 className="font-semibold mb-3 text-center">Share Location</h3>
+                  <Button size="lg" onClick={requestLocation} className="w-full h-12">
+                    Share Location
+                    <MapPin className="ml-2 w-4 h-4" />
+                  </Button>
+                </div>
+                
+                <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-6">
+                  <h3 className="font-semibold mb-3 text-center">Enter Zip Code</h3>
+                  <div className="flex gap-2">
+                    <Input
+                      value={zipCode}
+                      onChange={(e) => setZipCode(e.target.value)}
+                      placeholder="Enter zip code"
+                      onKeyDown={(e) => e.key === 'Enter' && handleZipCodeSubmit()}
+                    />
+                    <Button onClick={handleZipCodeSubmit} className="h-10">
+                      Search
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
+        </section>
+      )}
+
+      {userLocation && (
+        <section className="container mx-auto px-4 pb-8">
+          <div className="max-w-md mx-auto bg-card/80 backdrop-blur-xl rounded-2xl p-6 border border-border/50">
+            <Label className="text-sm font-medium mb-2 block">Search Radius: {radius} miles</Label>
+            <Slider
+              value={[radius]}
+              onValueChange={(value) => setRadius(value[0])}
+              min={10}
+              max={200}
+              step={10}
+              className="mb-2"
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              Adjust to see events within {radius} miles
+            </p>
+          </div>
         </section>
       )}
 
