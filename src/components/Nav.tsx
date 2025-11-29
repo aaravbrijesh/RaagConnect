@@ -72,9 +72,9 @@ export default function Nav() {
               onClick={() => navigate('/')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <img src={logo} alt="Raag Connects" className="h-10 w-10" />
+              <img src={logo} alt="Raag Connect" className="h-10 w-10" />
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Raag Connects
+                Raag Connect
               </span>
             </button>
 

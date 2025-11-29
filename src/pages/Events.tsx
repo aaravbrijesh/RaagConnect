@@ -267,21 +267,28 @@ export default function Events() {
           </div>
 
           <div className="flex items-center justify-end -mt-8">
-            {canCreateEvents && (
-              <Dialog open={open} onOpenChange={(newOpen) => {
-                if (newOpen && (!user || !session)) {
-                  toast.error('Please sign in to create an event');
-                  navigate('/login');
-                  return;
-                }
-                setOpen(newOpen);
-              }}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="gap-2">
-                    <Plus className="h-5 w-5" />
-                    Create Event
-                  </Button>
-                </DialogTrigger>
+            <Dialog open={open} onOpenChange={(newOpen) => {
+              if (newOpen && (!user || !session)) {
+                toast.error('Please sign in to create an event', {
+                  action: {
+                    label: 'Sign In',
+                    onClick: () => navigate('/login')
+                  }
+                });
+                return;
+              }
+              if (newOpen && !canCreateEvents) {
+                toast.error('You need artist or organizer role to create events');
+                return;
+              }
+              setOpen(newOpen);
+            }}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="gap-2">
+                  <Plus className="h-5 w-5" />
+                  Create Event
+                </Button>
+              </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editMode ? 'Edit Concert' : 'Create New Concert'}</DialogTitle>
@@ -454,8 +461,7 @@ export default function Events() {
                 </div>
               </DialogContent>
             </Dialog>
-          )}
-        </div>
+          </div>
         </motion.div>
 
         <motion.div
