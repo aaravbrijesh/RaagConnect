@@ -5,14 +5,14 @@ import ArtistProfileCheck from '@/components/ArtistProfileCheck';
 import Home from './Home';
 
 const Index = () => {
-  const { isSignedIn, authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { isSignedIn, authLoading, continueAsGuest } = useAuth();
 
   useEffect(() => {
+    // Auto-signin as guest if not authenticated
     if (!authLoading && !isSignedIn) {
-      navigate('/login');
+      continueAsGuest();
     }
-  }, [isSignedIn, authLoading, navigate]);
+  }, [isSignedIn, authLoading, continueAsGuest]);
 
   if (authLoading) {
     return (
