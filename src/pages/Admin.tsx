@@ -13,9 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Shield, Users, Trash2 } from 'lucide-react';
+import { Shield, Users, Trash2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import Nav from '@/components/Nav';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format } from 'date-fns';
 
 interface UserWithRoles {
   user_id: string;
@@ -23,12 +25,26 @@ interface UserWithRoles {
   roles: string[];
 }
 
+interface AuditLog {
+  id: string;
+  user_id: string;
+  action: string;
+  table_name: string;
+  record_id: string;
+  old_data: any;
+  new_data: any;
+  created_at: string;
+  user_email?: string;
+}
+
 export default function Admin() {
   const { user } = useAuth();
   const { isAdmin, loading: rolesLoading } = useUserRoles(user?.id);
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserWithRoles[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(true);
 
   useEffect(() => {
     if (!rolesLoading && !isAdmin) {
@@ -40,6 +56,7 @@ export default function Admin() {
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
+      fetchAuditLogs();
     }
   }, [isAdmin]);
 
@@ -118,6 +135,53 @@ export default function Admin() {
     }
   };
 
+  const fetchAuditLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const { data: logs, error: logsError } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (logsError) throw logsError;
+
+      // Fetch user emails
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, email');
+
+      if (profilesError) throw profilesError;
+
+      const emailMap = new Map(profiles?.map(p => [p.user_id, p.email]) || []);
+      
+      const logsWithEmails = logs?.map(log => ({
+        ...log,
+        user_email: emailMap.get(log.user_id) || 'Unknown user'
+      })) || [];
+
+      setAuditLogs(logsWithEmails);
+    } catch (error: any) {
+      toast.error('Failed to load audit logs');
+      console.error(error);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  const getActionBadge = (action: string) => {
+    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
+      create: 'default',
+      update: 'secondary',
+      delete: 'destructive',
+    };
+    return variants[action] || 'outline';
+  };
+
+  const formatTableName = (table: string) => {
+    return table.charAt(0).toUpperCase() + table.slice(1);
+  };
+
   if (rolesLoading || loading) {
     return (
       <div className="min-h-screen">
@@ -145,70 +209,124 @@ export default function Admin() {
           </h1>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              User Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {users.map((userEntry) => (
-                <div
-                  key={userEntry.user_id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-border/50 rounded-lg bg-card/50"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium">{userEntry.email}</p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {userEntry.user_id}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {userEntry.roles.map((role) => (
-                        <Badge
-                          key={role}
-                          variant={
-                            role === 'admin'
-                              ? 'default'
-                              : role === 'artist'
-                              ? 'secondary'
-                              : 'outline'
-                          }
-                          className="flex items-center gap-1"
-                        >
-                          {role}
-                          <button
-                            onClick={() => handleRemoveRole(userEntry.user_id, role)}
-                            className="ml-1 hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Select
-                      onValueChange={(role) => handleAddRole(userEntry.user_id, role)}
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="audit">Site Edits</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  User Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {users.map((userEntry) => (
+                    <div
+                      key={userEntry.user_id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-border/50 rounded-lg bg-card/50"
                     >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Add role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="viewer">Viewer</SelectItem>
-                        <SelectItem value="artist">Artist</SelectItem>
-                        <SelectItem value="organizer">Organizer</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{userEntry.email}</p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {userEntry.user_id}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {userEntry.roles.map((role) => (
+                            <Badge
+                              key={role}
+                              variant={
+                                role === 'admin'
+                                  ? 'default'
+                                  : role === 'artist'
+                                  ? 'secondary'
+                                  : 'outline'
+                              }
+                              className="flex items-center gap-1"
+                            >
+                              {role}
+                              <button
+                                onClick={() => handleRemoveRole(userEntry.user_id, role)}
+                                className="ml-1 hover:text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Select
+                          onValueChange={(role) => handleAddRole(userEntry.user_id, role)}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Add role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="artist">Artist</SelectItem>
+                            <SelectItem value="organizer">Organizer</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Site Data Changes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {logsLoading ? (
+                  <p className="text-muted-foreground text-center py-8">Loading audit logs...</p>
+                ) : auditLogs.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No edits recorded yet</p>
+                ) : (
+                  <div className="space-y-4">
+                    {auditLogs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="p-4 border border-border/50 rounded-lg bg-card/50"
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={getActionBadge(log.action)}>
+                              {log.action.toUpperCase()}
+                            </Badge>
+                            <span className="font-medium">{formatTableName(log.table_name)}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(log.created_at), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          By: {log.user_email}
+                        </p>
+                        <p className="text-xs font-mono text-muted-foreground">
+                          Record ID: {log.record_id}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
