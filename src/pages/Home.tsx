@@ -115,14 +115,24 @@ export default function Home() {
         setLocationPermission('granted');
         toast.success('Location found! Showing nearby events.');
       },
-      () => {
+      (error) => {
         toast.dismiss('location-loading');
-        toast.error('Please enter your zip code instead.', { duration: 5000 });
+        let errorMessage = 'Unable to get your location. ';
+        
+        if (error.code === 1) {
+          errorMessage += 'Location access was denied. Please enable location permissions in your browser settings or enter your zip code.';
+        } else if (error.code === 2) {
+          errorMessage += 'Location information is unavailable. Please try again or enter your zip code.';
+        } else if (error.code === 3) {
+          errorMessage += 'Location request timed out. Please try again or enter your zip code.';
+        }
+        
+        toast.error(errorMessage, { duration: 7000 });
       },
       {
-        enableHighAccuracy: false,
-        timeout: 20000,
-        maximumAge: 300000
+        enableHighAccuracy: true,
+        timeout: 30000,
+        maximumAge: 0
       }
     );
   };
