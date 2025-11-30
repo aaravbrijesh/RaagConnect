@@ -267,20 +267,9 @@ export default function Home() {
                 Find concerts and performances happening in your area
               </p>
               
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="max-w-md mx-auto">
                 <div className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 border border-border">
-                  <h3 className="font-semibold mb-2 text-center">Option 1: Share Location</h3>
-                  <p className="text-sm text-muted-foreground mb-4 text-center">
-                    Click "Allow" when your browser asks for location access
-                  </p>
-                  <Button size="lg" onClick={requestLocation} className="w-full h-12">
-                    Share My Location
-                    <MapPin className="ml-2 w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <div className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 border border-border">
-                  <h3 className="font-semibold mb-2 text-center">Option 2: Enter Zip Code</h3>
+                  <h3 className="font-semibold mb-2 text-center">Enter Your Zip Code</h3>
                   <p className="text-sm text-muted-foreground mb-4 text-center">
                     Enter your 5-digit US zip code
                   </p>
