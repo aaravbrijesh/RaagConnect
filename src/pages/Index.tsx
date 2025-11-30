@@ -8,9 +8,13 @@ const Index = () => {
   const { isSignedIn, authLoading, continueAsGuest } = useAuth();
 
   useEffect(() => {
-    // Auto-signin as guest if not authenticated
+    // Auto-signin as guest if not authenticated and no user session
     if (!authLoading && !isSignedIn) {
-      continueAsGuest();
+      // Small delay to ensure OAuth redirects have time to process
+      const timer = setTimeout(() => {
+        continueAsGuest();
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [isSignedIn, authLoading, continueAsGuest]);
 
