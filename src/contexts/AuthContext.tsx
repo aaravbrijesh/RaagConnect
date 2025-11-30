@@ -161,11 +161,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const continueAsGuest = () => {
-    // Allow guest to access the app without authentication
-    setIsSignedIn(true);
-    setUser(null);
-    setSession(null);
-    setUserRole('viewer');
+    // Only allow guest mode if there's no existing session
+    if (!session && !user) {
+      setIsSignedIn(true);
+      setUser(null);
+      setSession(null);
+      setUserRole('viewer');
+    }
   };
 
   return (
