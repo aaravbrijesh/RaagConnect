@@ -50,17 +50,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, 'Has session:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
-      setIsSignedIn(!!session?.user);
-
+      
+      // Real authenticated user takes priority over guest mode
       if (session?.user) {
+        setIsSignedIn(true);
         // Defer role fetching to avoid blocking
         setTimeout(async () => {
           const role = await fetchUserRole(session.user.id);
           setUserRole(role);
         }, 0);
       } else {
+        // Only clear auth state if we're not in guest mode
+        setIsSignedIn(false);
         setUserRole(null);
       }
 
@@ -69,15 +73,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
-      setIsSignedIn(!!session?.user);
-
+      
       if (session?.user) {
+        setIsSignedIn(true);
         setTimeout(async () => {
           const role = await fetchUserRole(session.user.id);
           setUserRole(role);
         }, 0);
+      } else {
+        setIsSignedIn(false);
       }
 
       setAuthLoading(false);
@@ -161,13 +168,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const continueAsGuest = () => {
-    // Only allow guest mode if there's no existing session
-    if (!session && !user) {
-      setIsSignedIn(true);
-      setUser(null);
-      setSession(null);
-      setUserRole('viewer');
-    }
+    // Guest mode: mark as signed in without actual user/session
+    setIsSignedIn(true);
+    setUser(null);
+    setSession(null);
+    setUserRole('viewer');
   };
 
   return (
