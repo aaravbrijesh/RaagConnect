@@ -7,20 +7,8 @@ import Home from './Home';
 const Index = () => {
   const { isSignedIn, authLoading, continueAsGuest } = useAuth();
 
-  useEffect(() => {
-    // Check if we're coming back from an OAuth redirect
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const isOAuthCallback = hashParams.has('access_token') || hashParams.has('error');
-    
-    // Only auto-signin as guest if not authenticated, no OAuth callback in progress
-    if (!authLoading && !isSignedIn && !isOAuthCallback) {
-      // Small delay to ensure any pending auth processes complete
-      const timer = setTimeout(() => {
-        continueAsGuest();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isSignedIn, authLoading, continueAsGuest]);
+  // No auto-guest logic - users browse as unauthenticated by default
+  // They only need to log in when attempting protected actions
 
   if (authLoading) {
     return (
