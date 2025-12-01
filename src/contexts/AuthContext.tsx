@@ -50,11 +50,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, 'Has session:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Real authenticated user takes priority over guest mode
+      // Real authenticated user
       if (session?.user) {
         setIsSignedIn(true);
         // Defer role fetching to avoid blocking
@@ -63,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole(role);
         }, 0);
       } else {
-        // Only clear auth state if we're not in guest mode
+        // Unauthenticated
         setIsSignedIn(false);
         setUserRole(null);
       }
@@ -73,7 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -168,11 +166,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const continueAsGuest = () => {
-    // Guest mode: mark as signed in without actual user/session
-    setIsSignedIn(true);
-    setUser(null);
-    setSession(null);
-    setUserRole('viewer');
+    // No-op: users are already "guests" when unauthenticated
+    // This function exists for backward compatibility
   };
 
   return (
