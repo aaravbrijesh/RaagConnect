@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Artists from "./pages/Artists";
+import Events from "./pages/Events";
 import Admin from "./pages/Admin";
 import Account from "./pages/Account";
 import CreateArtistProfile from "./pages/CreateArtistProfile";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/artists" element={<Artists />} />
             <Route path="/artists/:id" element={<ArtistDetail />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/account" element={<Account />} />
             <Route path="/login" element={<Login />} />

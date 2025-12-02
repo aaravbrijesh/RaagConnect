@@ -58,7 +58,9 @@ export default function Home() {
     const { data, error } = await supabase
       .from('events')
       .select('*, artists(*)')
-      .order('date', { ascending: true });
+      .gte('date', new Date().toISOString().split('T')[0])
+      .order('date', { ascending: true })
+      .limit(4);
     
     if (error) {
       toast.error('Failed to load events');
@@ -265,7 +267,7 @@ export default function Home() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search events by title or location..."
+                placeholder="Search events..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -469,19 +471,8 @@ export default function Home() {
           </Dialog>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <p className="text-muted-foreground">
-            Showing {filteredEvents.length} upcoming events
-          </p>
-        </motion.div>
-
         {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <div className="flex flex-col md:flex-row">
@@ -496,114 +487,137 @@ export default function Home() {
             ))}
           </div>
         ) : filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredEvents.map((event, index) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-              >
-                <Card 
-                  className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group cursor-pointer"
-                  onClick={() => setSelectedEvent(event)}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredEvents.map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index }}
                 >
-                  <div className="flex flex-col md:flex-row">
-                    <div className="relative w-full md:w-64 h-48 overflow-hidden">
-                      {event.image_url ? (
-                        <img
-                          src={event.image_url}
-                          alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                          <Calendar className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent" />
-                      {(user?.id === event.user_id || isAdmin) && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="absolute top-2 right-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenEdit(event);
-                          }}
-                        >
-                          <Edit className="h-3 w-3" />
-                          Edit
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <CardHeader>
-                        <CardTitle className="text-xl">{event.title}</CardTitle>
-                        <CardDescription className="text-base">
-                          {event.artists?.name || 'Various Artists'}
-                        </CardDescription>
-                      </CardHeader>
-                      
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-primary" />
-                          <span>{new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-primary" />
-                          <span>{event.time}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          <span>{event.location_name || 'Location TBA'}</span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                          <div className="flex items-center gap-2">
-                            <Ticket className="h-5 w-5 text-primary" />
-                            <span className="text-2xl font-bold">
-                              {event.price ? `$${event.price}` : 'Free'}
-                            </span>
+                  <Card 
+                    className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group cursor-pointer"
+                    onClick={() => setSelectedEvent(event)}
+                  >
+                    <div className="flex flex-col md:flex-row">
+                      <div className="relative w-full md:w-64 h-48 overflow-hidden">
+                        {event.image_url ? (
+                          <img
+                            src={event.image_url}
+                            alt={event.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                            <Calendar className="h-12 w-12 text-muted-foreground" />
                           </div>
-                          
-                          <Button 
-                            className="min-w-32"
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent" />
+                        {(user?.id === event.user_id || isAdmin) && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="absolute top-2 right-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (!user || !session) {
-                                toast.error('Please sign in to book this event', {
-                                  action: {
-                                    label: 'Sign In',
-                                    onClick: () => navigate('/login')
-                                  }
-                                });
-                                return;
-                              }
-                              setSelectedEvent(event);
-                              setBookingModalOpen(true);
+                              handleOpenEdit(event);
                             }}
                           >
-                            Book Now
+                            <Edit className="h-3 w-3" />
+                            Edit
                           </Button>
-                        </div>
-                      </CardContent>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <CardHeader>
+                          <CardTitle className="text-xl">{event.title}</CardTitle>
+                          <CardDescription className="text-base">
+                            {event.artists?.name || 'Various Artists'}
+                          </CardDescription>
+                        </CardHeader>
+                        
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <span>{new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="h-4 w-4 text-primary" />
+                            <span>{event.time}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm">
+                            <MapPin className="h-4 w-4 text-primary" />
+                            <span>{event.location_name || 'Location TBA'}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                            <div className="flex items-center gap-2">
+                              <Ticket className="h-5 w-5 text-primary" />
+                              <span className="text-2xl font-bold">
+                                {event.price ? `$${event.price}` : 'Free'}
+                              </span>
+                            </div>
+                            
+                            <Button 
+                              className="min-w-32"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!user || !session) {
+                                  toast.error('Please sign in to book this event', {
+                                    action: {
+                                      label: 'Sign In',
+                                      onClick: () => navigate('/login')
+                                    }
+                                  });
+                                  return;
+                                }
+                                setSelectedEvent(event);
+                                setBookingModalOpen(true);
+                              }}
+                            >
+                              Book Now
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* See All Events Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-10 text-center"
+            >
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => navigate('/events')}
+                className="gap-2"
+              >
+                See All Events
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          </>
         ) : searchTerm ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <p className="text-muted-foreground text-lg">No events found matching "{searchTerm}"</p>
+            <p className="text-muted-foreground text-lg mb-4">No events found matching "{searchTerm}"</p>
+            <Button variant="outline" onClick={() => navigate('/events')}>
+              Browse All Events
+            </Button>
           </motion.div>
         ) : (
           <motion.div
