@@ -217,35 +217,24 @@ export default function Home() {
             <p className="text-xl text-muted-foreground mb-8 max-w-xl">
               Connect with masters of Hindustani and Carnatic traditions. Experience live concerts that move the soul.
             </p>
-            {isSignedIn ? (
-              <div className="flex gap-4">
-                <Button
-                  size="lg"
-                  onClick={() => navigate('/events')}
-                  className="h-12 px-8"
-                >
-                  Explore Events
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => navigate('/artists')}
-                  className="h-12 px-8"
-                >
-                  View Artists
-                </Button>
-              </div>
-            ) : (
+            <div className="flex gap-4">
               <Button
                 size="lg"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/events')}
                 className="h-12 px-8"
               >
-                Get Started
+                View Events
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
-            )}
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate('/artists')}
+                className="h-12 px-8"
+              >
+                Discover Artists
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
