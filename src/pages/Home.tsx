@@ -19,7 +19,7 @@ import Nav from '@/components/Nav';
 import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
-import EventsMapWrapper from '@/components/EventsMapWrapper';
+import EventsMap from '@/components/EventsMap';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
@@ -779,7 +779,7 @@ export default function Home() {
           </div>
           
           {userLocation && (
-            <EventsMapWrapper
+            <EventsMap
               events={mapEvents}
               userLocation={userLocation}
               radius={searchRadius}
