@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { Music2, Home, Users, Calendar, LogOut, Shield, User, Settings } from 'lucide-react';
+import { Users, Calendar, LogOut, Shield, Settings } from 'lucide-react';
 import logo from '@/assets/MusicConnectsLogo.png';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -80,16 +80,12 @@ export default function Nav() {
 
             <div className="hidden md:flex items-center gap-2">
               <NavLink to="/" end className={navLinkClass}>
-                <Home className="h-4 w-4" />
-                Home
+                <Calendar className="h-4 w-4" />
+                Discover
               </NavLink>
               <NavLink to="/artists" className={navLinkClass}>
                 <Users className="h-4 w-4" />
                 Artists
-              </NavLink>
-              <NavLink to="/events" className={navLinkClass}>
-                <Calendar className="h-4 w-4" />
-                Events
               </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>
