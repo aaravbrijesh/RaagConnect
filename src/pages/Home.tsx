@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
 import EventsMap from '@/components/EventsMap';
+import LocationAutocomplete from '@/components/LocationAutocomplete';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
@@ -41,8 +42,6 @@ export default function Home() {
   const [searchRadius, setSearchRadius] = useState(50);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapEvents, setMapEvents] = useState<any[]>([]);
-  const [locationVerified, setLocationVerified] = useState(false);
-  const [locationSearching, setLocationSearching] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     artistId: '',
@@ -174,43 +173,22 @@ export default function Home() {
     }
   };
 
-  const handleLocationSearch = async () => {
-    if (!formData.locationName) {
-      toast.error('Please enter a location');
-      return;
+  const handleLocationSelect = (location: { name: string; lat: number; lng: number } | null) => {
+    if (location) {
+      setFormData({
+        ...formData,
+        locationName: location.name,
+        locationLat: location.lat,
+        locationLng: location.lng
+      });
+    } else {
+      setFormData({
+        ...formData,
+        locationName: '',
+        locationLat: null,
+        locationLng: null
+      });
     }
-    
-    setLocationSearching(true);
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        setFormData({
-          ...formData,
-          locationName: data[0].display_name,
-          locationLat: parseFloat(data[0].lat),
-          locationLng: parseFloat(data[0].lon)
-        });
-        setLocationVerified(true);
-        toast.success('Location verified!');
-      } else {
-        setLocationVerified(false);
-        toast.error('Location not found. Please try a different address.');
-      }
-    } catch (error) {
-      setLocationVerified(false);
-      toast.error('Failed to verify location');
-    } finally {
-      setLocationSearching(false);
-    }
-  };
-
-  const handleLocationChange = (value: string) => {
-    setFormData({ ...formData, locationName: value, locationLat: null, locationLng: null });
-    setLocationVerified(false);
   };
 
   const handleOpenEdit = (event: any) => {
@@ -233,8 +211,6 @@ export default function Home() {
       zelle: paymentInfo.zelle || '',
       paypal: paymentInfo.paypal || ''
     });
-    // Mark as verified if event already has coordinates
-    setLocationVerified(!!(event.location_lat && event.location_lng));
     setOpen(true);
   };
 
@@ -250,8 +226,8 @@ export default function Home() {
       return;
     }
 
-    if (formData.locationName && !locationVerified) {
-      toast.error('Please verify the location by clicking the verify button');
+    if (formData.locationName && !formData.locationLat) {
+      toast.error('Please select a location from the suggestions');
       return;
     }
 
@@ -342,7 +318,6 @@ export default function Home() {
         paypal: ''
       });
       setImageFile(null);
-      setLocationVerified(false);
       fetchEvents();
     } catch (error: any) {
       toast.error(error.message || `Failed to ${editMode ? 'update' : 'create'} event`);
@@ -470,44 +445,12 @@ export default function Home() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        id="location"
-                        value={formData.locationName}
-                        onChange={(e) => handleLocationChange(e.target.value)}
-                        placeholder="e.g. Shanmukhananda Hall, Mumbai"
-                        className={locationVerified ? 'pr-8 border-green-500' : ''}
-                      />
-                      {locationVerified && (
-                        <Check className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
-                      )}
-                    </div>
-                    <Button 
-                      type="button" 
-                      onClick={handleLocationSearch} 
-                      variant={locationVerified ? "default" : "outline"}
-                      disabled={locationSearching || !formData.locationName}
-                    >
-                      {locationSearching ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : locationVerified ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <MapPin className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                  {locationVerified && formData.locationLat && formData.locationLng ? (
-                    <p className="text-xs text-green-600">
-                      ✓ Location verified: {formData.locationLat.toFixed(4)}, {formData.locationLng.toFixed(4)}
-                    </p>
-                  ) : formData.locationName ? (
-                    <p className="text-xs text-amber-600">
-                      Click the button to verify this location
-                    </p>
-                  ) : null}
+                  <Label>Location</Label>
+                  <LocationAutocomplete
+                    value={formData.locationName}
+                    onChange={handleLocationSelect}
+                    placeholder="Search for a venue or address..."
+                  />
                 </div>
                 
                 <div className="space-y-2">
