@@ -497,7 +497,7 @@ export default function Home() {
           </div>
         ) : filteredEvents.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
               {filteredEvents.map((event, index) => (
                 <motion.div
                   key={event.id}
@@ -601,25 +601,23 @@ export default function Home() {
               ))}
             </div>
 
-            {/* See All Events Button */}
-            {totalEvents > 8 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="mt-10 text-center"
+            {/* See All Events Button - Always show */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-10 text-center"
+            >
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => navigate('/events')}
+                className="gap-2"
               >
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => navigate('/events')}
-                  className="gap-2"
-                >
-                  See All Events ({totalEvents})
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </motion.div>
-            )}
+                See All Events
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </motion.div>
           </>
         ) : searchTerm ? (
           <motion.div
