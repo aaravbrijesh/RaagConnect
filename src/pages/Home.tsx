@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, Music, ArrowRight } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, ArrowRight } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -19,6 +19,7 @@ import Nav from '@/components/Nav';
 import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
+import EventsMap from '@/components/EventsMap';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
@@ -35,6 +36,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchRadius, setSearchRadius] = useState(50);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapEvents, setMapEvents] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     artistId: '',
@@ -79,6 +85,86 @@ export default function Home() {
     }
     setLoading(false);
   };
+
+  const handleZipSearch = async () => {
+    if (!zipCode) {
+      toast.error('Please enter a zip code');
+      return;
+    }
+
+    setMapLoading(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}&countrycodes=us`
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const location = {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        };
+        setUserLocation(location);
+        
+        // Fetch events with location for distance calculation
+        const { data: eventsData } = await supabase
+          .from('events')
+          .select('*, artists(*)')
+          .not('location_lat', 'is', null)
+          .not('location_lng', 'is', null);
+
+        if (eventsData) {
+          // Calculate distance and filter by radius
+          const eventsWithDistance = eventsData.map(event => {
+            const distance = calculateDistance(
+              location.lat, location.lng,
+              event.location_lat!, event.location_lng!
+            );
+            return { ...event, distance };
+          }).filter(event => event.distance <= searchRadius);
+          
+          setMapEvents(eventsWithDistance);
+        }
+        toast.success('Location found!');
+      } else {
+        toast.error('Zip code not found');
+      }
+    } catch (error) {
+      toast.error('Failed to search location');
+    } finally {
+      setMapLoading(false);
+    }
+  };
+
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Re-filter events when radius changes
+  useEffect(() => {
+    if (userLocation && events.length > 0) {
+      const eventsWithDistance = events
+        .filter(e => e.location_lat && e.location_lng)
+        .map(event => {
+          const distance = calculateDistance(
+            userLocation.lat, userLocation.lng,
+            event.location_lat!, event.location_lng!
+          );
+          return { ...event, distance };
+        }).filter(event => event.distance <= searchRadius);
+      
+      setMapEvents(eventsWithDistance);
+    }
+  }, [searchRadius, userLocation]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -610,12 +696,11 @@ export default function Home() {
             >
               <Button 
                 size="lg" 
-                variant="outline"
                 onClick={() => navigate('/events')}
-                className="gap-2"
+                className="gap-2 px-8 py-6 text-lg"
               >
                 See All Events
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-5 w-5" />
               </Button>
             </motion.div>
           </>
@@ -643,28 +728,74 @@ export default function Home() {
         )}
       </section>
 
-      {/* CTA Section */}
+      {/* Events Map Section */}
       <section className="container mx-auto px-4 py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-12 overflow-hidden text-center"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-          <div className="relative max-w-2xl mx-auto">
-            <Music className="w-12 h-12 text-primary mx-auto mb-6" />
+          <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Meet the Artists
+              Find Events Near You
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Discover talented musicians and explore their profiles, performances, and upcoming events.
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              Enter your zip code to discover classical music performances in your area
             </p>
-            <Button size="lg" onClick={() => navigate('/artists')}>
-              Browse Artists
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
           </div>
+          
+          <div className="max-w-md mx-auto mb-8 space-y-4">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Enter zip code"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleZipSearch} disabled={mapLoading}>
+                {mapLoading ? 'Searching...' : 'Search'}
+              </Button>
+            </div>
+            
+            {userLocation && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Radius: {searchRadius} miles</span>
+                  <Button variant="ghost" size="sm" onClick={() => setUserLocation(null)}>
+                    Change Location
+                  </Button>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="200"
+                  value={searchRadius}
+                  onChange={(e) => setSearchRadius(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
+          
+          {userLocation && (
+            <EventsMap
+              events={mapEvents}
+              userLocation={userLocation}
+              radius={searchRadius}
+              onEventClick={(eventId) => {
+                const event = events.find(e => e.id === eventId);
+                if (event) setSelectedEvent(event);
+              }}
+            />
+          )}
+          
+          {!userLocation && (
+            <div className="bg-muted/50 rounded-2xl p-12 text-center">
+              <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Enter a zip code above to see events on the map</p>
+            </div>
+          )}
         </motion.div>
       </section>
 
