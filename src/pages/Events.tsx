@@ -245,7 +245,7 @@ export default function Events() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                Upcoming Concerts
+                Upcoming Events
               </h1>
               <p className="text-muted-foreground text-lg">
                 Experience the divine tradition of Indian classical music
@@ -291,14 +291,14 @@ export default function Events() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editMode ? 'Edit Concert' : 'Create New Concert'}</DialogTitle>
+                  <DialogTitle>{editMode ? 'Edit Event' : 'Create New Event'}</DialogTitle>
                   <DialogDescription>
-                    {editMode ? 'Update your concert details' : 'Schedule a Hindustani or Carnatic music performance'}
+                    {editMode ? 'Update your event details' : 'Schedule a Hindustani or Carnatic music performance'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="title">Concert Title</Label>
+                    <Label htmlFor="title">Event Title</Label>
                     <Input
                       id="title"
                       value={formData.title}

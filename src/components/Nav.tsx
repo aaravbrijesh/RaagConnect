@@ -89,7 +89,7 @@ export default function Nav() {
               </NavLink>
               <NavLink to="/events" className={navLinkClass}>
                 <Calendar className="h-4 w-4" />
-                Concerts
+                Events
               </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>
