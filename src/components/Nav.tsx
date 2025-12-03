@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Users, Calendar, LogOut, Shield, Settings } from "lucide-react";
+import { Users, Calendar, LogOut, Shield, Settings, Info } from "lucide-react";
 import logo from "@/assets/MusicConnectsLogo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -88,6 +88,10 @@ export default function Nav() {
               <NavLink to="/artists" className={navLinkClass}>
                 <Users className="h-4 w-4" />
                 Discover Artists
+              </NavLink>
+              <NavLink to="/about" className={navLinkClass}>
+                <Info className="h-4 w-4" />
+                About
               </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>

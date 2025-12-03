@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Edit, ArrowLeft, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Edit, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,17 @@ import Nav from '@/components/Nav';
 import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -106,14 +117,52 @@ export default function EventDetail() {
               <p className="text-lg text-muted-foreground">{getArtistNames()}</p>
             </div>
             {isOwnerOrAdmin && (
-              <Button
-                variant="outline"
-                className="gap-2 shrink-0"
-                onClick={() => navigate(`/events/create?edit=${event.id}`)}
-              >
-                <Edit className="h-4 w-4" />
-                Edit Event
-              </Button>
+              <div className="flex gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => navigate(`/events/create?edit=${event.id}`)}
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Event
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{event.title}"? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          const { error } = await supabase
+                            .from('events')
+                            .delete()
+                            .eq('id', event.id);
+                          
+                          if (error) {
+                            toast.error('Failed to delete event');
+                          } else {
+                            toast.success('Event deleted successfully');
+                            navigate('/');
+                          }
+                        }}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </div>
 
