@@ -67,10 +67,15 @@ export default function LocationAutocomplete({
     setIsSearching(true);
 
     try {
-      // Use Nominatim with addressdetails for better address matching including house numbers
+      // Use edge function proxy to handle Nominatim requests with proper headers
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8&addressdetails=1`,
-        { signal: abortRef.current.signal }
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/geocode?q=${encodeURIComponent(query)}&limit=8`,
+        { 
+          signal: abortRef.current.signal,
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          }
+        }
       );
       
       if (!response.ok) {
@@ -130,9 +135,14 @@ export default function LocationAutocomplete({
     
     setIsSearching(true);
     try {
-      // Do a final geocode lookup for the exact typed address
+      // Do a final geocode lookup for the exact typed address via edge function
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(inputValue)}&limit=1&addressdetails=1`
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/geocode?q=${encodeURIComponent(inputValue)}&limit=1`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          }
+        }
       );
       const data = await response.json();
       
