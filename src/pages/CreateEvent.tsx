@@ -26,7 +26,7 @@ type Artist = {
 
 export default function CreateEvent() {
   const { user, session } = useAuth();
-  const { canCreateEvents } = useUserRoles(user?.id);
+  const { canCreateEvents, loading: rolesLoading } = useUserRoles(user?.id);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
@@ -58,6 +58,11 @@ export default function CreateEvent() {
       return;
     }
     
+    // Wait for roles to load before checking permissions
+    if (rolesLoading) {
+      return;
+    }
+    
     if (!canCreateEvents) {
       toast.error('You need artist or organizer role to create events');
       navigate('/');
@@ -69,7 +74,7 @@ export default function CreateEvent() {
     if (editId) {
       fetchEventForEdit(editId);
     }
-  }, [user, session, canCreateEvents, editId]);
+  }, [user, session, canCreateEvents, rolesLoading, editId]);
 
   const fetchArtists = async () => {
     const { data, error } = await supabase
