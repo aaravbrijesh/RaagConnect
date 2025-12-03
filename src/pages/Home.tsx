@@ -74,7 +74,13 @@ export default function Home() {
     setMapLoading(true);
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}&countrycodes=us`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}&countrycodes=us`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'RaagConnect/1.0'
+          }
+        }
       );
       const data = await response.json();
 
@@ -88,7 +94,7 @@ export default function Home() {
         // Fetch events with location for distance calculation
         const { data: eventsData } = await supabase
           .from('events')
-          .select('*, artists(*)')
+          .select('*, artists(*), event_artists(artist_id, artists(*))')
           .not('location_lat', 'is', null)
           .not('location_lng', 'is', null);
 
@@ -106,10 +112,11 @@ export default function Home() {
         }
         toast.success('Location found!');
       } else {
-        toast.error('Zip code not found');
+        toast.error('Zip code not found. Try a US zip code like 10001');
       }
     } catch (error) {
-      toast.error('Failed to search location');
+      console.error('Zip search error:', error);
+      toast.error('Failed to search location. Please try again.');
     } finally {
       setMapLoading(false);
     }
@@ -136,7 +143,7 @@ export default function Home() {
       // Fetch all events with location for distance calculation
       const { data: eventsData } = await supabase
         .from('events')
-        .select('*, artists(*)')
+        .select('*, artists(*), event_artists(artist_id, artists(*))')
         .not('location_lat', 'is', null)
         .not('location_lng', 'is', null);
 

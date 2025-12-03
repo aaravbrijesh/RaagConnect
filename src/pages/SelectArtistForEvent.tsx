@@ -42,7 +42,14 @@ export default function SelectArtistForEvent() {
   const handleSelectArtist = (artist: Artist) => {
     const savedData = sessionStorage.getItem('eventFormData');
     const formData = savedData ? JSON.parse(savedData) : {};
-    formData.artistId = artist.id;
+    
+    // Get existing artistIds or create new array
+    const existingIds = formData.artistIds || [];
+    // Add artist if not already selected
+    if (!existingIds.includes(artist.id)) {
+      formData.artistIds = [...existingIds, artist.id];
+    }
+    
     sessionStorage.setItem('eventFormData', JSON.stringify(formData));
     navigate('/events/create');
   };
