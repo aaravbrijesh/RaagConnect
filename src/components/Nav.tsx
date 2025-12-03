@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUserRoles } from '@/hooks/useUserRoles';
-import { Button } from '@/components/ui/button';
-import { useNavigate, NavLink } from 'react-router-dom';
-import { Users, Calendar, LogOut, Shield, Settings } from 'lucide-react';
-import logo from '@/assets/MusicConnectsLogo.png';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { Button } from "@/components/ui/button";
+import { useNavigate, NavLink } from "react-router-dom";
+import { Users, Calendar, LogOut, Shield, Settings } from "lucide-react";
+import logo from "@/assets/MusicConnectsLogo.png";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Nav() {
   const { user, session, signOut } = useAuth();
   const { isAdmin } = useUserRoles(user?.id);
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -22,9 +28,9 @@ export default function Nav() {
     const loadUserInfo = async () => {
       try {
         const { data: profileData } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('user_id', user.id)
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", user.id)
           .maybeSingle();
 
         if (profileData?.full_name) {
@@ -33,9 +39,9 @@ export default function Nav() {
 
         // Check artist profile for avatar
         const { data: artistData } = await supabase
-          .from('artists')
-          .select('image_url')
-          .eq('user_id', user.id)
+          .from("artists")
+          .select("image_url")
+          .eq("user_id", user.id)
           .maybeSingle();
 
         if (artistData?.image_url) {
@@ -44,7 +50,7 @@ export default function Nav() {
           setAvatarUrl(user.user_metadata.avatar_url);
         }
       } catch (error) {
-        console.error('Error loading user info:', error);
+        console.error("Error loading user info:", error);
       }
     };
 
@@ -53,14 +59,12 @@ export default function Nav() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate("/login");
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-      isActive
-        ? 'bg-primary text-primary-foreground'
-        : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
+      isActive ? "bg-primary text-primary-foreground" : "hover:bg-secondary text-muted-foreground hover:text-foreground"
     }`;
 
   return (
@@ -69,23 +73,21 @@ export default function Nav() {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-8">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <img src={logo} alt="Raag Connect" className="h-8 w-8" />
-              <span className="text-lg font-semibold text-foreground">
-                Raag Connect
-              </span>
+              <span className="text-lg font-semibold text-foreground">Raag Connect</span>
             </button>
 
             <div className="hidden md:flex items-center gap-1">
               <NavLink to="/" end className={navLinkClass}>
                 <Calendar className="h-4 w-4" />
-                Discover
+                Discover Events
               </NavLink>
               <NavLink to="/artists" className={navLinkClass}>
                 <Users className="h-4 w-4" />
-                Artists
+                Discover Artists
               </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>
@@ -101,18 +103,16 @@ export default function Nav() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={avatarUrl} alt={fullName || 'User'} />
+                    <AvatarImage src={avatarUrl} alt={fullName || "User"} />
                     <AvatarFallback>
-                      {fullName ? fullName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'U'}
+                      {fullName ? fullName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:block text-sm font-medium">
-                    {fullName || user.email}
-                  </span>
+                  <span className="hidden sm:block text-sm font-medium">{fullName || user.email}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => navigate('/account')}>
+                <DropdownMenuItem onClick={() => navigate("/account")}>
                   <Settings className="h-4 w-4 mr-2" />
                   Account Settings
                 </DropdownMenuItem>
@@ -125,7 +125,7 @@ export default function Nav() {
             </DropdownMenu>
           )}
           {!session && (
-            <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/login")}>
               Sign In
             </Button>
           )}
