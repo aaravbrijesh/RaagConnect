@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, Plus, UserPlus } from 'lucide-react';
+import { ArrowLeft, Upload, UserPlus, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,7 +31,7 @@ export default function CreateEvent() {
   const editId = searchParams.get('edit');
   
   const [loading, setLoading] = useState(false);
-  const [artists, setArtists] = useState<Artist[]>([]);
+  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   
@@ -51,6 +50,21 @@ export default function CreateEvent() {
     paypal: ''
   });
 
+  // Load form data from sessionStorage on mount
+  useEffect(() => {
+    const savedData = sessionStorage.getItem('eventFormData');
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      setFormData(prev => ({ ...prev, ...parsed }));
+      
+      if (parsed.artistId) {
+        fetchArtistById(parsed.artistId);
+      }
+      
+      sessionStorage.removeItem('eventFormData');
+    }
+  }, []);
+
   useEffect(() => {
     if (!user || !session) {
       toast.error('Please sign in to create an event');
@@ -58,7 +72,6 @@ export default function CreateEvent() {
       return;
     }
     
-    // Wait for roles to load before checking permissions
     if (rolesLoading) {
       return;
     }
@@ -69,21 +82,20 @@ export default function CreateEvent() {
       return;
     }
 
-    fetchArtists();
-    
     if (editId) {
       fetchEventForEdit(editId);
     }
   }, [user, session, canCreateEvents, rolesLoading, editId]);
 
-  const fetchArtists = async () => {
+  const fetchArtistById = async (artistId: string) => {
     const { data, error } = await supabase
       .from('artists')
       .select('id, name, genre, image_url')
-      .order('name');
+      .eq('id', artistId)
+      .single();
     
     if (!error && data) {
-      setArtists(data);
+      setSelectedArtist(data);
     }
   };
 
@@ -117,6 +129,10 @@ export default function CreateEvent() {
       zelle: paymentInfo.zelle || '',
       paypal: paymentInfo.paypal || ''
     });
+
+    if (data.artist_id) {
+      fetchArtistById(data.artist_id);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,6 +157,22 @@ export default function CreateEvent() {
         locationLng: null
       });
     }
+  };
+
+  const handleSelectArtist = () => {
+    sessionStorage.setItem('eventFormData', JSON.stringify(formData));
+    navigate('/select-artist');
+  };
+
+  const handleCreateNewArtist = () => {
+    sessionStorage.setItem('eventFormData', JSON.stringify(formData));
+    sessionStorage.setItem('returnToEventCreate', 'true');
+    navigate('/create-artist-profile');
+  };
+
+  const handleClearArtist = () => {
+    setSelectedArtist(null);
+    setFormData({ ...formData, artistId: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -315,38 +347,56 @@ export default function CreateEvent() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Featured Artist</h3>
                   
-                  <div className="space-y-2">
-                    <Label>Select Artist (Optional)</Label>
-                    <Select
-                      value={formData.artistId}
-                      onValueChange={(value) => setFormData({ ...formData, artistId: value === 'none' ? '' : value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose an artist or leave empty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No artist selected</SelectItem>
-                        {artists.map((artist) => (
-                          <SelectItem key={artist.id} value={artist.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{artist.name}</span>
-                              <span className="text-muted-foreground text-xs">({artist.genre})</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate('/create-artist-profile')}
-                    className="gap-2"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Create New Artist Profile
-                  </Button>
+                  {selectedArtist ? (
+                    <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                      <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
+                        {selectedArtist.image_url ? (
+                          <img
+                            src={selectedArtist.image_url}
+                            alt={selectedArtist.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Users className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{selectedArtist.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">{selectedArtist.genre}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearArtist}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSelectArtist}
+                        className="gap-2 flex-1"
+                      >
+                        <Users className="h-4 w-4" />
+                        Select Existing Artist
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCreateNewArtist}
+                        className="gap-2 flex-1"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Create New Artist
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />

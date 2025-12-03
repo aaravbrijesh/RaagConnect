@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type LocationSuggestion = {
@@ -29,7 +29,6 @@ export default function LocationAutocomplete({
 }: LocationAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSelected, setIsSelected] = useState(!!value);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -54,19 +53,15 @@ export default function LocationAutocomplete({
   }, []);
 
   const searchLocations = async (query: string) => {
-    if (!query || query.length < 3) {
+    if (!query || query.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setShowSuggestions(false);
-    
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8&addressdetails=1`,
         {
           headers: {
             'Accept': 'application/json',
@@ -75,7 +70,9 @@ export default function LocationAutocomplete({
       );
       
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
       }
       
       const data = await response.json();
@@ -85,8 +82,6 @@ export default function LocationAutocomplete({
       console.error('Location search failed:', error);
       setSuggestions([]);
       setShowSuggestions(false);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -94,15 +89,15 @@ export default function LocationAutocomplete({
     const newValue = e.target.value;
     setInputValue(newValue);
     setIsSelected(false);
-    onChange(null); // Clear selection when typing
+    onChange(null);
 
-    // Debounce the search
+    // Debounce the search - 200ms for responsiveness
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
     debounceRef.current = setTimeout(() => {
       searchLocations(newValue);
-    }, 300);
+    }, 200);
   };
 
   const handleSelectSuggestion = (suggestion: LocationSuggestion) => {
@@ -119,10 +114,8 @@ export default function LocationAutocomplete({
   };
 
   const formatLocationName = (displayName: string): string => {
-    // Shorten the display name to be more readable
     const parts = displayName.split(', ');
     if (parts.length <= 3) return displayName;
-    // Return first 3-4 meaningful parts
     return parts.slice(0, 4).join(', ');
   };
 
@@ -139,18 +132,15 @@ export default function LocationAutocomplete({
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
           className={cn(
-            "pl-10 pr-10 transition-colors",
+            "pl-10 transition-colors",
             isSelected && "border-green-500 focus-visible:ring-green-500"
           )}
         />
-        {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-        )}
       </div>
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden max-h-64 overflow-y-auto">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.place_id}
@@ -165,22 +155,10 @@ export default function LocationAutocomplete({
         </div>
       )}
 
-      {/* No results message */}
-      {showSuggestions && !isLoading && inputValue.length >= 3 && suggestions.length === 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg p-4 text-center text-sm text-muted-foreground">
-          No locations found. Try a different search.
-        </div>
-      )}
-
       {/* Helper text */}
       {isSelected && (
         <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1">
           <span>✓</span> Location verified
-        </p>
-      )}
-      {!isSelected && inputValue && inputValue.length < 3 && (
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          Type at least 3 characters to search
         </p>
       )}
     </div>
