@@ -17,7 +17,7 @@ type Artist = {
   location_name: string | null;
 };
 
-export default function SelectArtist() {
+export default function SelectArtistForEvent() {
   const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,22 +40,15 @@ export default function SelectArtist() {
   };
 
   const handleSelectArtist = (artist: Artist) => {
-    // Get existing form data from sessionStorage
     const savedData = sessionStorage.getItem('eventFormData');
     const formData = savedData ? JSON.parse(savedData) : {};
-    
-    // Update with selected artist
     formData.artistId = artist.id;
     sessionStorage.setItem('eventFormData', JSON.stringify(formData));
-    
-    // Navigate back to event creation
     navigate('/events/create');
   };
 
   const handleCreateNewArtist = () => {
-    // Mark that we came from event creation
-    sessionStorage.setItem('returnToEventCreate', 'true');
-    navigate('/create-artist-profile');
+    navigate('/events/create/createartist');
   };
 
   const handleBack = () => {
@@ -86,7 +79,6 @@ export default function SelectArtist() {
           <p className="text-muted-foreground">Choose an artist to feature at your event</p>
         </div>
 
-        {/* Search and Create New */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -103,7 +95,6 @@ export default function SelectArtist() {
           </Button>
         </div>
 
-        {/* Artists Grid */}
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading artists...</p>

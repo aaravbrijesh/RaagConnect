@@ -161,13 +161,12 @@ export default function CreateEvent() {
 
   const handleSelectArtist = () => {
     sessionStorage.setItem('eventFormData', JSON.stringify(formData));
-    navigate('/select-artist');
+    navigate('/events/create/selectartist');
   };
 
   const handleCreateNewArtist = () => {
     sessionStorage.setItem('eventFormData', JSON.stringify(formData));
-    sessionStorage.setItem('returnToEventCreate', 'true');
-    navigate('/create-artist-profile');
+    navigate('/events/create/createartist');
   };
 
   const handleClearArtist = () => {

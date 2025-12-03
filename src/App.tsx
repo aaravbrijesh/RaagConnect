@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -14,7 +14,8 @@ import Admin from "./pages/Admin";
 import Account from "./pages/Account";
 import CreateArtistProfile from "./pages/CreateArtistProfile";
 import CreateEvent from "./pages/CreateEvent";
-import SelectArtist from "./pages/SelectArtist";
+import SelectArtistForEvent from "./pages/SelectArtistForEvent";
+import CreateArtistForEvent from "./pages/CreateArtistForEvent";
 import ArtistDetail from "./pages/ArtistDetail";
 import NotFound from "./pages/NotFound";
 
@@ -33,7 +34,8 @@ const App = () => (
             <Route path="/artists/:id" element={<ArtistDetail />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/create" element={<CreateEvent />} />
-            <Route path="/select-artist" element={<SelectArtist />} />
+            <Route path="/events/create/selectartist" element={<SelectArtistForEvent />} />
+            <Route path="/events/create/createartist" element={<CreateArtistForEvent />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/account" element={<Account />} />
             <Route path="/login" element={<Login />} />
