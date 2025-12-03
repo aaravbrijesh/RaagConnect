@@ -64,7 +64,7 @@ export default function Nav() {
     }`;
 
   return (
-    <nav className="border-b border-border/50 backdrop-blur-sm bg-background/95 sticky top-0 z-50 shadow-sm">
+    <nav className="border-b bg-background sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-8">
@@ -72,13 +72,13 @@ export default function Nav() {
               onClick={() => navigate('/')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <img src={logo} alt="Raag Connect" className="h-10 w-10" />
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <img src={logo} alt="Raag Connect" className="h-8 w-8" />
+              <span className="text-lg font-semibold text-foreground">
                 Raag Connect
               </span>
             </button>
 
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-1">
               <NavLink to="/" end className={navLinkClass}>
                 <Calendar className="h-4 w-4" />
                 Discover

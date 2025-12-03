@@ -76,50 +76,31 @@ export default function Login() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-8 shadow-elegant border border-border/50">
-          <motion.h2
-            className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            🎵 Raag Connect
-          </motion.h2>
+        <div className="bg-card rounded-xl p-8 shadow-lg border border-border">
+          <h2 className="text-2xl font-semibold text-center mb-1">
+            Welcome back
+          </h2>
+          <p className="text-center text-muted-foreground mb-6 text-sm">
+            Sign in to Raag Connect
+          </p>
 
-          <motion.p
-            className="text-center text-muted-foreground mb-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            Sign in to discover classical music
-          </motion.p>
+          <form onSubmit={handleEmailLogin} className="space-y-3">
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              disabled={authLoading}
+            />
 
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                disabled={authLoading}
-                className="bg-background/50 border-border/50"
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-              className="relative"
-            >
+            <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 disabled={authLoading}
-                className="bg-background/50 border-border/50 pr-10"
+                className="pr-10"
               />
               <button
                 type="button"
@@ -128,22 +109,20 @@ export default function Login() {
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-              <Button type="submit" className="w-full rounded-full" disabled={authLoading}>
-                {authLoading ? "Signing in..." : "Sign In"}
-              </Button>
-            </motion.div>
+            <Button type="submit" className="w-full" disabled={authLoading}>
+              {authLoading ? "Signing in..." : "Sign In"}
+            </Button>
           </form>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-5 space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/50"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-card px-2 text-muted-foreground">or</span>
               </div>
             </div>
 
@@ -152,9 +131,9 @@ export default function Login() {
               variant="outline"
               onClick={handleGoogle}
               disabled={authLoading}
-              className="w-full rounded-full"
+              className="w-full"
             >
-              Sign in with Google
+              Continue with Google
             </Button>
 
             <Button
@@ -162,22 +141,22 @@ export default function Login() {
               variant="ghost"
               onClick={handleGuestContinue}
               disabled={authLoading}
-              className="w-full rounded-full"
+              className="w-full text-muted-foreground"
             >
               Continue as Guest
             </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/register")}
-                className="text-primary hover:underline font-semibold"
-              >
-                Sign up
-              </button>
-            </p>
           </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/register")}
+              className="text-primary hover:underline font-medium"
+            >
+              Sign up
+            </button>
+          </p>
         </div>
       </motion.div>
     </div>

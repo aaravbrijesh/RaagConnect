@@ -83,57 +83,34 @@ export default function Register() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.3 }}
         className="w-full max-w-md"
       >
-        <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-8 shadow-elegant border border-border/50">
-          <motion.h2
-            className="text-3xl font-bold text-center mb-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            Create Your Account
-          </motion.h2>
-
-          <motion.p
-            className="text-center text-muted-foreground mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
+        <div className="bg-card rounded-xl p-8 shadow-lg border border-border">
+          <h2 className="text-2xl font-semibold text-center mb-1">
+            Create an account
+          </h2>
+          <p className="text-center text-muted-foreground mb-6 text-sm">
             Join the classical music community
-          </motion.p>
+          </p>
 
-          <form onSubmit={handleRegister} className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                disabled={authLoading}
-                className="bg-background/50 border-border/50"
-              />
-            </motion.div>
+          <form onSubmit={handleRegister} className="space-y-3">
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              disabled={authLoading}
+            />
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-              className="relative"
-            >
+            <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password (6+ characters)"
                 disabled={authLoading}
-                className="bg-background/50 border-border/50 pr-10"
+                className="pr-10"
               />
               <button
                 type="button"
@@ -142,21 +119,16 @@ export default function Register() {
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.55 }}
-              className="relative"
-            >
+            <div className="relative">
               <Input
                 type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm Password"
                 disabled={authLoading}
-                className="bg-background/50 border-border/50 pr-10"
+                className="pr-10"
               />
               <button
                 type="button"
@@ -165,96 +137,75 @@ export default function Register() {
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-              className="space-y-3"
-            >
-              <Label>I am a...</Label>
+            <div className="space-y-2 pt-2">
+              <Label className="text-sm">I am a...</Label>
               <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer')}>
                 <div className="space-y-2">
                   <div 
-                    className={`cursor-pointer transition-all rounded-lg border-2 ${role === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                    className={`cursor-pointer transition-all rounded-lg border ${role === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                     onClick={() => setRole('viewer')}
                   >
-                    <div className="p-4 flex items-start gap-3">
+                    <div className="p-3 flex items-center gap-3">
                       <RadioGroupItem value="viewer" id="viewer" />
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Eye className="h-4 w-4 text-primary" />
-                          <label htmlFor="viewer" className="text-base font-semibold cursor-pointer">Viewer</label>
-                        </div>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Discover and book classical music events
-                        </p>
+                        <label htmlFor="viewer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          Viewer
+                        </label>
+                        <p className="text-xs text-muted-foreground">Discover and book events</p>
                       </div>
                     </div>
                   </div>
 
                   <div 
-                    className={`cursor-pointer transition-all rounded-lg border-2 ${role === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                    className={`cursor-pointer transition-all rounded-lg border ${role === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                     onClick={() => setRole('artist')}
                   >
-                    <div className="p-4 flex items-start gap-3">
+                    <div className="p-3 flex items-center gap-3">
                       <RadioGroupItem value="artist" id="artist" />
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Music className="h-4 w-4 text-primary" />
-                          <label htmlFor="artist" className="text-base font-semibold cursor-pointer">Artist</label>
-                        </div>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Create your profile and showcase your music
-                        </p>
+                        <label htmlFor="artist" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                          <Music className="h-4 w-4 text-muted-foreground" />
+                          Artist
+                        </label>
+                        <p className="text-xs text-muted-foreground">Create your profile and showcase music</p>
                       </div>
                     </div>
                   </div>
 
                   <div 
-                    className={`cursor-pointer transition-all rounded-lg border-2 ${role === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                    className={`cursor-pointer transition-all rounded-lg border ${role === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                     onClick={() => setRole('organizer')}
                   >
-                    <div className="p-4 flex items-start gap-3">
+                    <div className="p-3 flex items-center gap-3">
                       <RadioGroupItem value="organizer" id="organizer" />
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-primary" />
-                          <label htmlFor="organizer" className="text-base font-semibold cursor-pointer">Organizer</label>
-                        </div>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Create and manage classical music events
-                        </p>
+                        <label htmlFor="organizer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          Organizer
+                        </label>
+                        <p className="text-xs text-muted-foreground">Create and manage events</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </RadioGroup>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Button
-                type="submit"
-                className="w-full rounded-full"
-                disabled={authLoading}
-              >
-                {authLoading ? 'Creating account...' : 'Create Account'}
-              </Button>
-            </motion.div>
+            <Button type="submit" className="w-full" disabled={authLoading}>
+              {authLoading ? 'Creating account...' : 'Create Account'}
+            </Button>
           </form>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-5 space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/50"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-card px-2 text-muted-foreground">or</span>
               </div>
             </div>
 
@@ -263,22 +214,22 @@ export default function Register() {
               variant="outline"
               onClick={handleGoogleSignUp}
               disabled={authLoading}
-              className="w-full rounded-full"
+              className="w-full"
             >
-              Sign up with Google
+              Continue with Google
             </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => navigate('/login')}
-                className="text-primary hover:underline font-semibold"
-              >
-                Sign in
-              </button>
-            </p>
           </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-primary hover:underline font-medium"
+            >
+              Sign in
+            </button>
+          </p>
         </div>
       </motion.div>
     </div>
