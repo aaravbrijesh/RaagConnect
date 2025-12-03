@@ -9,6 +9,7 @@ interface AuthContextType {
   isSignedIn: boolean;
   authLoading: boolean;
   authMessage: string;
+  needsRoleSelection: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   registerUser: (email: string, password: string, role?: string) => Promise<void>;
@@ -25,8 +26,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [authMessage, setAuthMessage] = useState('');
+  const [needsRoleSelection, setNeedsRoleSelection] = useState(false);
 
-  const fetchUserRole = async (userId: string): Promise<string> => {
+  const fetchUserRole = async (userId: string): Promise<string | null> => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -37,13 +39,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Error fetching user role:', error);
-        return 'viewer';
+        return null;
       }
       
-      return data?.role || 'viewer';
+      return data?.role || null;
     } catch (error) {
       console.error('Error fetching user role:', error);
-      return 'viewer';
+      return null;
     }
   };
 
@@ -60,11 +62,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTimeout(async () => {
           const role = await fetchUserRole(session.user.id);
           setUserRole(role);
+          // Check if user needs to select a role (OAuth users without role)
+          if (!role && session.user.app_metadata?.provider === 'google') {
+            setNeedsRoleSelection(true);
+          } else {
+            setNeedsRoleSelection(false);
+          }
         }, 0);
       } else {
         // Unauthenticated
         setIsSignedIn(false);
         setUserRole(null);
+        setNeedsRoleSelection(false);
       }
 
       setAuthLoading(false);
@@ -80,6 +89,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTimeout(async () => {
           const role = await fetchUserRole(session.user.id);
           setUserRole(role);
+          // Check if user needs to select a role (OAuth users without role)
+          if (!role && session.user.app_metadata?.provider === 'google') {
+            setNeedsRoleSelection(true);
+          } else {
+            setNeedsRoleSelection(false);
+          }
         }, 0);
       } else {
         setIsSignedIn(false);
@@ -179,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSignedIn,
         authLoading,
         authMessage,
+        needsRoleSelection,
         signInWithEmail,
         signInWithGoogle,
         registerUser,

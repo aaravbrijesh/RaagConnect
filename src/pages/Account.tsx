@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, Music, Eye, Calendar } from 'lucide-react';
 import Nav from '@/components/Nav';
 
 export default function Account() {
@@ -20,6 +21,9 @@ export default function Account() {
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [currentRole, setCurrentRole] = useState<string>('viewer');
+  const [newRole, setNewRole] = useState<'viewer' | 'artist' | 'organizer'>('viewer');
+  const [updatingRole, setUpdatingRole] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -42,6 +46,18 @@ export default function Account() {
           setEmail(data.email || user.email || '');
         } else {
           setEmail(user.email || '');
+        }
+
+        // Load user role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (roleData?.role) {
+          setCurrentRole(roleData.role);
+          setNewRole(roleData.role as 'viewer' | 'artist' | 'organizer');
         }
 
         // Check if user has artist profile with image
@@ -118,6 +134,38 @@ export default function Account() {
     }
   };
 
+  const handleUpdateRole = async () => {
+    if (!user || newRole === currentRole) return;
+
+    setUpdatingRole(true);
+    try {
+      // Update existing role
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setCurrentRole(newRole);
+      toast.success('Role updated successfully!');
+
+      // If changed to artist, offer to create profile
+      if (newRole === 'artist') {
+        toast.info('Would you like to create an artist profile?', {
+          action: {
+            label: 'Create Profile',
+            onClick: () => navigate('/create-artist-profile')
+          }
+        });
+      }
+    } catch (error: any) {
+      toast.error('Error updating role: ' + error.message);
+    } finally {
+      setUpdatingRole(false);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -136,7 +184,7 @@ export default function Account() {
   return (
     <>
       <Nav />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-8 max-w-2xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Account Settings</CardTitle>
@@ -220,6 +268,86 @@ export default function Account() {
                 <p>Provider: {user?.app_metadata?.provider || 'email'}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Role Settings Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Role Settings</CardTitle>
+            <CardDescription>Change how you use Raag Connect</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm text-muted-foreground mb-4">
+              Current role: <span className="font-medium text-foreground capitalize">{currentRole}</span>
+            </div>
+
+            <RadioGroup value={newRole} onValueChange={(value) => setNewRole(value as 'viewer' | 'artist' | 'organizer')}>
+              <div className="space-y-2">
+                <div 
+                  className={`cursor-pointer transition-all rounded-lg border ${newRole === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                  onClick={() => setNewRole('viewer')}
+                >
+                  <div className="p-3 flex items-center gap-3">
+                    <RadioGroupItem value="viewer" id="role-viewer" />
+                    <div className="flex-1">
+                      <label htmlFor="role-viewer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        Viewer
+                      </label>
+                      <p className="text-xs text-muted-foreground">Discover and book events</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className={`cursor-pointer transition-all rounded-lg border ${newRole === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                  onClick={() => setNewRole('artist')}
+                >
+                  <div className="p-3 flex items-center gap-3">
+                    <RadioGroupItem value="artist" id="role-artist" />
+                    <div className="flex-1">
+                      <label htmlFor="role-artist" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <Music className="h-4 w-4 text-muted-foreground" />
+                        Artist
+                      </label>
+                      <p className="text-xs text-muted-foreground">Create your profile and showcase music</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className={`cursor-pointer transition-all rounded-lg border ${newRole === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                  onClick={() => setNewRole('organizer')}
+                >
+                  <div className="p-3 flex items-center gap-3">
+                    <RadioGroupItem value="organizer" id="role-organizer" />
+                    <div className="flex-1">
+                      <label htmlFor="role-organizer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        Organizer
+                      </label>
+                      <p className="text-xs text-muted-foreground">Create and manage events</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </RadioGroup>
+
+            <Button 
+              onClick={handleUpdateRole} 
+              disabled={updatingRole || newRole === currentRole}
+              className="w-full"
+            >
+              {updatingRole ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Role'
+              )}
+            </Button>
           </CardContent>
         </Card>
       </div>

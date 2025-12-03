@@ -10,8 +10,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Artists from "./pages/Artists";
 import Events from "./pages/Events";
+import EventDetail from "./pages/EventDetail";
 import Admin from "./pages/Admin";
 import Account from "./pages/Account";
+import SelectRole from "./pages/SelectRole";
 import CreateArtistProfile from "./pages/CreateArtistProfile";
 import CreateEvent from "./pages/CreateEvent";
 import SelectArtistForEvent from "./pages/SelectArtistForEvent";
@@ -33,11 +35,13 @@ const App = () => (
             <Route path="/artists" element={<Artists />} />
             <Route path="/artists/:id" element={<ArtistDetail />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/events/create" element={<CreateEvent />} />
             <Route path="/events/create/selectartist" element={<SelectArtistForEvent />} />
             <Route path="/events/create/createartist" element={<CreateArtistForEvent />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/create-artist-profile" element={<CreateArtistProfile />} />
