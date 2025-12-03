@@ -203,36 +203,32 @@ export default function LocationAutocomplete({
         />
       </div>
 
-      {showSuggestions && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden max-h-80 overflow-y-auto">
-          {suggestions.length > 0 && (
-            <>
-              {suggestions.map((suggestion, idx) => (
-                <button
-                  key={`${suggestion.place_id}-${idx}`}
-                  type="button"
-                  onClick={() => handleSelectSuggestion(suggestion)}
-                  className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-start gap-3 border-b border-border last:border-0"
-                >
-                  <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                  <span className="text-sm line-clamp-2">{suggestion.display_name}</span>
-                </button>
-              ))}
-              
-              {/* Option to use exact typed address */}
-              {inputValue && !isSelected && (
-                <button
-                  type="button"
-                  onClick={handleUseTypedAddress}
-                  className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-3 bg-muted/50 border-t border-border"
-                >
-                  <Check className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-sm">
-                    Use "<span className="font-medium">{inputValue}</span>"
-                  </span>
-                </button>
-              )}
-            </>
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="absolute z-[9999] w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden max-h-80 overflow-y-auto">
+          {suggestions.map((suggestion, idx) => (
+            <button
+              key={`${suggestion.place_id}-${idx}`}
+              type="button"
+              onClick={() => handleSelectSuggestion(suggestion)}
+              className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-start gap-3 border-b border-border last:border-0"
+            >
+              <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+              <span className="text-sm line-clamp-2">{suggestion.display_name}</span>
+            </button>
+          ))}
+          
+          {/* Option to use exact typed address */}
+          {inputValue && !isSelected && (
+            <button
+              type="button"
+              onClick={handleUseTypedAddress}
+              className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-3 bg-muted/50 border-t border-border"
+            >
+              <Check className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm">
+                Use "<span className="font-medium">{inputValue}</span>"
+              </span>
+            </button>
           )}
         </div>
       )}
