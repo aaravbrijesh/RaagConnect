@@ -146,7 +146,11 @@ export default function CreateArtistForEvent() {
       // Go back to event creation with the new artist selected
       const savedData = sessionStorage.getItem('eventFormData');
       const eventFormData = savedData ? JSON.parse(savedData) : {};
-      eventFormData.artistId = newArtist.id;
+      // Add to artistIds array (not singular artistId)
+      const existingIds = eventFormData.artistIds || [];
+      if (!existingIds.includes(newArtist.id)) {
+        eventFormData.artistIds = [...existingIds, newArtist.id];
+      }
       sessionStorage.setItem('eventFormData', JSON.stringify(eventFormData));
       navigate('/events/create');
     } catch (error: any) {
