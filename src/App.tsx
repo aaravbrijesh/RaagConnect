@@ -13,6 +13,7 @@ import Events from "./pages/Events";
 import Admin from "./pages/Admin";
 import Account from "./pages/Account";
 import CreateArtistProfile from "./pages/CreateArtistProfile";
+import CreateEvent from "./pages/CreateEvent";
 import ArtistDetail from "./pages/ArtistDetail";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/artists" element={<Artists />} />
             <Route path="/artists/:id" element={<ArtistDetail />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/events/create" element={<CreateEvent />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/account" element={<Account />} />
             <Route path="/login" element={<Login />} />

@@ -56,20 +56,35 @@ export default function LocationAutocomplete({
   const searchLocations = async (query: string) => {
     if (!query || query.length < 3) {
       setSuggestions([]);
+      setShowSuggestions(false);
+      setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
+    setShowSuggestions(false);
+    
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          }
+        }
       );
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
       const data = await response.json();
-      setSuggestions(data);
-      setShowSuggestions(true);
+      setSuggestions(data || []);
+      setShowSuggestions(data && data.length > 0);
     } catch (error) {
       console.error('Location search failed:', error);
       setSuggestions([]);
+      setShowSuggestions(false);
     } finally {
       setIsLoading(false);
     }
