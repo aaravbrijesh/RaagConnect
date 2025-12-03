@@ -70,13 +70,7 @@ export default function LocationAutocomplete({
       // Use Nominatim with addressdetails for better address matching including house numbers
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8&addressdetails=1`,
-        { 
-          signal: abortRef.current.signal,
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'RaagConnect/1.0'
-          }
-        }
+        { signal: abortRef.current.signal }
       );
       
       if (!response.ok) {
@@ -138,13 +132,7 @@ export default function LocationAutocomplete({
     try {
       // Do a final geocode lookup for the exact typed address
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(inputValue)}&limit=1&addressdetails=1`,
-        {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'RaagConnect/1.0'
-          }
-        }
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(inputValue)}&limit=1&addressdetails=1`
       );
       const data = await response.json();
       

@@ -74,14 +74,12 @@ export default function Home() {
     setMapLoading(true);
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}&countrycodes=us`,
-        {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'RaagConnect/1.0'
-          }
-        }
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}&countrycodes=us&limit=1`
       );
+      
+      if (!response.ok) {
+        throw new Error('Geocoding request failed');
+      }
       const data = await response.json();
 
       if (data && data.length > 0) {
