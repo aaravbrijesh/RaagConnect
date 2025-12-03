@@ -6,20 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
-import EventDiscussion from '@/components/EventDiscussion';
-import BookingModal from '@/components/BookingModal';
-import BookingManagement from '@/components/BookingManagement';
 import { useNavigate } from 'react-router-dom';
 
 export default function Events() {
@@ -29,8 +23,6 @@ export default function Events() {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
-  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -353,7 +345,7 @@ export default function Events() {
               <Card 
                 key={event.id}
                 className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
-                onClick={() => setSelectedEvent(event)}
+                onClick={() => navigate(`/events/${event.id}`)}
               >
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative w-full sm:w-48 h-36 overflow-hidden bg-muted shrink-0">
@@ -419,20 +411,10 @@ export default function Events() {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!user || !session) {
-                          toast.error('Please sign in to book this event', {
-                            action: {
-                              label: 'Sign In',
-                              onClick: () => navigate('/login')
-                            }
-                          });
-                          return;
-                        }
-                        setSelectedEvent(event);
-                        setBookingModalOpen(true);
+                        navigate(`/events/${event.id}`);
                       }}
                     >
-                      Book Now
+                      View Details
                     </Button>
                   </div>
                 </div>
@@ -450,134 +432,6 @@ export default function Events() {
           </div>
         )}
       </div>
-
-      {/* Event Details Sheet */}
-      <Sheet open={!!selectedEvent && !bookingModalOpen} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-          {selectedEvent && (
-            <>
-              <SheetHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <SheetTitle className="text-2xl">{selectedEvent.title}</SheetTitle>
-                    <SheetDescription>
-                      {selectedEvent.event_artists && selectedEvent.event_artists.length > 0 
-                        ? selectedEvent.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'Various Artists'
-                        : selectedEvent.artists?.name || 'Various Artists'}
-                    </SheetDescription>
-                  </div>
-                  {user && (selectedEvent.user_id === user.id || isAdmin) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => {
-                        setSelectedEvent(null);
-                        navigate(`/events/create?edit=${selectedEvent.id}`);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit Event
-                    </Button>
-                  )}
-                </div>
-              </SheetHeader>
-
-              <div className="mt-6 space-y-6">
-                {selectedEvent.image_url && (
-                  <div className="relative h-64 rounded-lg overflow-hidden">
-                    <img
-                      src={selectedEvent.image_url}
-                      alt={selectedEvent.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <span className="font-medium">
-                      {new Date(selectedEvent.date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        month: 'long', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <span className="font-medium">{selectedEvent.time}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    <span className="font-medium">{selectedEvent.location_name || 'Location TBA'}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2 border-t">
-                    <Ticket className="h-5 w-5 text-primary" />
-                    <span className="text-2xl font-bold">
-                      {selectedEvent.price ? `$${selectedEvent.price}` : 'Free Entry'}
-                    </span>
-                  </div>
-
-                  <Button
-                    className="w-full mt-4" 
-                    size="lg"
-                    onClick={() => {
-                      if (!user || !session) {
-                        toast.error('Please sign in to book this event', {
-                          action: {
-                            label: 'Sign In',
-                            onClick: () => navigate('/login')
-                          }
-                        });
-                        return;
-                      }
-                      setBookingModalOpen(true);
-                    }}
-                  >
-                    Book Tickets Now
-                  </Button>
-                </div>
-
-                <div className="pt-6 border-t">
-                  {user && (selectedEvent.user_id === user.id || isAdmin) ? (
-                    <Tabs defaultValue="announcements">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                        <TabsTrigger value="bookings">Manage Bookings</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="announcements" className="mt-6">
-                        <EventDiscussion eventId={selectedEvent.id} organizerId={selectedEvent.user_id} />
-                      </TabsContent>
-                      
-                      <TabsContent value="bookings" className="mt-6">
-                        <BookingManagement eventId={selectedEvent.id} />
-                      </TabsContent>
-                    </Tabs>
-                  ) : (
-                    <EventDiscussion eventId={selectedEvent.id} organizerId={selectedEvent.user_id} />
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Booking Modal */}
-      {selectedEvent && (
-        <BookingModal
-          event={selectedEvent}
-          open={bookingModalOpen}
-          onOpenChange={setBookingModalOpen}
-        />
-      )}
     </div>
   );
 }
