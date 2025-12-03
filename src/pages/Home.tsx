@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Clock, Ticket, Plus, Edit, Search, ArrowRight } from 'lucide-react';
+import EventFilters, { DateFilter, SortOption, filterAndSortEvents } from '@/components/EventFilters';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,9 @@ export default function Home() {
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('upcoming');
+  const [sortBy, setSortBy] = useState<SortOption>('date-asc');
+  const [locationFilter, setLocationFilter] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [searchRadius, setSearchRadius] = useState(50);
@@ -166,12 +170,32 @@ export default function Home() {
     refetchAndFilter();
   }, [searchRadius, userLocation]);
 
-  const filteredEvents = searchTerm
-    ? events.filter(event => 
+  const filteredEvents = useMemo(() => {
+    let result = events;
+    
+    // Apply search term
+    if (searchTerm) {
+      result = result.filter(event => 
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.location_name?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : events;
+      );
+    }
+    
+    // Apply filters and sorting
+    return filterAndSortEvents(result, dateFilter, locationFilter, sortBy);
+  }, [events, searchTerm, dateFilter, locationFilter, sortBy]);
+
+  const activeFilterCount = [
+    dateFilter !== 'upcoming' ? 1 : 0,
+    locationFilter ? 1 : 0,
+    sortBy !== 'date-asc' ? 1 : 0
+  ].reduce((a, b) => a + b, 0);
+
+  const clearFilters = () => {
+    setDateFilter('upcoming');
+    setSortBy('date-asc');
+    setLocationFilter('');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -198,43 +222,56 @@ export default function Home() {
 
       {/* Events Section */}
       <section className="container mx-auto px-4 pb-16">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div className="max-w-md flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search events..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <div className="space-y-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="max-w-md flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search events..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
+
+            <Button 
+              size="lg" 
+              className="gap-2"
+              onClick={() => {
+                if (!user || !session) {
+                  toast.error('Please sign in to create an event', {
+                    action: {
+                      label: 'Sign In',
+                      onClick: () => navigate('/login')
+                    }
+                  });
+                  return;
+                }
+                if (!canCreateEvents) {
+                  toast.error('You need artist or organizer role to create events');
+                  return;
+                }
+                navigate('/events/create');
+              }}
+            >
+              <Plus className="h-5 w-5" />
+              Create Event
+            </Button>
           </div>
 
-          <Button 
-            size="lg" 
-            className="gap-2"
-            onClick={() => {
-              if (!user || !session) {
-                toast.error('Please sign in to create an event', {
-                  action: {
-                    label: 'Sign In',
-                    onClick: () => navigate('/login')
-                  }
-                });
-                return;
-              }
-              if (!canCreateEvents) {
-                toast.error('You need artist or organizer role to create events');
-                return;
-              }
-              navigate('/events/create');
-            }}
-          >
-            <Plus className="h-5 w-5" />
-            Create Event
-          </Button>
+          <EventFilters
+            dateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            locationFilter={locationFilter}
+            onLocationFilterChange={setLocationFilter}
+            onClearFilters={clearFilters}
+            activeFilterCount={activeFilterCount}
+          />
         </div>
 
         {loading ? (
