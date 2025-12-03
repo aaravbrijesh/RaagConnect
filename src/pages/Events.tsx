@@ -279,200 +279,29 @@ export default function Events() {
               </div>
             </div>
 
-            <Dialog open={open} onOpenChange={(newOpen) => {
-              if (newOpen && (!user || !session)) {
-                toast.error('Please sign in to create an event', {
-                  action: {
-                    label: 'Sign In',
-                    onClick: () => navigate('/login')
-                  }
-                });
-                return;
-              }
-              if (newOpen && !canCreateEvents) {
-                toast.error('You need artist or organizer role to create events');
-                return;
-              }
-              setOpen(newOpen);
-            }}>
-              <DialogTrigger asChild>
-                <Button size="lg" className="gap-2">
-                  <Plus className="h-5 w-5" />
-                  Create Event
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editMode ? 'Edit Event' : 'Create New Event'}</DialogTitle>
-                  <DialogDescription>
-                    {editMode ? 'Update your event details' : 'Schedule a Hindustani or Carnatic music performance'}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Event Title</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="e.g. Raga Yaman Recital, Thyagaraja Aradhana"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="artist">Artist (Optional)</Label>
-                    <Input
-                      id="artist"
-                      value={formData.artistId}
-                      onChange={(e) => setFormData({ ...formData, artistId: e.target.value })}
-                      placeholder="Artist ID (leave blank if none)"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Date</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="time">Time</Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        value={formData.time}
-                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="location"
-                        value={formData.locationName}
-                        onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
-                        placeholder="e.g. Shanmukhananda Hall, Mumbai"
-                      />
-                      <Button type="button" onClick={handleLocationSearch} variant="outline">
-                        <MapPin className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {formData.locationLat && formData.locationLng && (
-                      <p className="text-xs text-muted-foreground">
-                        Coordinates: {formData.locationLat.toFixed(4)}, {formData.locationLng.toFixed(4)}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price ($)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <Separator className="my-4" />
-
-                  <div className="space-y-4">
-                    <Label className="text-base">Payment Methods</Label>
-                    <p className="text-sm text-muted-foreground">Add one or more payment options for attendees</p>
-                    
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="venmo" className="text-sm">Venmo</Label>
-                        <Input
-                          id="venmo"
-                          value={formData.venmo}
-                          onChange={(e) => setFormData({ ...formData, venmo: e.target.value })}
-                          placeholder="@username"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="cashapp" className="text-sm">Cash App</Label>
-                        <Input
-                          id="cashapp"
-                          value={formData.cashapp}
-                          onChange={(e) => setFormData({ ...formData, cashapp: e.target.value })}
-                          placeholder="$cashtag"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="zelle" className="text-sm">Zelle</Label>
-                        <Input
-                          id="zelle"
-                          value={formData.zelle}
-                          onChange={(e) => setFormData({ ...formData, zelle: e.target.value })}
-                          placeholder="email@example.com or phone"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="paypal" className="text-sm">PayPal</Label>
-                        <Input
-                          id="paypal"
-                          value={formData.paypal}
-                          onChange={(e) => setFormData({ ...formData, paypal: e.target.value })}
-                          placeholder="@username"
-                        />
-                      </div>
-                    </div>
-
-                    <Alert>
-                      <AlertDescription className="text-xs">
-                        Users will send payment using one of these methods and upload proof. You'll review and approve bookings.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="image">Event Image</Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="cursor-pointer"
-                      />
-                      {imageFile && (
-                        <Badge variant="secondary">
-                          <Upload className="h-3 w-3 mr-1" />
-                          {imageFile.name}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => {
-                    setOpen(false);
-                    setEditMode(false);
-                    setEditingEvent(null);
-                  }}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateEvent} disabled={loading}>
-                    {loading ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Event' : 'Create Event')}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              size="lg" 
+              className="gap-2"
+              onClick={() => {
+                if (!user || !session) {
+                  toast.error('Please sign in to create an event', {
+                    action: {
+                      label: 'Sign In',
+                      onClick: () => navigate('/login')
+                    }
+                  });
+                  return;
+                }
+                if (!canCreateEvents) {
+                  toast.error('You need artist or organizer role to create events');
+                  return;
+                }
+                navigate('/events/create');
+              }}
+            >
+              <Plus className="h-5 w-5" />
+              Create Event
+            </Button>
           </div>
         </motion.div>
 
@@ -536,7 +365,7 @@ export default function Events() {
                           className="absolute top-2 right-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenEdit(event);
+                            navigate(`/events/create?edit=${event.id}`);
                           }}
                         >
                           <Edit className="h-3 w-3" />
@@ -645,7 +474,7 @@ export default function Events() {
                       className="gap-2"
                       onClick={() => {
                         setSelectedEvent(null);
-                        handleOpenEdit(selectedEvent);
+                        navigate(`/events/create?edit=${selectedEvent.id}`);
                       }}
                     >
                       <Edit className="h-4 w-4" />

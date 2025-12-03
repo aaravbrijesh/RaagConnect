@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Edit, Search, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -20,42 +17,23 @@ import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
 import EventsMap from '@/components/EventsMap';
-import LocationAutocomplete from '@/components/LocationAutocomplete';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const { user, session } = useAuth();
   const { canCreateEvents, isAdmin } = useUserRoles(user?.id);
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [searchRadius, setSearchRadius] = useState(50);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapEvents, setMapEvents] = useState<any[]>([]);
-  const [formData, setFormData] = useState({
-    title: '',
-    artistId: '',
-    date: '',
-    time: '',
-    locationName: '',
-    locationLat: null as number | null,
-    locationLng: null as number | null,
-    price: '',
-    venmo: '',
-    cashapp: '',
-    zelle: '',
-    paypal: ''
-  });
 
   useEffect(() => {
     fetchEvents();
@@ -167,166 +145,7 @@ export default function Home() {
     }
   }, [searchRadius, userLocation]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
-    }
-  };
-
-  const handleLocationSelect = (location: { name: string; lat: number; lng: number } | null) => {
-    if (location) {
-      setFormData({
-        ...formData,
-        locationName: location.name,
-        locationLat: location.lat,
-        locationLng: location.lng
-      });
-    } else {
-      setFormData({
-        ...formData,
-        locationName: '',
-        locationLat: null,
-        locationLng: null
-      });
-    }
-  };
-
-  const handleOpenEdit = (event: any) => {
-    setEditingEvent(event);
-    setEditMode(true);
-    
-    const paymentInfo = event.payment_link ? JSON.parse(event.payment_link) : {};
-    
-    setFormData({
-      title: event.title,
-      artistId: event.artist_id || '',
-      date: event.date,
-      time: event.time,
-      locationName: event.location_name || '',
-      locationLat: event.location_lat,
-      locationLng: event.location_lng,
-      price: event.price?.toString() || '',
-      venmo: paymentInfo.venmo || '',
-      cashapp: paymentInfo.cashapp || '',
-      zelle: paymentInfo.zelle || '',
-      paypal: paymentInfo.paypal || ''
-    });
-    setOpen(true);
-  };
-
-  const handleCreateEvent = async () => {
-    if (!user || !session) {
-      toast.error('Please sign in to create an event');
-      setOpen(false);
-      return;
-    }
-
-    if (!formData.title || !formData.date || !formData.time) {
-      toast.error('Please fill in required fields');
-      return;
-    }
-
-    if (formData.locationName && !formData.locationLat) {
-      toast.error('Please select a location from the suggestions');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      let imageUrl = editMode ? editingEvent?.image_url : null;
-
-      if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${user.id}/${Math.random()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('event-images')
-          .upload(fileName, imageFile);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('event-images')
-          .getPublicUrl(fileName);
-
-        imageUrl = publicUrl;
-      }
-
-      const paymentInfo = JSON.stringify({
-        venmo: formData.venmo || null,
-        cashapp: formData.cashapp || null,
-        zelle: formData.zelle || null,
-        paypal: formData.paypal || null
-      });
-
-      if (editMode && editingEvent) {
-        const { error } = await supabase
-          .from('events')
-          .update({
-            title: formData.title,
-            artist_id: formData.artistId || null,
-            date: formData.date,
-            time: formData.time,
-            location_name: formData.locationName || null,
-            location_lat: formData.locationLat,
-            location_lng: formData.locationLng,
-            price: formData.price ? parseFloat(formData.price) : null,
-            payment_link: paymentInfo,
-            image_url: imageUrl
-          })
-          .eq('id', editingEvent.id);
-
-        if (error) throw error;
-        toast.success('Event updated successfully!');
-      } else {
-        const { error } = await supabase
-          .from('events')
-          .insert({
-            user_id: user.id,
-            title: formData.title,
-            artist_id: formData.artistId || null,
-            date: formData.date,
-            time: formData.time,
-            location_name: formData.locationName || null,
-            location_lat: formData.locationLat,
-            location_lng: formData.locationLng,
-            price: formData.price ? parseFloat(formData.price) : null,
-            payment_link: paymentInfo,
-            image_url: imageUrl
-          });
-
-        if (error) throw error;
-        toast.success('Event created successfully!');
-      }
-
-      setOpen(false);
-      setEditMode(false);
-      setEditingEvent(null);
-      setFormData({
-        title: '',
-        artistId: '',
-        date: '',
-        time: '',
-        locationName: '',
-        locationLat: null,
-        locationLng: null,
-        price: '',
-        venmo: '',
-        cashapp: '',
-        zelle: '',
-        paypal: ''
-      });
-      setImageFile(null);
-      fetchEvents();
-    } catch (error: any) {
-      toast.error(error.message || `Failed to ${editMode ? 'update' : 'create'} event`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredEvents = searchTerm 
+  const filteredEvents = searchTerm
     ? events.filter(event => 
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.location_name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -372,189 +191,29 @@ export default function Home() {
             </div>
           </div>
 
-          <Dialog open={open} onOpenChange={(newOpen) => {
-            if (newOpen && (!user || !session)) {
-              toast.error('Please sign in to create an event', {
-                action: {
-                  label: 'Sign In',
-                  onClick: () => navigate('/login')
-                }
-              });
-              return;
-            }
-            if (newOpen && !canCreateEvents) {
-              toast.error('You need artist or organizer role to create events');
-              return;
-            }
-            setOpen(newOpen);
-          }}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="gap-2">
-                <Plus className="h-5 w-5" />
-                Create Event
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editMode ? 'Edit Event' : 'Create New Event'}</DialogTitle>
-                <DialogDescription>
-                  {editMode ? 'Update your event details' : 'Schedule a Hindustani or Carnatic music performance'}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Event Title</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g. Raga Yaman Recital, Thyagaraja Aradhana"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="artist">Artist (Optional)</Label>
-                  <Input
-                    id="artist"
-                    value={formData.artistId}
-                    onChange={(e) => setFormData({ ...formData, artistId: e.target.value })}
-                    placeholder="Artist ID (leave blank if none)"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="time">Time</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Location</Label>
-                  <LocationAutocomplete
-                    value={formData.locationName}
-                    onChange={handleLocationSelect}
-                    placeholder="Search for a venue or address..."
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price ($)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="space-y-4">
-                  <Label className="text-base">Payment Methods</Label>
-                  <p className="text-sm text-muted-foreground">Add one or more payment options for attendees</p>
-                  
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="venmo" className="text-sm">Venmo</Label>
-                      <Input
-                        id="venmo"
-                        value={formData.venmo}
-                        onChange={(e) => setFormData({ ...formData, venmo: e.target.value })}
-                        placeholder="@username"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="cashapp" className="text-sm">Cash App</Label>
-                      <Input
-                        id="cashapp"
-                        value={formData.cashapp}
-                        onChange={(e) => setFormData({ ...formData, cashapp: e.target.value })}
-                        placeholder="$cashtag"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="zelle" className="text-sm">Zelle</Label>
-                      <Input
-                        id="zelle"
-                        value={formData.zelle}
-                        onChange={(e) => setFormData({ ...formData, zelle: e.target.value })}
-                        placeholder="email@example.com or phone"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="paypal" className="text-sm">PayPal</Label>
-                      <Input
-                        id="paypal"
-                        value={formData.paypal}
-                        onChange={(e) => setFormData({ ...formData, paypal: e.target.value })}
-                        placeholder="@username"
-                      />
-                    </div>
-                  </div>
-
-                  <Alert>
-                    <AlertDescription className="text-xs">
-                      Users will send payment using one of these methods and upload proof. You'll review and approve bookings.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="image">Event Image</Label>
-                  <div className="flex items-center gap-4">
-                    <Input
-                      id="image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="cursor-pointer"
-                    />
-                    {imageFile && (
-                      <Badge variant="secondary">
-                        <Upload className="h-3 w-3 mr-1" />
-                        {imageFile.name}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => {
-                  setOpen(false);
-                  setEditMode(false);
-                  setEditingEvent(null);
-                }}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateEvent} disabled={loading}>
-                  {loading ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Event' : 'Create Event')}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            size="lg" 
+            className="gap-2"
+            onClick={() => {
+              if (!user || !session) {
+                toast.error('Please sign in to create an event', {
+                  action: {
+                    label: 'Sign In',
+                    onClick: () => navigate('/login')
+                  }
+                });
+                return;
+              }
+              if (!canCreateEvents) {
+                toast.error('You need artist or organizer role to create events');
+                return;
+              }
+              navigate('/events/create');
+            }}
+          >
+            <Plus className="h-5 w-5" />
+            Create Event
+          </Button>
         </div>
 
         {loading ? (
@@ -605,7 +264,7 @@ export default function Home() {
                           className="absolute top-2 right-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenEdit(event);
+                            navigate(`/events/create?edit=${event.id}`);
                           }}
                         >
                           <Edit className="h-3 w-3" />
@@ -808,7 +467,7 @@ export default function Home() {
                       className="gap-2"
                       onClick={() => {
                         setSelectedEvent(null);
-                        handleOpenEdit(selectedEvent);
+                        navigate(`/events/create?edit=${selectedEvent.id}`);
                       }}
                     >
                       <Edit className="h-4 w-4" />
