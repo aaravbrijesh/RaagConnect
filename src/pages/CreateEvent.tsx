@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, Upload, UserPlus, Users, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,13 +31,12 @@ export default function CreateEvent() {
   const editId = searchParams.get('edit');
   
   const [loading, setLoading] = useState(false);
-  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+  const [selectedArtists, setSelectedArtists] = useState<Artist[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     title: '',
-    artistId: '',
     date: '',
     time: '',
     locationName: '',
@@ -57,8 +56,9 @@ export default function CreateEvent() {
       const parsed = JSON.parse(savedData);
       setFormData(prev => ({ ...prev, ...parsed }));
       
-      if (parsed.artistId) {
-        fetchArtistById(parsed.artistId);
+      // Load selected artists
+      if (parsed.artistIds && parsed.artistIds.length > 0) {
+        fetchArtistsByIds(parsed.artistIds);
       }
       
       sessionStorage.removeItem('eventFormData');
@@ -87,51 +87,71 @@ export default function CreateEvent() {
     }
   }, [user, session, canCreateEvents, rolesLoading, editId]);
 
-  const fetchArtistById = async (artistId: string) => {
+  const fetchArtistsByIds = async (artistIds: string[]) => {
     const { data, error } = await supabase
       .from('artists')
       .select('id, name, genre, image_url')
-      .eq('id', artistId)
-      .single();
+      .in('id', artistIds);
     
     if (!error && data) {
-      setSelectedArtist(data);
+      setSelectedArtists(data);
     }
   };
 
   const fetchEventForEdit = async (id: string) => {
-    const { data, error } = await supabase
+    // Fetch event data
+    const { data: eventData, error: eventError } = await supabase
       .from('events')
       .select('*')
       .eq('id', id)
       .single();
     
-    if (error) {
+    if (eventError) {
       toast.error('Event not found');
       navigate('/events');
       return;
     }
 
-    setEditingEvent(data);
-    const paymentInfo = data.payment_link ? JSON.parse(data.payment_link) : {};
+    // Fetch event artists
+    const { data: eventArtists } = await supabase
+      .from('event_artists')
+      .select('artist_id, artists(id, name, genre, image_url)')
+      .eq('event_id', id);
+
+    setEditingEvent(eventData);
+    const paymentInfo = eventData.payment_link ? JSON.parse(eventData.payment_link) : {};
     
     setFormData({
-      title: data.title,
-      artistId: data.artist_id || '',
-      date: data.date,
-      time: data.time,
-      locationName: data.location_name || '',
-      locationLat: data.location_lat,
-      locationLng: data.location_lng,
-      price: data.price?.toString() || '',
+      title: eventData.title,
+      date: eventData.date,
+      time: eventData.time,
+      locationName: eventData.location_name || '',
+      locationLat: eventData.location_lat,
+      locationLng: eventData.location_lng,
+      price: eventData.price?.toString() || '',
       venmo: paymentInfo.venmo || '',
       cashapp: paymentInfo.cashapp || '',
       zelle: paymentInfo.zelle || '',
       paypal: paymentInfo.paypal || ''
     });
 
-    if (data.artist_id) {
-      fetchArtistById(data.artist_id);
+    // Set selected artists from junction table
+    if (eventArtists && eventArtists.length > 0) {
+      const artists = eventArtists
+        .map((ea: any) => ea.artists)
+        .filter(Boolean);
+      setSelectedArtists(artists);
+    } else if (eventData.artist_id) {
+      // Backward compatibility: load from legacy artist_id field
+      const { data: legacyArtist } = await supabase
+        .from('artists')
+        .select('id, name, genre, image_url')
+        .eq('id', eventData.artist_id)
+        .single();
+      
+      if (legacyArtist) {
+        setSelectedArtists([legacyArtist]);
+      }
     }
   };
 
@@ -159,19 +179,24 @@ export default function CreateEvent() {
     }
   };
 
-  const handleSelectArtist = () => {
-    sessionStorage.setItem('eventFormData', JSON.stringify(formData));
+  const handleSelectArtists = () => {
+    sessionStorage.setItem('eventFormData', JSON.stringify({
+      ...formData,
+      artistIds: selectedArtists.map(a => a.id)
+    }));
     navigate('/events/create/selectartist');
   };
 
   const handleCreateNewArtist = () => {
-    sessionStorage.setItem('eventFormData', JSON.stringify(formData));
+    sessionStorage.setItem('eventFormData', JSON.stringify({
+      ...formData,
+      artistIds: selectedArtists.map(a => a.id)
+    }));
     navigate('/events/create/createartist');
   };
 
-  const handleClearArtist = () => {
-    setSelectedArtist(null);
-    setFormData({ ...formData, artistId: '' });
+  const handleRemoveArtist = (artistId: string) => {
+    setSelectedArtists(prev => prev.filter(a => a.id !== artistId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -223,7 +248,7 @@ export default function CreateEvent() {
 
       const eventData = {
         title: formData.title,
-        artist_id: formData.artistId || null,
+        artist_id: selectedArtists.length > 0 ? selectedArtists[0].id : null, // Keep for backward compatibility
         date: formData.date,
         time: formData.time,
         location_name: formData.locationName || null,
@@ -234,6 +259,8 @@ export default function CreateEvent() {
         image_url: imageUrl
       };
 
+      let eventId: string;
+
       if (editingEvent) {
         const { error } = await supabase
           .from('events')
@@ -241,17 +268,44 @@ export default function CreateEvent() {
           .eq('id', editingEvent.id);
 
         if (error) throw error;
+        eventId = editingEvent.id;
+
+        // Delete existing event_artists and re-create
+        await supabase
+          .from('event_artists')
+          .delete()
+          .eq('event_id', eventId);
+
         toast.success('Event updated successfully!');
       } else {
-        const { error } = await supabase
+        const { data: newEvent, error } = await supabase
           .from('events')
           .insert({
             ...eventData,
             user_id: user.id
-          });
+          })
+          .select('id')
+          .single();
 
         if (error) throw error;
+        eventId = newEvent.id;
         toast.success('Event created successfully!');
+      }
+
+      // Insert event_artists relationships
+      if (selectedArtists.length > 0) {
+        const eventArtistRecords = selectedArtists.map(artist => ({
+          event_id: eventId,
+          artist_id: artist.id
+        }));
+
+        const { error: artistsError } = await supabase
+          .from('event_artists')
+          .insert(eventArtistRecords);
+
+        if (artistsError) {
+          console.error('Error linking artists:', artistsError);
+        }
       }
 
       navigate('/events');
@@ -342,60 +396,65 @@ export default function CreateEvent() {
 
                 <Separator />
 
-                {/* Artist Selection */}
+                {/* Artist Selection - Multiple */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Featured Artist</h3>
+                  <h3 className="text-lg font-semibold">Featured Artists</h3>
                   
-                  {selectedArtist ? (
-                    <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                      <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
-                        {selectedArtist.image_url ? (
-                          <img
-                            src={selectedArtist.image_url}
-                            alt={selectedArtist.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Users className="h-6 w-6 text-muted-foreground" />
+                  {selectedArtists.length > 0 && (
+                    <div className="space-y-2">
+                      {selectedArtists.map(artist => (
+                        <div key={artist.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                          <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                            {artist.image_url ? (
+                              <img
+                                src={artist.image_url}
+                                alt={artist.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Users className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{selectedArtist.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">{selectedArtist.genre}</p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleClearArtist}
-                      >
-                        Change
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleSelectArtist}
-                        className="gap-2 flex-1"
-                      >
-                        <Users className="h-4 w-4" />
-                        Select Existing Artist
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCreateNewArtist}
-                        className="gap-2 flex-1"
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        Create New Artist
-                      </Button>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{artist.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">{artist.genre}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveArtist(artist.id)}
+                            className="shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   )}
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleSelectArtists}
+                      className="gap-2 flex-1"
+                    >
+                      <Users className="h-4 w-4" />
+                      {selectedArtists.length > 0 ? 'Add More Artists' : 'Select Existing Artists'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCreateNewArtist}
+                      className="gap-2 flex-1"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Create New Artist
+                    </Button>
+                  </div>
                 </div>
 
                 <Separator />
@@ -500,7 +559,7 @@ export default function CreateEvent() {
                 <div className="flex justify-end gap-3 pt-4">
                   <Button 
                     type="button" 
-                    variant="outline" 
+                    variant="outline"
                     onClick={() => navigate(-1)}
                   >
                     Cancel
