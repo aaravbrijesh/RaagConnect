@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
-import { MapPin, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Loader2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type LocationSuggestion = {
@@ -52,7 +53,7 @@ export default function LocationAutocomplete({
   }, []);
 
   const searchLocations = async (query: string) => {
-    if (!query || query.length < 1) {
+    if (!query || query.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -66,10 +67,15 @@ export default function LocationAutocomplete({
     setIsSearching(true);
 
     try {
-      // Use Photon API (powered by OpenStreetMap) - better autocomplete than Nominatim
+      // Use Nominatim with addressdetails for better address matching including house numbers
       const response = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=8`,
-        { signal: abortRef.current.signal }
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8&addressdetails=1&countrycodes=us`,
+        { 
+          signal: abortRef.current.signal,
+          headers: {
+            'Accept': 'application/json'
+          }
+        }
       );
       
       if (!response.ok) {
@@ -77,16 +83,12 @@ export default function LocationAutocomplete({
       }
       
       const data = await response.json();
-      const results: LocationSuggestion[] = (data.features || []).map((f: any, index: number) => {
-        const props = f.properties || {};
-        const parts = [props.name, props.street, props.city, props.state, props.country].filter(Boolean);
-        return {
-          place_id: index,
-          display_name: parts.join(', ') || 'Unknown location',
-          lat: f.geometry?.coordinates?.[1]?.toString() || '0',
-          lon: f.geometry?.coordinates?.[0]?.toString() || '0'
-        };
-      });
+      const results: LocationSuggestion[] = data.map((item: any) => ({
+        place_id: item.place_id,
+        display_name: item.display_name,
+        lat: item.lat,
+        lon: item.lon
+      }));
       
       setSuggestions(results);
       setShowSuggestions(results.length > 0);
@@ -112,7 +114,7 @@ export default function LocationAutocomplete({
     }
     debounceRef.current = setTimeout(() => {
       searchLocations(newValue);
-    }, 150);
+    }, 300);
   };
 
   const handleSelectSuggestion = (suggestion: LocationSuggestion) => {
@@ -125,6 +127,46 @@ export default function LocationAutocomplete({
       lat: parseFloat(suggestion.lat),
       lng: parseFloat(suggestion.lon)
     });
+  };
+
+  // Allow user to use their exact typed input (with geocoding)
+  const handleUseTypedAddress = async () => {
+    if (!inputValue.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      // Do a final geocode lookup for the exact typed address
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(inputValue)}&limit=1&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        setIsSelected(true);
+        setShowSuggestions(false);
+        onChange({
+          name: inputValue, // Keep user's typed address
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon)
+        });
+      } else {
+        // If no geocode result, still allow but with approximate coords from first suggestion
+        if (suggestions.length > 0) {
+          setIsSelected(true);
+          setShowSuggestions(false);
+          onChange({
+            name: inputValue,
+            lat: parseFloat(suggestions[0].lat),
+            lng: parseFloat(suggestions[0].lon)
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -141,7 +183,11 @@ export default function LocationAutocomplete({
         <Input
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => inputValue && inputValue.length > 0 && searchLocations(inputValue)}
+          onFocus={() => {
+            if (inputValue && inputValue.length >= 2) {
+              searchLocations(inputValue);
+            }
+          }}
           placeholder={placeholder}
           className={cn(
             "pl-10 transition-colors",
@@ -150,19 +196,37 @@ export default function LocationAutocomplete({
         />
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden max-h-64 overflow-y-auto">
-          {suggestions.map((suggestion, idx) => (
-            <button
-              key={`${suggestion.place_id}-${idx}`}
-              type="button"
-              onClick={() => handleSelectSuggestion(suggestion)}
-              className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-start gap-3 border-b border-border last:border-0"
-            >
-              <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-              <span className="text-sm line-clamp-2">{suggestion.display_name}</span>
-            </button>
-          ))}
+      {showSuggestions && (
+        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden max-h-80 overflow-y-auto">
+          {suggestions.length > 0 && (
+            <>
+              {suggestions.map((suggestion, idx) => (
+                <button
+                  key={`${suggestion.place_id}-${idx}`}
+                  type="button"
+                  onClick={() => handleSelectSuggestion(suggestion)}
+                  className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-start gap-3 border-b border-border last:border-0"
+                >
+                  <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <span className="text-sm line-clamp-2">{suggestion.display_name}</span>
+                </button>
+              ))}
+              
+              {/* Option to use exact typed address */}
+              {inputValue && !isSelected && (
+                <button
+                  type="button"
+                  onClick={handleUseTypedAddress}
+                  className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-3 bg-muted/50 border-t border-border"
+                >
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-sm">
+                    Use "<span className="font-medium">{inputValue}</span>"
+                  </span>
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
 

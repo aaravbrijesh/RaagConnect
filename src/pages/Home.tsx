@@ -49,10 +49,10 @@ export default function Home() {
     
     setTotalEvents(count || 0);
     
-    // Get first 8 events
+    // Get first 8 events with their artists from junction table
     const { data, error } = await supabase
       .from('events')
-      .select('*, artists(*)')
+      .select('*, artists(*), event_artists(artist_id, artists(*))')
       .order('date', { ascending: true })
       .limit(8);
     
@@ -128,21 +128,32 @@ export default function Home() {
     return R * c;
   };
 
-  // Re-filter events when radius changes
+  // Re-filter events when radius changes - use mapEvents base data, not limited events
   useEffect(() => {
-    if (userLocation && events.length > 0) {
-      const eventsWithDistance = events
-        .filter(e => e.location_lat && e.location_lng)
-        .map(event => {
+    const refetchAndFilter = async () => {
+      if (!userLocation) return;
+      
+      // Fetch all events with location for distance calculation
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('*, artists(*)')
+        .not('location_lat', 'is', null)
+        .not('location_lng', 'is', null);
+
+      if (eventsData) {
+        const eventsWithDistance = eventsData.map(event => {
           const distance = calculateDistance(
             userLocation.lat, userLocation.lng,
             event.location_lat!, event.location_lng!
           );
           return { ...event, distance };
         }).filter(event => event.distance <= searchRadius);
-      
-      setMapEvents(eventsWithDistance);
-    }
+        
+        setMapEvents(eventsWithDistance);
+      }
+    };
+    
+    refetchAndFilter();
   }, [searchRadius, userLocation]);
 
   const filteredEvents = searchTerm
@@ -281,7 +292,9 @@ export default function Home() {
                     <CardContent className="p-4 flex-1 flex flex-col">
                       <h3 className="font-bold text-lg mb-1 line-clamp-1">{event.title}</h3>
                       <p className="text-sm text-muted-foreground mb-3">
-                        {event.artists?.name || 'Various Artists'}
+                        {event.event_artists && event.event_artists.length > 0 
+                          ? event.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'Various Artists'
+                          : event.artists?.name || 'Various Artists'}
                       </p>
                       
                       <div className="space-y-1.5 text-sm mt-auto">

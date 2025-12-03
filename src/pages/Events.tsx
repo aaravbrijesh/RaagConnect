@@ -57,7 +57,7 @@ export default function Events() {
     setLoading(true);
     const { data, error } = await supabase
       .from('events')
-      .select('*, artists(*)')
+      .select('*, artists(*), event_artists(artist_id, artists(*))')
       .order('date', { ascending: true });
     
     if (error) {
@@ -378,7 +378,9 @@ export default function Events() {
                       <CardHeader>
                         <CardTitle className="text-xl">{event.title}</CardTitle>
                         <CardDescription className="text-base">
-                          {event.artists?.name || 'Various Artists'}
+                          {event.event_artists && event.event_artists.length > 0 
+                            ? event.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'Various Artists'
+                            : event.artists?.name || 'Various Artists'}
                         </CardDescription>
                       </CardHeader>
                       
@@ -464,7 +466,9 @@ export default function Events() {
                   <div>
                     <SheetTitle className="text-2xl">{selectedEvent.title}</SheetTitle>
                     <SheetDescription>
-                      {selectedEvent.artists?.name || 'Various Artists'}
+                      {selectedEvent.event_artists && selectedEvent.event_artists.length > 0 
+                        ? selectedEvent.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'Various Artists'
+                        : selectedEvent.artists?.name || 'Various Artists'}
                     </SheetDescription>
                   </div>
                   {user && (selectedEvent.user_id === user.id || isAdmin) && (
