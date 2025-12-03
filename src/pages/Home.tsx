@@ -202,43 +202,33 @@ export default function Home() {
       <Nav />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background" />
-        <div className="container relative mx-auto px-4 pt-16 pb-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl"
-          >
-            <h1 className="text-5xl md:text-7xl font-bold mb-4 leading-tight">
-              Discover <span className="text-primary">Events</span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-6 max-w-xl">
-              Experience the divine tradition of Indian classical music. Find and book live performances near you.
-            </p>
-          </motion.div>
+      <section className="container mx-auto px-4 pt-12 pb-8">
+        <div className="max-w-2xl">
+          <h1 className="text-4xl md:text-5xl font-semibold mb-3 tracking-tight">
+            Discover Events
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Find and book live Indian classical music performances near you.
+          </p>
         </div>
       </section>
 
       {/* Events Section */}
       <section className="container mx-auto px-4 pb-16">
-        <div className="space-y-4 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="max-w-md flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search events..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search events..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9"
+              />
             </div>
 
             <Button 
-              size="lg" 
               className="gap-2"
               onClick={() => {
                 if (!user || !session) {
@@ -257,7 +247,7 @@ export default function Home() {
                 navigate('/events/create');
               }}
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" />
               Create Event
             </Button>
           </div>
@@ -275,123 +265,108 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <div className="h-48 bg-muted" />
-                <CardContent className="p-4 space-y-3">
+                <div className="h-40 bg-muted rounded-t-lg" />
+                <CardContent className="p-4 space-y-2">
                   <div className="h-5 bg-muted rounded w-3/4" />
                   <div className="h-4 bg-muted rounded w-1/2" />
-                  <div className="h-4 bg-muted rounded w-2/3" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : filteredEvents.length > 0 ? (
           <>
-            <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-              {filteredEvents.map((event, index) => (
-                <motion.div
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filteredEvents.map((event) => (
+                <Card 
                   key={event.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 * index }}
-                  className="flex"
+                  className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
+                  onClick={() => setSelectedEvent(event)}
                 >
-                  <Card 
-                    className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group cursor-pointer flex flex-col w-full"
-                    onClick={() => setSelectedEvent(event)}
-                  >
-                    <div className="relative h-40 overflow-hidden">
-                      {event.image_url ? (
-                        <img
-                          src={event.image_url}
-                          alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                          <Calendar className="h-10 w-10 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                      {(user?.id === event.user_id || isAdmin) && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="absolute top-2 right-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/events/create?edit=${event.id}`);
-                          }}
-                        >
-                          <Edit className="h-3 w-3" />
-                          Edit
-                        </Button>
-                      )}
-                      <div className="absolute bottom-2 right-2">
-                        <Badge variant={event.price ? "default" : "secondary"}>
-                          {event.price ? `$${event.price}` : 'Free'}
-                        </Badge>
+                  <div className="relative h-36 overflow-hidden bg-muted">
+                    {event.image_url ? (
+                      <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Calendar className="h-8 w-8 text-muted-foreground/50" />
                       </div>
-                    </div>
-                    
-                    <CardContent className="p-4 flex-1 flex flex-col">
-                      <h3 className="font-bold text-lg mb-1 line-clamp-1">{event.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {event.event_artists && event.event_artists.length > 0 
-                          ? event.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'Various Artists'
-                          : event.artists?.name || 'Various Artists'}
-                      </p>
-                      
-                      <div className="space-y-1.5 text-sm mt-auto">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5 text-primary" />
-                          <span>
-                            {new Date(event.date).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5 text-primary" />
-                          <span>{event.time}</span>
-                        </div>
-                        
-                        {event.location_name && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5 text-primary" />
-                            <span className="line-clamp-1">{event.location_name}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Button 
-                        className="w-full mt-4"
+                    )}
+                    {(user?.id === event.user_id || isAdmin) && (
+                      <Button
+                        variant="secondary"
                         size="sm"
+                        className="absolute top-2 right-2 h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (!user || !session) {
-                            toast.error('Please sign in to book this event', {
-                              action: {
-                                label: 'Sign In',
-                                onClick: () => navigate('/login')
-                              }
-                            });
-                            return;
-                          }
-                          setSelectedEvent(event);
-                          setBookingModalOpen(true);
+                          navigate(`/events/create?edit=${event.id}`);
                         }}
                       >
-                        Book Now
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
                       </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    )}
+                  </div>
+                  
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-medium line-clamp-1">{event.title}</h3>
+                      <Badge variant={event.price ? "default" : "secondary"} className="text-xs shrink-0">
+                        {event.price ? `$${event.price}` : 'Free'}
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-1">
+                      {event.event_artists && event.event_artists.length > 0 
+                        ? event.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'TBA'
+                        : event.artists?.name || 'TBA'}
+                    </p>
+                    
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3" />
+                        <span>
+                          {new Date(event.date).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric'
+                          })} · {event.time}
+                        </span>
+                      </div>
+                      {event.location_name && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3" />
+                          <span className="line-clamp-1">{event.location_name}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      className="w-full mt-3"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!user || !session) {
+                          toast.error('Please sign in to book this event', {
+                            action: {
+                              label: 'Sign In',
+                              onClick: () => navigate('/login')
+                            }
+                          });
+                          return;
+                        }
+                        setSelectedEvent(event);
+                        setBookingModalOpen(true);
+                      }}
+                    >
+                      Book Now
+                    </Button>
+                  </CardContent>
+                </Card>
               ))}
             </div>
 

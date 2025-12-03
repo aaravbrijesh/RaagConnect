@@ -265,233 +265,187 @@ export default function Events() {
       <Nav />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate('/')}
-          className="mb-6 gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Home
-        </Button>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                All Events
-              </h1>
-              <p className="text-muted-foreground text-lg">
-                Browse all upcoming and past events
-              </p>
-            </div>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-semibold mb-1">All Events</h1>
+          <p className="text-muted-foreground">Browse all upcoming and past events</p>
+        </div>
 
-          <div className="space-y-4 mt-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="max-w-md flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search events by title or location..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <Button 
-                size="lg" 
-                className="gap-2"
-                onClick={() => {
-                  if (!user || !session) {
-                    toast.error('Please sign in to create an event', {
-                      action: {
-                        label: 'Sign In',
-                        onClick: () => navigate('/login')
-                      }
-                    });
-                    return;
-                  }
-                  if (!canCreateEvents) {
-                    toast.error('You need artist or organizer role to create events');
-                    return;
-                  }
-                  navigate('/events/create');
-                }}
-              >
-                <Plus className="h-5 w-5" />
-                Create Event
-              </Button>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search events..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9"
+              />
             </div>
 
-            <EventFilters
-              dateFilter={dateFilter}
-              onDateFilterChange={setDateFilter}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              locationFilter={locationFilter}
-              onLocationFilterChange={setLocationFilter}
-              onClearFilters={clearFilters}
-              activeFilterCount={activeFilterCount}
-            />
+            <Button 
+              className="gap-2"
+              onClick={() => {
+                if (!user || !session) {
+                  toast.error('Please sign in to create an event', {
+                    action: {
+                      label: 'Sign In',
+                      onClick: () => navigate('/login')
+                    }
+                  });
+                  return;
+                }
+                if (!canCreateEvents) {
+                  toast.error('You need artist or organizer role to create events');
+                  return;
+                }
+                navigate('/events/create');
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              Create Event
+            </Button>
           </div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <p className="text-muted-foreground">
-            Showing {filteredEvents.length} events
-          </p>
-        </motion.div>
+          <EventFilters
+            dateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            locationFilter={locationFilter}
+            onLocationFilterChange={setLocationFilter}
+            onClearFilters={clearFilters}
+            activeFilterCount={activeFilterCount}
+          />
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-4">
+          {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}
+        </p>
 
         {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <div className="flex flex-col md:flex-row">
-                  <div className="w-full md:w-64 h-48 bg-muted" />
-                  <div className="flex-1 p-6 space-y-3">
-                    <div className="h-6 bg-muted rounded w-3/4" />
+                <div className="flex flex-col sm:flex-row">
+                  <div className="w-full sm:w-48 h-36 bg-muted rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none" />
+                  <div className="flex-1 p-4 space-y-2">
+                    <div className="h-5 bg-muted rounded w-3/4" />
                     <div className="h-4 bg-muted rounded w-1/2" />
-                    <div className="h-4 bg-muted rounded w-2/3" />
                   </div>
                 </div>
               </Card>
             ))}
           </div>
         ) : filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredEvents.map((event, index) => (
-              <motion.div
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {filteredEvents.map((event) => (
+              <Card 
                 key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * Math.min(index, 5) }}
+                className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => setSelectedEvent(event)}
               >
-                <Card 
-                  className="overflow-hidden hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 group cursor-pointer"
-                  onClick={() => setSelectedEvent(event)}
-                >
-                  <div className="flex flex-col md:flex-row">
-                    <div className="relative w-full md:w-64 h-48 overflow-hidden">
-                      {event.image_url ? (
-                        <img
-                          src={event.image_url}
-                          alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                          <Calendar className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent" />
-                      {(user?.id === event.user_id || isAdmin) && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="absolute top-2 right-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/events/create?edit=${event.id}`);
-                          }}
-                        >
-                          <Edit className="h-3 w-3" />
-                          Edit
-                        </Button>
+                <div className="flex flex-col sm:flex-row">
+                  <div className="relative w-full sm:w-48 h-36 overflow-hidden bg-muted shrink-0">
+                    {event.image_url ? (
+                      <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Calendar className="h-8 w-8 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    {(user?.id === event.user_id || isAdmin) && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="absolute top-2 right-2 h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/events/create?edit=${event.id}`);
+                        }}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 p-4">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="font-medium line-clamp-1">{event.title}</h3>
+                      <Badge variant={event.price ? "default" : "secondary"} className="text-xs shrink-0">
+                        {event.price ? `$${event.price}` : 'Free'}
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-1">
+                      {event.event_artists && event.event_artists.length > 0 
+                        ? event.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'TBA'
+                        : event.artists?.name || 'TBA'}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-3">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {event.time}
+                      </span>
+                      {event.location_name && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span className="line-clamp-1">{event.location_name}</span>
+                        </span>
                       )}
                     </div>
                     
-                    <div className="flex-1">
-                      <CardHeader>
-                        <CardTitle className="text-xl">{event.title}</CardTitle>
-                        <CardDescription className="text-base">
-                          {event.event_artists && event.event_artists.length > 0 
-                            ? event.event_artists.map((ea: any) => ea.artists?.name).filter(Boolean).join(', ') || 'Various Artists'
-                            : event.artists?.name || 'Various Artists'}
-                        </CardDescription>
-                      </CardHeader>
-                      
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-primary" />
-                          <span>{new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-primary" />
-                          <span>{event.time}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          <span>{event.location_name || 'Location TBA'}</span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                          <div className="flex items-center gap-2">
-                            <Ticket className="h-5 w-5 text-primary" />
-                            <span className="text-2xl font-bold">
-                              {event.price ? `$${event.price}` : 'Free'}
-                            </span>
-                          </div>
-                          
-                          <Button 
-                            className="min-w-32"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!user || !session) {
-                                toast.error('Please sign in to book this event', {
-                                  action: {
-                                    label: 'Sign In',
-                                    onClick: () => navigate('/login')
-                                  }
-                                });
-                                return;
-                              }
-                              setSelectedEvent(event);
-                              setBookingModalOpen(true);
-                            }}
-                          >
-                            Book Now
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </div>
+                    <Button 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!user || !session) {
+                          toast.error('Please sign in to book this event', {
+                            action: {
+                              label: 'Sign In',
+                              onClick: () => navigate('/login')
+                            }
+                          });
+                          return;
+                        }
+                        setSelectedEvent(event);
+                        setBookingModalOpen(true);
+                      }}
+                    >
+                      Book Now
+                    </Button>
                   </div>
-                </Card>
-              </motion.div>
+                </div>
+              </Card>
             ))}
           </div>
         ) : searchTerm ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
-            <p className="text-muted-foreground text-lg">No events found matching "{searchTerm}"</p>
-          </motion.div>
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No events found matching "{searchTerm}"</p>
+          </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
-            <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <p className="text-xl text-muted-foreground">No events found</p>
-            <p className="text-sm text-muted-foreground mt-2">Check back soon for new performances</p>
-          </motion.div>
+          <div className="text-center py-12">
+            <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+            <p className="text-muted-foreground">No events found</p>
+          </div>
         )}
       </div>
 
