@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Music, MapPin, Upload, ArrowLeft } from 'lucide-react';
+import { Music, Upload, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,8 +12,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
+import LocationAutocomplete from '@/components/LocationAutocomplete';
 
-// Validation schema for artist profile
 const artistProfileSchema = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" }),
   genre: z.string().trim().min(1, { message: "Specialization is required" }).max(100, { message: "Specialization must be less than 100 characters" }),
@@ -29,6 +29,7 @@ export default function CreateArtistProfile() {
   const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
   const [customSpecialization, setCustomSpecialization] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [returnToEventCreate, setReturnToEventCreate] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     genre: '',
@@ -43,6 +44,12 @@ export default function CreateArtistProfile() {
       toast.error('Please sign in to create an artist profile');
       navigate('/login');
     }
+    
+    // Check if we should return to event creation
+    const shouldReturn = sessionStorage.getItem('returnToEventCreate');
+    if (shouldReturn === 'true') {
+      setReturnToEventCreate(true);
+    }
   }, [user, session, navigate]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,27 +58,21 @@ export default function CreateArtistProfile() {
     }
   };
 
-  const handleLocationSearch = async () => {
-    if (!formData.locationName) return;
-    
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        setFormData({
-          ...formData,
-          locationLat: parseFloat(data[0].lat),
-          locationLng: parseFloat(data[0].lon)
-        });
-        toast.success('Location found!');
-      } else {
-        toast.error('Location not found');
-      }
-    } catch (error) {
-      toast.error('Failed to search location');
+  const handleLocationSelect = (location: { name: string; lat: number; lng: number } | null) => {
+    if (location) {
+      setFormData({
+        ...formData,
+        locationName: location.name,
+        locationLat: location.lat,
+        locationLng: location.lng
+      });
+    } else {
+      setFormData({
+        ...formData,
+        locationName: '',
+        locationLat: null,
+        locationLng: null
+      });
     }
   };
 
@@ -83,7 +84,6 @@ export default function CreateArtistProfile() {
       return;
     }
 
-    // Determine final genre value
     const specializations = [...selectedSpecializations];
     if (showCustomInput && customSpecialization.trim()) {
       specializations.push(customSpecialization.trim());
@@ -96,7 +96,6 @@ export default function CreateArtistProfile() {
     
     const finalGenre = specializations.join(', ');
 
-    // Validate form data
     const validation = artistProfileSchema.safeParse({
       name: formData.name,
       genre: finalGenre,
@@ -131,7 +130,7 @@ export default function CreateArtistProfile() {
         imageUrl = publicUrl;
       }
 
-      const { error } = await supabase
+      const { data: newArtist, error } = await supabase
         .from('artists')
         .insert({
           user_id: user.id,
@@ -142,7 +141,9 @@ export default function CreateArtistProfile() {
           location_lng: formData.locationLng,
           bio: formData.bio || null,
           image_url: imageUrl
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
 
@@ -154,11 +155,21 @@ export default function CreateArtistProfile() {
 
       if (profileError) {
         console.error('Failed to update profile name:', profileError);
-        // Don't fail the whole process if this fails
       }
 
       toast.success('Profile created successfully!');
-      navigate('/');
+
+      // If we came from event creation, go back with the new artist selected
+      if (returnToEventCreate && newArtist) {
+        const savedData = sessionStorage.getItem('eventFormData');
+        const eventFormData = savedData ? JSON.parse(savedData) : {};
+        eventFormData.artistId = newArtist.id;
+        sessionStorage.setItem('eventFormData', JSON.stringify(eventFormData));
+        sessionStorage.removeItem('returnToEventCreate');
+        navigate('/events/create');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to create profile');
     } finally {
@@ -171,6 +182,15 @@ export default function CreateArtistProfile() {
     navigate('/login');
   };
 
+  const handleBack = () => {
+    if (returnToEventCreate) {
+      sessionStorage.removeItem('returnToEventCreate');
+      navigate('/events/create');
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
@@ -180,6 +200,15 @@ export default function CreateArtistProfile() {
         className="w-full max-w-2xl"
       >
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-8 shadow-elegant border border-border/50">
+          <Button 
+            variant="ghost" 
+            onClick={handleBack}
+            className="mb-4 gap-2 -ml-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {returnToEventCreate ? 'Back to Event Creation' : 'Back'}
+          </Button>
+
           <div className="flex justify-between items-start mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -281,23 +310,12 @@ export default function CreateArtistProfile() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="location"
-                  value={formData.locationName}
-                  onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
-                  placeholder="e.g. Los Angeles, CA"
-                />
-                <Button type="button" onClick={handleLocationSearch} variant="outline">
-                  <MapPin className="h-4 w-4" />
-                </Button>
-              </div>
-              {formData.locationLat && formData.locationLng && (
-                <p className="text-xs text-muted-foreground">
-                  Coordinates: {formData.locationLat.toFixed(4)}, {formData.locationLng.toFixed(4)}
-                </p>
-              )}
+              <Label>Location</Label>
+              <LocationAutocomplete
+                value={formData.locationName}
+                onChange={handleLocationSelect}
+                placeholder="Search for your city or location..."
+              />
             </div>
             
             <div className="space-y-2">
