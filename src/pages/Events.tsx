@@ -273,9 +273,11 @@ export default function Events() {
           </Button>
         </div>
 
-        <div className="mb-6">
-          <h1 className="text-3xl font-semibold mb-1">All Events</h1>
-          <p className="text-muted-foreground">Browse all upcoming and past events</p>
+        <div className="mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            Discover Events
+          </h1>
+          <p className="text-muted-foreground text-lg">Browse all upcoming and past events</p>
         </div>
 
         <div className="flex flex-col gap-4 mb-6">
