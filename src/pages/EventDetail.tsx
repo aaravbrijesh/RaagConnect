@@ -13,6 +13,7 @@ import Nav from '@/components/Nav';
 import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
+import EventSchedule from '@/components/EventSchedule';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -221,10 +222,13 @@ export default function EventDetail() {
                   </div>
                 )}
               </div>
+
+              {/* Event Schedule */}
+              <EventSchedule eventId={event.id} canEdit={isOwnerOrAdmin || false} />
             </div>
 
             {/* Booking Card */}
-            <div className="bg-card border rounded-xl p-6 space-y-4">
+            <div className="bg-card border rounded-xl p-6 space-y-4 h-fit">
               <div className="flex items-center gap-2">
                 <Ticket className="h-5 w-5 text-primary" />
                 <span className="text-2xl font-bold">
