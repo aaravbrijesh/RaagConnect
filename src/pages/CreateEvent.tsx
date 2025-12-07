@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ export default function CreateEvent() {
   const [loading, setLoading] = useState(false);
   const [selectedArtists, setSelectedArtists] = useState<Artist[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   
   const [formData, setFormData] = useState({
@@ -46,7 +48,8 @@ export default function CreateEvent() {
     venmo: '',
     cashapp: '',
     zelle: '',
-    paypal: ''
+    paypal: '',
+    notes: ''
   });
 
   // Load form data from sessionStorage on mount
@@ -132,7 +135,8 @@ export default function CreateEvent() {
       venmo: paymentInfo.venmo || '',
       cashapp: paymentInfo.cashapp || '',
       zelle: paymentInfo.zelle || '',
-      paypal: paymentInfo.paypal || ''
+      paypal: paymentInfo.paypal || '',
+      notes: eventData.notes || ''
     });
 
     // Set selected artists from junction table
@@ -158,6 +162,12 @@ export default function CreateEvent() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImageFile(e.target.files[0]);
+    }
+  };
+
+  const handleFlyerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFlyerFile(e.target.files[0]);
     }
   };
 
@@ -221,6 +231,7 @@ export default function CreateEvent() {
 
     try {
       let imageUrl = editingEvent?.image_url || null;
+      let flyerUrl = editingEvent?.flyer_url || null;
 
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
@@ -237,6 +248,23 @@ export default function CreateEvent() {
           .getPublicUrl(fileName);
 
         imageUrl = publicUrl;
+      }
+
+      if (flyerFile) {
+        const fileExt = flyerFile.name.split('.').pop();
+        const fileName = `${user.id}/flyer-${Math.random()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('event-images')
+          .upload(fileName, flyerFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('event-images')
+          .getPublicUrl(fileName);
+
+        flyerUrl = publicUrl;
       }
 
       const paymentInfo = JSON.stringify({
@@ -256,7 +284,9 @@ export default function CreateEvent() {
         location_lng: formData.locationLng,
         price: formData.price ? parseFloat(formData.price) : null,
         payment_link: paymentInfo,
-        image_url: imageUrl
+        image_url: imageUrl,
+        flyer_url: flyerUrl,
+        notes: formData.notes || null
       };
 
       let eventId: string;
@@ -527,32 +557,76 @@ export default function CreateEvent() {
 
                 <Separator />
 
-                {/* Event Image */}
+                {/* Notes */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Event Image</h3>
+                  <h3 className="text-lg font-semibold">Additional Notes</h3>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="image">Upload Image</Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="cursor-pointer"
-                      />
-                      {imageFile && (
-                        <Badge variant="secondary">
-                          <Upload className="h-3 w-3 mr-1" />
-                          {imageFile.name}
-                        </Badge>
+                    <Label htmlFor="notes">Notes</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="e.g. RSVP required, agenda includes..., followed by dinner"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Event Images */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Event Images</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="image">Event Photo</Label>
+                      <div className="flex items-center gap-4">
+                        <Input
+                          id="image"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="cursor-pointer"
+                        />
+                        {imageFile && (
+                          <Badge variant="secondary">
+                            <Upload className="h-3 w-3 mr-1" />
+                            {imageFile.name}
+                          </Badge>
+                        )}
+                      </div>
+                      {editingEvent?.image_url && !imageFile && (
+                        <p className="text-sm text-muted-foreground">
+                          Current image will be kept
+                        </p>
                       )}
                     </div>
-                    {editingEvent?.image_url && !imageFile && (
-                      <p className="text-sm text-muted-foreground">
-                        Current image will be kept unless you upload a new one
-                      </p>
-                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="flyer">Event Flyer</Label>
+                      <div className="flex items-center gap-4">
+                        <Input
+                          id="flyer"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFlyerChange}
+                          className="cursor-pointer"
+                        />
+                        {flyerFile && (
+                          <Badge variant="secondary">
+                            <Upload className="h-3 w-3 mr-1" />
+                            {flyerFile.name}
+                          </Badge>
+                        )}
+                      </div>
+                      {editingEvent?.flyer_url && !flyerFile && (
+                        <p className="text-sm text-muted-foreground">
+                          Current flyer will be kept
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
