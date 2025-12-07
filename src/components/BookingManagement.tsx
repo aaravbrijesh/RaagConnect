@@ -14,7 +14,8 @@ interface BookingManagementProps {
 
 export default function BookingManagement({ eventId }: BookingManagementProps) {
   const [bookings, setBookings] = useState<any[]>([]);
-  const [selectedProof, setSelectedProof] = useState<string | null>(null);
+  const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
+  const [proofLoading, setProofLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -136,10 +137,27 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
                 variant="outline"
                 size="sm"
                 className="gap-2"
-                onClick={() => setSelectedProof(booking.proof_of_payment_url)}
+                disabled={proofLoading}
+                onClick={async () => {
+                  setProofLoading(true);
+                  try {
+                    // Get signed URL for secure access (expires in 1 hour)
+                    const { data, error } = await supabase.storage
+                      .from('payment-proofs')
+                      .createSignedUrl(booking.proof_of_payment_url, 3600);
+                    
+                    if (error) throw error;
+                    setSelectedProofUrl(data.signedUrl);
+                  } catch (err: any) {
+                    toast.error('Failed to load proof of payment');
+                    console.error('Error getting signed URL:', err);
+                  } finally {
+                    setProofLoading(false);
+                  }
+                }}
               >
                 <Eye className="h-4 w-4" />
-                View Proof of Payment
+                {proofLoading ? 'Loading...' : 'View Proof of Payment'}
               </Button>
             )}
 
@@ -172,22 +190,22 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
       ))}
 
       {/* Proof of Payment Modal */}
-      <Dialog open={!!selectedProof} onOpenChange={() => setSelectedProof(null)}>
+      <Dialog open={!!selectedProofUrl} onOpenChange={() => setSelectedProofUrl(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Proof of Payment</DialogTitle>
           </DialogHeader>
-          {selectedProof && (
+          {selectedProofUrl && (
             <div className="mt-4">
-              {selectedProof.endsWith('.pdf') ? (
+              {selectedProofUrl.includes('.pdf') ? (
                 <iframe
-                  src={selectedProof}
+                  src={selectedProofUrl}
                   className="w-full h-[600px] border rounded"
                   title="Proof of Payment"
                 />
               ) : (
                 <img
-                  src={selectedProof}
+                  src={selectedProofUrl}
                   alt="Proof of Payment"
                   className="w-full rounded-lg"
                 />

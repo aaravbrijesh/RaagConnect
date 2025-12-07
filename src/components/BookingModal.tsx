@@ -79,19 +79,18 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
     setLoading(true);
 
     try {
-      // Upload proof of payment
+      // Upload proof of payment to private bucket
       const fileExt = proofFile.name.split('.').pop();
       const fileName = `${user.id}/${event.id}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('event-images')
+        .from('payment-proofs')
         .upload(fileName, proofFile);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('event-images')
-        .getPublicUrl(fileName);
+      // Store the file path (not public URL) for secure access via signed URLs
+      const proofPath = fileName;
 
       // Create booking with validated data
       const { error: bookingError } = await supabase
@@ -103,7 +102,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
           attendee_email: validation.data.email,
           amount: event.price || 0,
           payment_method: 'direct',
-          proof_of_payment_url: publicUrl,
+          proof_of_payment_url: proofPath,
           status: 'pending'
         });
 
