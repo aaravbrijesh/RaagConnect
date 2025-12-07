@@ -1,23 +1,36 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Music, MapPin, Calendar, ArrowLeft, Edit, Upload } from 'lucide-react';
+import { Music, MapPin, Calendar, ArrowLeft, Edit, Upload, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 
 export default function ArtistDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin } = useUserRoles(user?.id);
   const [artist, setArtist] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +179,24 @@ export default function ArtistDetail() {
     }
   };
 
-  const isOwner = user && artist && user.id === artist.user_id;
+  const isOwnerOrAdmin = user && artist && (user.id === artist.user_id || isAdmin);
+
+  const handleDeleteArtist = async () => {
+    try {
+      const { error } = await supabase
+        .from('artists')
+        .delete()
+        .eq('id', artist.id);
+      
+      if (error) throw error;
+      
+      toast.success('Artist profile deleted successfully');
+      navigate('/artists');
+    } catch (error: any) {
+      toast.error('Failed to delete artist profile');
+      console.error(error);
+    }
+  };
 
   if (loading) {
     return (
@@ -238,14 +268,38 @@ export default function ArtistDetail() {
                     {artist.genre}
                   </Badge>
                 </div>
-                {isOwner && (
-                  <Button 
-                    onClick={() => setEditOpen(true)}
-                    className="gap-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit Profile
-                  </Button>
+                {isOwnerOrAdmin && (
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => setEditOpen(true)}
+                      className="gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit Profile
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="gap-2">
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Artist Profile</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{artist.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteArtist}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 )}
               </div>
             </div>

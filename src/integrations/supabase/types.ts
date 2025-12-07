@@ -225,11 +225,13 @@ export type Database = {
           artist_id: string | null
           created_at: string
           date: string
+          flyer_url: string | null
           id: string
           image_url: string | null
           location_lat: number | null
           location_lng: number | null
           location_name: string | null
+          notes: string | null
           payment_link: string | null
           price: number | null
           stripe_price_id: string | null
@@ -244,11 +246,13 @@ export type Database = {
           artist_id?: string | null
           created_at?: string
           date: string
+          flyer_url?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
+          notes?: string | null
           payment_link?: string | null
           price?: number | null
           stripe_price_id?: string | null
@@ -263,11 +267,13 @@ export type Database = {
           artist_id?: string | null
           created_at?: string
           date?: string
+          flyer_url?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
+          notes?: string | null
           payment_link?: string | null
           price?: number | null
           stripe_price_id?: string | null

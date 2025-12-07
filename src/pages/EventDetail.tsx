@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Edit, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Edit, ArrowLeft, Loader2, Trash2, FileText, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -166,16 +166,27 @@ export default function EventDetail() {
             )}
           </div>
 
-          {/* Event Image */}
-          {event.image_url && (
-            <div className="relative h-64 md:h-96 rounded-xl overflow-hidden mb-8">
-              <img
-                src={event.image_url}
-                alt={event.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+          {/* Event Images */}
+          <div className="grid md:grid-cols-2 gap-4 mb-8">
+            {event.image_url && (
+              <div className="relative h-64 md:h-80 rounded-xl overflow-hidden">
+                <img
+                  src={event.image_url}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            {event.flyer_url && (
+              <div className="relative h-64 md:h-80 rounded-xl overflow-hidden border">
+                <img
+                  src={event.flyer_url}
+                  alt={`${event.title} flyer`}
+                  className="w-full h-full object-contain bg-muted/30"
+                />
+              </div>
+            )}
+          </div>
 
           {/* Event Details */}
           <div className="grid md:grid-cols-3 gap-8 mb-8">
@@ -202,6 +213,13 @@ export default function EventDetail() {
                   <MapPin className="h-5 w-5 text-primary" />
                   <span className="font-medium">{event.location_name || 'Location TBA'}</span>
                 </div>
+
+                {event.notes && (
+                  <div className="flex items-start gap-3 pt-2">
+                    <StickyNote className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <p className="text-muted-foreground">{event.notes}</p>
+                  </div>
+                )}
               </div>
             </div>
 
