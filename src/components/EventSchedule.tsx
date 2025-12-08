@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Clock, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from "react";
+import { Clock, Plus, Trash2, Edit2, Save, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ScheduleItem {
   id: string;
@@ -24,7 +24,7 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({ time: '', title: '', description: '' });
+  const [formData, setFormData] = useState({ time: "", title: "", description: "" });
 
   useEffect(() => {
     fetchSchedule();
@@ -32,13 +32,13 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
 
   const fetchSchedule = async () => {
     const { data, error } = await supabase
-      .from('event_schedule')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('time', { ascending: true });
+      .from("event_schedule")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("time", { ascending: true });
 
     if (error) {
-      console.error('Error fetching schedule:', error);
+      console.error("Error fetching schedule:", error);
     } else {
       setSchedule(data || []);
     }
@@ -47,25 +47,23 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
 
   const handleAdd = async () => {
     if (!formData.time || !formData.title.trim()) {
-      toast.error('Please fill in time and title');
+      toast.error("Please fill in time and title");
       return;
     }
 
-    const { error } = await supabase
-      .from('event_schedule')
-      .insert({
-        event_id: eventId,
-        time: formData.time,
-        title: formData.title.trim(),
-        description: formData.description.trim() || null
-      });
+    const { error } = await supabase.from("event_schedule").insert({
+      event_id: eventId,
+      time: formData.time,
+      title: formData.title.trim(),
+      description: formData.description.trim() || null,
+    });
 
     if (error) {
-      toast.error('Failed to add schedule item');
+      toast.error("Failed to add schedule item");
       console.error(error);
     } else {
-      toast.success('Schedule item added');
-      setFormData({ time: '', title: '', description: '' });
+      toast.success("Schedule item added");
+      setFormData({ time: "", title: "", description: "" });
       setShowAddForm(false);
       fetchSchedule();
     }
@@ -73,41 +71,38 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
 
   const handleUpdate = async (id: string) => {
     if (!formData.time || !formData.title.trim()) {
-      toast.error('Please fill in time and title');
+      toast.error("Please fill in time and title");
       return;
     }
 
     const { error } = await supabase
-      .from('event_schedule')
+      .from("event_schedule")
       .update({
         time: formData.time,
         title: formData.title.trim(),
-        description: formData.description.trim() || null
+        description: formData.description.trim() || null,
       })
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
-      toast.error('Failed to update schedule item');
+      toast.error("Failed to update schedule item");
       console.error(error);
     } else {
-      toast.success('Schedule updated');
+      toast.success("Schedule updated");
       setEditingId(null);
-      setFormData({ time: '', title: '', description: '' });
+      setFormData({ time: "", title: "", description: "" });
       fetchSchedule();
     }
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('event_schedule')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from("event_schedule").delete().eq("id", id);
 
     if (error) {
-      toast.error('Failed to delete schedule item');
+      toast.error("Failed to delete schedule item");
       console.error(error);
     } else {
-      toast.success('Schedule item removed');
+      toast.success("Schedule item removed");
       fetchSchedule();
     }
   };
@@ -117,20 +112,20 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
     setFormData({
       time: item.time,
       title: item.title,
-      description: item.description || ''
+      description: item.description || "",
     });
     setShowAddForm(false);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ time: '', title: '', description: '' });
+    setFormData({ time: "", title: "", description: "" });
   };
 
   const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
+    const [hours, minutes] = time.split(":");
     const h = parseInt(hours, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
+    const ampm = h >= 12 ? "PM" : "AM";
     const displayHour = h % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
   };
@@ -154,7 +149,7 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
               onClick={() => {
                 setShowAddForm(true);
                 setEditingId(null);
-                setFormData({ time: '', title: '', description: '' });
+                setFormData({ time: "", title: "", description: "" });
               }}
               className="gap-1"
             >
@@ -201,9 +196,7 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
         )}
 
         {schedule.length === 0 && !showAddForm ? (
-          <p className="text-muted-foreground text-sm text-center py-4">
-            No schedule items yet
-          </p>
+          <p className="text-muted-foreground text-sm text-center py-4">Coming Soon</p>
         ) : (
           <div className="space-y-2">
             {schedule.map((item) => (
@@ -247,20 +240,11 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium">{item.title}</p>
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                          {item.description}
-                        </p>
-                      )}
+                      {item.description && <p className="text-sm text-muted-foreground mt-0.5">{item.description}</p>}
                     </div>
                     {canEdit && (
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => startEdit(item)}
-                        >
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEdit(item)}>
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
