@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Edit, ArrowLeft, Loader2, Trash2, FileText, StickyNote } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Edit, ArrowLeft, Loader2, Trash2, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +14,7 @@ import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
 import EventSchedule from '@/components/EventSchedule';
+import ShareEvent from '@/components/ShareEvent';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,6 +120,11 @@ export default function EventDetail() {
             </div>
             {isOwnerOrAdmin && (
               <div className="flex gap-2 shrink-0">
+                <ShareEvent 
+                  title={event.title} 
+                  url={window.location.href}
+                  date={new Date(event.date).toLocaleDateString()}
+                />
                 <Button
                   variant="outline"
                   className="gap-2"
@@ -252,8 +258,19 @@ export default function EventDetail() {
                   setBookingModalOpen(true);
                 }}
               >
-                Book Tickets
+                {event.price ? 'Book Tickets' : 'Register for Free'}
               </Button>
+
+              {/* Share button for non-owners */}
+              {!isOwnerOrAdmin && (
+                <ShareEvent 
+                  title={event.title} 
+                  url={window.location.href}
+                  date={new Date(event.date).toLocaleDateString()}
+                  variant="outline"
+                  size="default"
+                />
+              )}
             </div>
           </div>
 
@@ -271,7 +288,13 @@ export default function EventDetail() {
                 </TabsContent>
                 
                 <TabsContent value="bookings" className="mt-6">
-                  <BookingManagement eventId={event.id} />
+                  <BookingManagement 
+                    eventId={event.id} 
+                    eventTitle={event.title}
+                    eventDate={event.date}
+                    eventTime={event.time}
+                    eventLocation={event.location_name}
+                  />
                 </TabsContent>
               </Tabs>
             ) : (

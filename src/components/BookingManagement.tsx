@@ -10,9 +10,13 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface BookingManagementProps {
   eventId: string;
+  eventTitle?: string;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
 }
 
-export default function BookingManagement({ eventId }: BookingManagementProps) {
+export default function BookingManagement({ eventId, eventTitle, eventDate, eventTime, eventLocation }: BookingManagementProps) {
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
   const [proofLoading, setProofLoading] = useState(false);
@@ -58,7 +62,7 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
     }
   };
 
-  const updateBookingStatus = async (bookingId: string, status: 'confirmed' | 'rejected') => {
+  const updateBookingStatus = async (bookingId: string, status: 'confirmed' | 'rejected', attendeeEmail: string, attendeeName: string) => {
     setLoading(true);
     try {
       const { error } = await supabase
@@ -67,6 +71,25 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
         .eq('id', bookingId);
 
       if (error) throw error;
+
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-booking-email', {
+          body: {
+            to: attendeeEmail,
+            attendeeName,
+            eventTitle: eventTitle || 'Event',
+            eventDate: eventDate ? new Date(eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : 'TBA',
+            eventTime: eventTime || 'TBA',
+            eventLocation: eventLocation || 'TBA',
+            status
+          }
+        });
+        console.log('Email notification sent');
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError);
+        // Don't fail the booking update if email fails
+      }
 
       toast.success(`Booking ${status}!`);
       await fetchBookings();
@@ -167,7 +190,7 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
                   size="sm"
                   variant="default"
                   className="gap-2 flex-1"
-                  onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                  onClick={() => updateBookingStatus(booking.id, 'confirmed', booking.attendee_email, booking.attendee_name)}
                   disabled={loading}
                 >
                   <CheckCircle className="h-4 w-4" />
@@ -177,7 +200,7 @@ export default function BookingManagement({ eventId }: BookingManagementProps) {
                   size="sm"
                   variant="destructive"
                   className="gap-2 flex-1"
-                  onClick={() => updateBookingStatus(booking.id, 'rejected')}
+                  onClick={() => updateBookingStatus(booking.id, 'rejected', booking.attendee_email, booking.attendee_name)}
                   disabled={loading}
                 >
                   <XCircle className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, UserPlus, Users, X } from 'lucide-react';
+import EventScheduleEditor from '@/components/EventScheduleEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,7 @@ export default function CreateEvent() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [schedule, setSchedule] = useState<{ id: string; time: string; title: string; description: string }[]>([]);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -572,6 +574,11 @@ export default function CreateEvent() {
                     />
                   </div>
                 </div>
+
+                <Separator />
+
+                {/* Event Schedule */}
+                <EventScheduleEditor schedule={schedule} onChange={setSchedule} />
 
                 <Separator />
 

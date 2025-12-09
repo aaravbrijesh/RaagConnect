@@ -405,9 +405,8 @@ export default function Artists() {
                     <Music className="h-5 w-5 text-primary" />
                     {artist.name}
                   </CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {artist.location_name || 'Location not specified'}
+                  <CardDescription>
+                    {artist.genre}
                   </CardDescription>
                 </CardHeader>
                 
