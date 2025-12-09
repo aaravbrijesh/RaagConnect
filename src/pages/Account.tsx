@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { Loader2, Upload, Music, Eye, Calendar } from 'lucide-react';
 import Nav from '@/components/Nav';
+import MyBookings from '@/components/MyBookings';
 
 export default function Account() {
   const { user, session } = useAuth();
@@ -350,6 +351,9 @@ export default function Account() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* My Bookings */}
+        {user && <MyBookings userId={user.id} />}
       </div>
     </>
   );
