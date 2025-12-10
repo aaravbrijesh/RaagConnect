@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, UserPlus, Users, X } from 'lucide-react';
+import { z } from 'zod';
 import EventScheduleEditor from '@/components/EventScheduleEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,22 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Nav from '@/components/Nav';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
+
+// Validation schema for event form
+const eventSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format'),
+  price: z.string().optional().refine(
+    (v) => !v || (!isNaN(parseFloat(v)) && parseFloat(v) >= 0 && parseFloat(v) <= 10000),
+    'Price must be between 0 and 10,000'
+  ),
+  notes: z.string().max(2000, 'Notes must be less than 2000 characters').optional(),
+  venmo: z.string().max(50, 'Venmo handle must be less than 50 characters').optional(),
+  cashapp: z.string().max(50, 'Cash App handle must be less than 50 characters').optional(),
+  zelle: z.string().max(100, 'Zelle must be less than 100 characters').optional(),
+  paypal: z.string().max(50, 'PayPal handle must be less than 50 characters').optional(),
+});
 
 type Artist = {
   id: string;
@@ -219,8 +236,22 @@ export default function CreateEvent() {
       return;
     }
 
-    if (!formData.title || !formData.date || !formData.time) {
-      toast.error('Please fill in required fields (title, date, time)');
+    // Validate form data with zod schema
+    const validationResult = eventSchema.safeParse({
+      title: formData.title,
+      date: formData.date,
+      time: formData.time,
+      price: formData.price || undefined,
+      notes: formData.notes || undefined,
+      venmo: formData.venmo || undefined,
+      cashapp: formData.cashapp || undefined,
+      zelle: formData.zelle || undefined,
+      paypal: formData.paypal || undefined,
+    });
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
