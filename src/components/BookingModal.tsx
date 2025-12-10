@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle, Minus, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -23,11 +23,13 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   const [loading, setLoading] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [userProfile, setUserProfile] = useState<{ full_name: string; email: string } | null>(null);
+  const [ticketCount, setTicketCount] = useState(1);
 
   // Parse payment info from JSON
   const paymentInfo = event.payment_link ? JSON.parse(event.payment_link) : {};
   const hasPaymentInfo = paymentInfo.venmo || paymentInfo.cashapp || paymentInfo.zelle || paymentInfo.paypal;
   const isFreeEvent = !event.price || event.price === 0;
+  const totalAmount = (event.price || 0) * ticketCount;
 
   // Fetch user profile for auto-fill
   useEffect(() => {
@@ -55,6 +57,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
     if (open) {
       fetchProfile();
+      setTicketCount(1);
+      setProofFile(null);
     }
   }, [user, open]);
 
@@ -110,19 +114,21 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         proofPath = fileName;
       }
 
-      // Create booking with user profile data
+      // Create bookings for each ticket
+      const bookingsToInsert = Array.from({ length: ticketCount }, () => ({
+        event_id: event.id,
+        user_id: user.id,
+        attendee_name: userProfile.full_name,
+        attendee_email: userProfile.email,
+        amount: event.price || 0,
+        payment_method: isFreeEvent ? 'free' : 'direct',
+        proof_of_payment_url: proofPath,
+        status: isFreeEvent ? 'confirmed' : 'pending'
+      }));
+
       const { error: bookingError } = await supabase
         .from('bookings')
-        .insert({
-          event_id: event.id,
-          user_id: user.id,
-          attendee_name: userProfile.full_name,
-          attendee_email: userProfile.email,
-          amount: event.price || 0,
-          payment_method: isFreeEvent ? 'free' : 'direct',
-          proof_of_payment_url: proofPath,
-          status: isFreeEvent ? 'confirmed' : 'pending'
-        });
+        .insert(bookingsToInsert);
 
       if (bookingError) throw bookingError;
 
@@ -134,11 +140,12 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       };
 
-      const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatDateForGoogle(eventDate)}/${formatDateForGoogle(endDate)}&details=${encodeURIComponent(`Booking for ${event.title}`)}&location=${encodeURIComponent(event.location_name || '')}`;
+      const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatDateForGoogle(eventDate)}/${formatDateForGoogle(endDate)}&details=${encodeURIComponent(`Booking for ${event.title} (${ticketCount} ticket${ticketCount > 1 ? 's' : ''})`)}&location=${encodeURIComponent(event.location_name || '')}`;
 
+      const ticketText = ticketCount > 1 ? `${ticketCount} tickets` : '1 ticket';
       const successMessage = isFreeEvent 
-        ? 'Booking confirmed! 🎉' 
-        : 'Booking submitted! Awaiting organizer confirmation.';
+        ? `${ticketText} confirmed! 🎉` 
+        : `${ticketText} submitted! Awaiting organizer confirmation.`;
 
       toast.success(
         <div>
@@ -157,6 +164,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
       onOpenChange(false);
       setProofFile(null);
+      setTicketCount(1);
     } catch (error: any) {
       toast.error(error.message || 'Failed to submit booking');
     } finally {
@@ -187,10 +195,40 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </p>
           </div>
 
+          {/* Ticket Quantity */}
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Number of Tickets</Label>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
+                  disabled={ticketCount <= 1}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-lg font-semibold w-8 text-center">{ticketCount}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setTicketCount(Math.min(10, ticketCount + 1))}
+                  disabled={ticketCount >= 10}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Price Info */}
           <div className="p-4 bg-muted rounded-lg">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Event Price</span>
+              <span className="text-sm font-medium">
+                {isFreeEvent ? 'Event Price' : `Total (${ticketCount} × $${event.price})`}
+              </span>
               <span className="text-lg font-bold">
                 {isFreeEvent ? (
                   <span className="flex items-center gap-2 text-green-600">
@@ -198,7 +236,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                     Free Entry
                   </span>
                 ) : (
-                  `$${event.price}`
+                  `$${totalAmount.toFixed(2)}`
                 )}
               </span>
             </div>
@@ -209,7 +247,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <p className="font-medium mb-2">Send payment to:</p>
+                <p className="font-medium mb-2">Send ${totalAmount.toFixed(2)} to:</p>
                 <div className="space-y-1 text-sm">
                   {paymentInfo.venmo && (
                     <div className="flex items-center gap-2">
@@ -269,7 +307,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             disabled={loading || (!isFreeEvent && !proofFile) || !userProfile}
             className="w-full"
           >
-            {loading ? 'Processing...' : isFreeEvent ? 'Confirm Registration' : 'Submit Booking'}
+            {loading ? 'Processing...' : isFreeEvent ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}` : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
           </Button>
         </div>
       </DialogContent>
