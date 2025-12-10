@@ -24,9 +24,16 @@ export default function ShareEvent({ title, url, date, variant = 'outline', size
     ? `Check out "${title}" on ${date} - Raag Connect`
     : `Check out "${title}" on Raag Connect`;
 
+  const getFullUrl = () => {
+    // Ensure we have a full URL
+    if (url.startsWith('http')) return url;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
+  };
+
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(getFullUrl());
       setCopied(true);
       toast.success('Link copied to clipboard!');
       setTimeout(() => setCopied(false), 2000);
@@ -36,7 +43,8 @@ export default function ShareEvent({ title, url, date, variant = 'outline', size
   };
 
   const handleShare = (platform: string) => {
-    const encodedUrl = encodeURIComponent(url);
+    const fullUrl = getFullUrl();
+    const encodedUrl = encodeURIComponent(fullUrl);
     const encodedText = encodeURIComponent(shareText);
 
     const shareUrls: Record<string, string> = {
@@ -58,7 +66,7 @@ export default function ShareEvent({ title, url, date, variant = 'outline', size
         await navigator.share({
           title,
           text: shareText,
-          url,
+          url: getFullUrl(),
         });
       } catch (err) {
         // User cancelled or error
