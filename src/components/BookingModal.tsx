@@ -30,6 +30,9 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   const hasPaymentInfo = paymentInfo.venmo || paymentInfo.cashapp || paymentInfo.zelle || paymentInfo.paypal;
   const isFreeEvent = !event.price || event.price === 0;
   const totalAmount = (event.price || 0) * ticketCount;
+  
+  // Check if event is in the past
+  const isPastEvent = new Date(`${event.date}T${event.time}`) < new Date();
 
   // Fetch user profile for auto-fill
   useEffect(() => {
@@ -74,6 +77,12 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   };
 
   const handleBooking = async () => {
+    if (isPastEvent) {
+      toast.error('This event has already passed');
+      onOpenChange(false);
+      return;
+    }
+    
     if (!user || !session) {
       toast.error('Please sign in to book this event', {
         action: {
@@ -178,7 +187,11 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         <DialogHeader>
           <DialogTitle>Book Event: {event.title}</DialogTitle>
           <DialogDescription>
-            {isFreeEvent ? 'Confirm your free registration' : 'Complete your booking for this event'}
+            {isPastEvent 
+              ? 'This event has already passed' 
+              : isFreeEvent 
+                ? 'Confirm your free registration' 
+                : 'Complete your booking for this event'}
           </DialogDescription>
         </DialogHeader>
 
@@ -304,10 +317,16 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
           <Button 
             onClick={handleBooking} 
-            disabled={loading || (!isFreeEvent && !proofFile) || !userProfile}
+            disabled={loading || isPastEvent || (!isFreeEvent && !proofFile) || !userProfile}
             className="w-full"
           >
-            {loading ? 'Processing...' : isFreeEvent ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}` : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
+            {isPastEvent 
+              ? 'Event Has Passed' 
+              : loading 
+                ? 'Processing...' 
+                : isFreeEvent 
+                  ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}` 
+                  : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
           </Button>
         </div>
       </DialogContent>

@@ -32,7 +32,8 @@ export default function ArtistDetail() {
   const { user } = useAuth();
   const { isAdmin } = useUserRoles(user?.id);
   const [artist, setArtist] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
@@ -82,7 +83,14 @@ export default function ArtistDetail() {
         .order('date', { ascending: true });
 
       if (eventsError) throw eventsError;
-      setEvents(eventsData || []);
+      
+      // Split into upcoming and past events
+      const today = new Date().toISOString().split('T')[0];
+      const upcoming = (eventsData || []).filter(e => e.date >= today);
+      const past = (eventsData || []).filter(e => e.date < today).reverse();
+      
+      setUpcomingEvents(upcoming);
+      setPastEvents(past);
     } catch (error: any) {
       toast.error('Failed to load artist details');
       console.error(error);
@@ -322,6 +330,7 @@ export default function ArtistDetail() {
           </Card>
         </motion.div>
 
+        {/* Upcoming Events */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -331,14 +340,16 @@ export default function ArtistDetail() {
             Upcoming Events
           </h2>
 
-          {events.length > 0 ? (
+          {upcomingEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map((event, index) => (
+              {upcomingEvents.map((event, index) => (
                 <motion.div
                   key={event.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
+                  onClick={() => navigate(`/events/${event.id}`)}
+                  className="cursor-pointer"
                 >
                   <Card className="hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50">
                     <CardHeader>
@@ -374,6 +385,57 @@ export default function ArtistDetail() {
             </Card>
           )}
         </motion.div>
+
+        {/* Past Events */}
+        {pastEvents.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-12"
+          >
+            <h2 className="text-3xl font-bold mb-6 text-muted-foreground">
+              Past Events
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pastEvents.map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                  onClick={() => navigate(`/events/${event.id}`)}
+                  className="cursor-pointer"
+                >
+                  <Card className="hover:shadow-md transition-all duration-300 bg-muted/30 border-border/30 opacity-75">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-5 w-5" />
+                        {event.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(event.date).toLocaleDateString()} at {event.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>{event.location_name || 'Location TBA'}</span>
+                      </div>
+                      {event.price && (
+                        <p className="text-lg font-semibold text-muted-foreground">
+                          ${event.price}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
