@@ -92,12 +92,12 @@ export default function Account() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           full_name: fullName,
           email: email,
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq('user_id', user.id);
 
       if (error) throw error;
       toast.success('Profile updated successfully!');
