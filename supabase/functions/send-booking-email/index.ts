@@ -18,6 +18,27 @@ interface BookingEmailRequest {
   status: "confirmed" | "rejected";
 }
 
+// Escape HTML special characters to prevent XSS in email clients
+const escapeHtml = (str: string): string => {
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, (c) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+    return entities[c] || c;
+  });
+};
+
+// Validate email format
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -25,26 +46,80 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, attendeeName, eventTitle, eventDate, eventTime, eventLocation, status }: BookingEmailRequest = await req.json();
+    const body = await req.json();
+    const { to, attendeeName, eventTitle, eventDate, eventTime, eventLocation, status } = body as BookingEmailRequest;
+
+    // Validate required fields
+    if (!to || !attendeeName || !eventTitle || !eventDate || !status) {
+      console.error("Missing required fields");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate email format
+    if (!isValidEmail(to)) {
+      console.error("Invalid email format:", to);
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate input lengths to prevent abuse
+    if (attendeeName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Attendee name too long (max 100 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    if (eventTitle.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Event title too long (max 200 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    if (eventLocation && eventLocation.length > 500) {
+      return new Response(
+        JSON.stringify({ error: "Event location too long (max 500 characters)" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate status
+    if (status !== "confirmed" && status !== "rejected") {
+      return new Response(
+        JSON.stringify({ error: "Invalid status" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Escape all user-provided content for safe HTML embedding
+    const safeAttendeeName = escapeHtml(attendeeName);
+    const safeEventTitle = escapeHtml(eventTitle);
+    const safeEventDate = escapeHtml(eventDate);
+    const safeEventTime = escapeHtml(eventTime || '');
+    const safeEventLocation = escapeHtml(eventLocation || 'TBA');
 
     console.log(`Sending ${status} email to ${to} for event: ${eventTitle}`);
 
     const isConfirmed = status === "confirmed";
     const subject = isConfirmed 
-      ? `🎵 Your booking for "${eventTitle}" is confirmed!`
-      : `Booking update for "${eventTitle}"`;
+      ? `🎵 Your booking for "${safeEventTitle}" is confirmed!`
+      : `Booking update for "${safeEventTitle}"`;
 
     const html = isConfirmed
       ? `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #1a1a1a; margin-bottom: 20px;">Booking Confirmed! 🎉</h1>
-          <p style="color: #333; font-size: 16px;">Dear ${attendeeName},</p>
+          <p style="color: #333; font-size: 16px;">Dear ${safeAttendeeName},</p>
           <p style="color: #333; font-size: 16px;">Great news! Your booking has been confirmed for:</p>
           <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #1a1a1a; margin: 0 0 12px 0;">${eventTitle}</h2>
-            <p style="margin: 8px 0; color: #666;"><strong>Date:</strong> ${eventDate}</p>
-            <p style="margin: 8px 0; color: #666;"><strong>Time:</strong> ${eventTime}</p>
-            <p style="margin: 8px 0; color: #666;"><strong>Location:</strong> ${eventLocation || "TBA"}</p>
+            <h2 style="color: #1a1a1a; margin: 0 0 12px 0;">${safeEventTitle}</h2>
+            <p style="margin: 8px 0; color: #666;"><strong>Date:</strong> ${safeEventDate}</p>
+            <p style="margin: 8px 0; color: #666;"><strong>Time:</strong> ${safeEventTime}</p>
+            <p style="margin: 8px 0; color: #666;"><strong>Location:</strong> ${safeEventLocation}</p>
           </div>
           <p style="color: #333; font-size: 16px;">We look forward to seeing you at the event!</p>
           <p style="color: #666; font-size: 14px; margin-top: 30px;">Best regards,<br>Raag Connect</p>
@@ -53,11 +128,11 @@ const handler = async (req: Request): Promise<Response> => {
       : `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #1a1a1a; margin-bottom: 20px;">Booking Update</h1>
-          <p style="color: #333; font-size: 16px;">Dear ${attendeeName},</p>
+          <p style="color: #333; font-size: 16px;">Dear ${safeAttendeeName},</p>
           <p style="color: #333; font-size: 16px;">Unfortunately, your booking for the following event could not be confirmed:</p>
           <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #1a1a1a; margin: 0 0 12px 0;">${eventTitle}</h2>
-            <p style="margin: 8px 0; color: #666;"><strong>Date:</strong> ${eventDate}</p>
+            <h2 style="color: #1a1a1a; margin: 0 0 12px 0;">${safeEventTitle}</h2>
+            <p style="margin: 8px 0; color: #666;"><strong>Date:</strong> ${safeEventDate}</p>
           </div>
           <p style="color: #333; font-size: 16px;">This may be due to payment verification issues or event capacity. Please contact the organizer for more details.</p>
           <p style="color: #666; font-size: 14px; margin-top: 30px;">Best regards,<br>Raag Connect</p>
