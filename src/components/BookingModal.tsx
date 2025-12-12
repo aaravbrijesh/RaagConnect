@@ -34,10 +34,13 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   // Check if event is in the past
   const isPastEvent = new Date(`${event.date}T${event.time}`) < new Date();
 
-  // Fetch user profile for auto-fill
+  // Fetch user profile for auto-fill - prioritize auth email for Google OAuth users
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
+      
+      // For Google OAuth users, user.email is always available and verified
+      const authEmail = user.email || '';
       
       const { data } = await supabase
         .from('profiles')
@@ -45,17 +48,14 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (data) {
-        setUserProfile({
-          full_name: data.full_name || '',
-          email: data.email || user.email || ''
-        });
-      } else {
-        setUserProfile({
-          full_name: user.user_metadata?.full_name || '',
-          email: user.email || ''
-        });
-      }
+      // Use auth email (from Google) first, then profile email as fallback
+      const email = authEmail || data?.email || '';
+      const fullName = data?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || '';
+
+      setUserProfile({
+        full_name: fullName,
+        email: email
+      });
     };
 
     if (open) {
@@ -140,6 +140,31 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         .insert(bookingsToInsert);
 
       if (bookingError) throw bookingError;
+
+      // Send confirmation email for free events (auto-confirmed)
+      if (isFreeEvent) {
+        try {
+          await supabase.functions.invoke('send-booking-email', {
+            body: {
+              to: userProfile.email,
+              attendeeName: userProfile.full_name,
+              eventTitle: event.title,
+              eventDate: new Date(event.date).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              eventTime: event.time,
+              eventLocation: event.location_name || '',
+              status: 'confirmed'
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+          // Don't fail the booking if email fails
+        }
+      }
 
       // Create Google Calendar link
       const eventDate = new Date(`${event.date}T${event.time}`);
