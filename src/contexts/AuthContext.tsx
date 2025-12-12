@@ -50,60 +50,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    let mounted = true;
+
+    const handleSession = async (session: Session | null, isInitial = false) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Real authenticated user
       if (session?.user) {
         setIsSignedIn(true);
-        // Defer role fetching to avoid blocking
-        setTimeout(async () => {
-          const role = await fetchUserRole(session.user.id);
-          setUserRole(role);
-          // Check if user needs to select a role (OAuth users without role)
-          if (!role && session.user.app_metadata?.provider === 'google') {
-            setNeedsRoleSelection(true);
-          } else {
-            setNeedsRoleSelection(false);
-          }
-        }, 0);
+        
+        // Fetch role after state is set
+        const role = await fetchUserRole(session.user.id);
+        if (!mounted) return;
+        
+        setUserRole(role);
+        
+        // Check if OAuth user needs role selection
+        const provider = session.user.app_metadata?.provider;
+        if (!role && (provider === 'google' || provider === 'oauth')) {
+          setNeedsRoleSelection(true);
+        } else {
+          setNeedsRoleSelection(false);
+        }
       } else {
-        // Unauthenticated
         setIsSignedIn(false);
         setUserRole(null);
         setNeedsRoleSelection(false);
       }
-
-      setAuthLoading(false);
-    });
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
       
-      if (session?.user) {
-        setIsSignedIn(true);
-        setTimeout(async () => {
-          const role = await fetchUserRole(session.user.id);
-          setUserRole(role);
-          // Check if user needs to select a role (OAuth users without role)
-          if (!role && session.user.app_metadata?.provider === 'google') {
-            setNeedsRoleSelection(true);
-          } else {
-            setNeedsRoleSelection(false);
-          }
-        }, 0);
-      } else {
-        setIsSignedIn(false);
+      if (isInitial) {
+        setAuthLoading(false);
       }
+    };
 
-      setAuthLoading(false);
+    // Set up auth state listener FIRST - this catches OAuth redirects
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        // Handle the session synchronously first
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsSignedIn(!!session?.user);
+        setAuthLoading(false);
+        
+        // Then fetch role asynchronously
+        if (session?.user) {
+          handleSession(session);
+        } else {
+          setUserRole(null);
+          setNeedsRoleSelection(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
+      handleSession(session, true);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithEmail = async (email: string, password: string) => {
