@@ -54,61 +54,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleSession = async (session: Session | null, isInitial = false) => {
       if (!mounted) return;
-      
+
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         setIsSignedIn(true);
-        
-        // Fetch role after state is set
+
         const role = await fetchUserRole(session.user.id);
         if (!mounted) return;
-        
+
         setUserRole(role);
-        
-        // Check if OAuth user needs role selection
+
         const provider = session.user.app_metadata?.provider;
-        if (!role && (provider === 'google' || provider === 'oauth')) {
-          setNeedsRoleSelection(true);
-        } else {
-          setNeedsRoleSelection(false);
-        }
+        setNeedsRoleSelection(!role && (provider === 'google' || provider === 'oauth'));
       } else {
         setIsSignedIn(false);
         setUserRole(null);
         setNeedsRoleSelection(false);
       }
-      
+
       if (isInitial) {
         setAuthLoading(false);
       }
     };
 
-    // Set up auth state listener FIRST - this catches OAuth redirects
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        
-        // Handle the session synchronously first
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsSignedIn(!!session?.user);
-        setAuthLoading(false);
-        
-        // Then fetch role asynchronously
+    // Set up auth state listener FIRST - catches OAuth redirects
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      // Synchronous state updates only
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsSignedIn(!!session?.user);
+      setAuthLoading(false);
+
+      // Defer backend calls to avoid auth callback deadlocks
+      setTimeout(() => {
+        if (!mounted) return;
         if (session?.user) {
           handleSession(session);
         } else {
           setUserRole(null);
           setNeedsRoleSelection(false);
         }
-      }
-    );
+      }, 0);
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
       handleSession(session, true);
     });
 
@@ -117,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
 
   const signInWithEmail = async (email: string, password: string) => {
     setAuthLoading(true);

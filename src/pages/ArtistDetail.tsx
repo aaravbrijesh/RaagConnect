@@ -54,6 +54,8 @@ export default function ArtistDetail() {
   const fetchArtistDetails = async () => {
     if (!id) return;
 
+    setLoading(true);
+
     try {
       // Fetch artist
       const { data: artistData, error: artistError } = await supabase
@@ -64,7 +66,7 @@ export default function ArtistDetail() {
 
       if (artistError) throw artistError;
       setArtist(artistData);
-      
+
       // Initialize form data
       setFormData({
         name: artistData.name,
@@ -72,23 +74,33 @@ export default function ArtistDetail() {
         locationName: artistData.location_name || '',
         locationLat: artistData.location_lat,
         locationLng: artistData.location_lng,
-        bio: artistData.bio || ''
+        bio: artistData.bio || '',
       });
 
-      // Fetch artist's events
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('artist_id', id)
-        .order('date', { ascending: true });
+      // Fetch artist's events (supports legacy single-artist + new multi-artist links)
+      const [{ data: legacyEvents, error: legacyEventsError }, { data: linkedRows, error: linkedEventsError }] =
+        await Promise.all([
+          supabase.from('events').select('*').eq('artist_id', id),
+          supabase.from('event_artists').select('event:events(*)').eq('artist_id', id),
+        ]);
 
-      if (eventsError) throw eventsError;
-      
+      if (legacyEventsError) throw legacyEventsError;
+      if (linkedEventsError) throw linkedEventsError;
+
+      const linkedEvents = (linkedRows || [])
+        .map((row: any) => row.event)
+        .filter(Boolean);
+
+      const merged = [...(legacyEvents || []), ...linkedEvents];
+      const uniqueEvents = Array.from(new Map(merged.map((e: any) => [e.id, e])).values()).sort(
+        (a: any, b: any) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)
+      );
+
       // Split into upcoming and past events
       const today = new Date().toISOString().split('T')[0];
-      const upcoming = (eventsData || []).filter(e => e.date >= today);
-      const past = (eventsData || []).filter(e => e.date < today).reverse();
-      
+      const upcoming = uniqueEvents.filter((e: any) => e.date >= today);
+      const past = uniqueEvents.filter((e: any) => e.date < today).reverse();
+
       setUpcomingEvents(upcoming);
       setPastEvents(past);
     } catch (error: any) {
@@ -387,17 +399,17 @@ export default function ArtistDetail() {
         </motion.div>
 
         {/* Past Events */}
-        {pastEvents.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-12"
-          >
-            <h2 className="text-3xl font-bold mb-6 text-muted-foreground">
-              Past Events
-            </h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-12"
+        >
+          <h2 className="text-3xl font-bold mb-6 text-muted-foreground">
+            Past Events
+          </h2>
 
+          {pastEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pastEvents.map((event, index) => (
                 <motion.div
@@ -418,24 +430,32 @@ export default function ArtistDetail() {
                     <CardContent className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
-                        <span>{new Date(event.date).toLocaleDateString()} at {event.time}</span>
+                        <span>
+                          {new Date(event.date).toLocaleDateString()} at {event.time}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         <span>{event.location_name || 'Location TBA'}</span>
                       </div>
                       {event.price && (
-                        <p className="text-lg font-semibold text-muted-foreground">
-                          ${event.price}
-                        </p>
+                        <p className="text-lg font-semibold text-muted-foreground">${event.price}</p>
                       )}
                     </CardContent>
                   </Card>
                 </motion.div>
               ))}
             </div>
-          </motion.div>
-        )}
+          ) : (
+            <Card className="p-12 text-center bg-card/50 backdrop-blur-sm border-border/50">
+              <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <p className="text-xl text-muted-foreground">No past events</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                When this artist is added to events, you’ll see their history here
+              </p>
+            </Card>
+          )}
+        </motion.div>
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
