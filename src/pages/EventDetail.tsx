@@ -91,6 +91,9 @@ export default function EventDetail() {
   }
 
   const isOwnerOrAdmin = user && (event.user_id === user.id || isAdmin);
+  
+  // Check if event is in the past
+  const isPastEvent = new Date(`${event.date}T${event.time}`) < new Date();
 
   return (
     <div className="min-h-screen bg-background">
@@ -245,7 +248,13 @@ export default function EventDetail() {
               <Button
                 className="w-full" 
                 size="lg"
+                disabled={isPastEvent}
+                variant={isPastEvent ? "secondary" : "default"}
                 onClick={() => {
+                  if (isPastEvent) {
+                    toast.info('This event has already passed');
+                    return;
+                  }
                   if (!user || !session) {
                     toast.error('Please sign in to book this event', {
                       action: {
@@ -258,7 +267,11 @@ export default function EventDetail() {
                   setBookingModalOpen(true);
                 }}
               >
-                {event.price ? 'Book Tickets' : 'Register for Free'}
+                {isPastEvent 
+                  ? 'Event Has Passed' 
+                  : event.price 
+                    ? 'Book Tickets' 
+                    : 'Register for Free'}
               </Button>
 
               {/* Share button for non-owners */}

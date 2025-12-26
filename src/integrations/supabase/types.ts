@@ -261,6 +261,7 @@ export type Database = {
       events: {
         Row: {
           artist_id: string | null
+          confirmation_type: string | null
           created_at: string
           date: string
           flyer_url: string | null
@@ -282,6 +283,7 @@ export type Database = {
         }
         Insert: {
           artist_id?: string | null
+          confirmation_type?: string | null
           created_at?: string
           date: string
           flyer_url?: string | null
@@ -303,6 +305,7 @@ export type Database = {
         }
         Update: {
           artist_id?: string | null
+          confirmation_type?: string | null
           created_at?: string
           date?: string
           flyer_url?: string | null

@@ -14,10 +14,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 
+const BIO_MAX_LENGTH = 4096;
+
 const artistProfileSchema = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }).max(100, { message: "Name must be less than 100 characters" }),
   genre: z.string().trim().min(1, { message: "Specialization is required" }).max(100, { message: "Specialization must be less than 100 characters" }),
-  bio: z.string().max(2000, { message: "Bio must be less than 2000 characters" }).optional(),
+  bio: z.string().max(BIO_MAX_LENGTH, { message: `Bio must be less than ${BIO_MAX_LENGTH} characters` }).optional(),
   locationName: z.string().max(200, { message: "Location must be less than 200 characters" }).optional(),
 });
 
@@ -319,13 +321,20 @@ export default function CreateArtistProfile() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bio">Bio</Label>
+                <span className={`text-xs ${formData.bio.length > BIO_MAX_LENGTH ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                  {BIO_MAX_LENGTH - formData.bio.length} characters remaining
+                </span>
+              </div>
               <Textarea
                 id="bio"
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Tell us about yourself and your musical journey..."
                 rows={4}
+                maxLength={BIO_MAX_LENGTH}
+                className={formData.bio.length > BIO_MAX_LENGTH - 100 ? 'border-destructive/50' : ''}
               />
             </div>
             
@@ -337,13 +346,16 @@ export default function CreateArtistProfile() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="cursor-pointer"
+                  className="cursor-pointer flex-1"
                 />
                 {imageFile && (
-                  <Badge variant="secondary">
-                    <Upload className="h-3 w-3 mr-1" />
-                    {imageFile.name}
-                  </Badge>
+                  <div className="relative shrink-0">
+                    <img
+                      src={URL.createObjectURL(imageFile)}
+                      alt="Preview"
+                      className="h-12 w-12 object-cover rounded-md border"
+                    />
+                  </div>
                 )}
               </div>
             </div>

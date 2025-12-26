@@ -68,7 +68,8 @@ export default function CreateEvent() {
     cashapp: '',
     zelle: '',
     paypal: '',
-    notes: ''
+    notes: '',
+    confirmationType: 'online' as 'online' | 'at_the_door'
   });
 
   // Load form data from sessionStorage on mount
@@ -155,7 +156,8 @@ export default function CreateEvent() {
       cashapp: paymentInfo.cashapp || '',
       zelle: paymentInfo.zelle || '',
       paypal: paymentInfo.paypal || '',
-      notes: eventData.notes || ''
+      notes: eventData.notes || '',
+      confirmationType: (eventData.confirmation_type === 'at_the_door' ? 'at_the_door' : 'online') as 'online' | 'at_the_door'
     });
 
     // Set selected artists from junction table
@@ -319,7 +321,8 @@ export default function CreateEvent() {
         payment_link: paymentInfo,
         image_url: imageUrl,
         flyer_url: flyerUrl,
-        notes: formData.notes || null
+        notes: formData.notes || null,
+        confirmation_type: formData.price ? formData.confirmationType : null
       };
 
       let eventId: string;
@@ -581,6 +584,33 @@ export default function CreateEvent() {
                     </div>
                   </div>
 
+                  {/* Confirmation Type - Only for paid events */}
+                  {formData.price && parseFloat(formData.price) > 0 && (
+                    <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                      <Label className="text-sm font-medium">Booking Confirmation Method</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div 
+                          className={`cursor-pointer transition-all rounded-lg border p-3 ${formData.confirmationType === 'online' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                          onClick={() => setFormData({ ...formData, confirmationType: 'online' })}
+                        >
+                          <div className="font-medium text-sm">Online Confirmation</div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Review and approve each booking manually before the event
+                          </p>
+                        </div>
+                        <div 
+                          className={`cursor-pointer transition-all rounded-lg border p-3 ${formData.confirmationType === 'at_the_door' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                          onClick={() => setFormData({ ...formData, confirmationType: 'at_the_door' })}
+                        >
+                          <div className="font-medium text-sm">At-the-Door Confirmation</div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Confirm payment and attendance when guests arrive
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <Alert>
                     <AlertDescription className="text-sm">
                       Attendees will send payment using one of these methods and upload proof. You'll review and approve bookings from the event management area.
@@ -620,50 +650,46 @@ export default function CreateEvent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="image">Event Photo</Label>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <Input
                           id="image"
                           type="file"
                           accept="image/*"
                           onChange={handleImageChange}
-                          className="cursor-pointer"
+                          className="cursor-pointer flex-1"
                         />
-                        {imageFile && (
-                          <Badge variant="secondary">
-                            <Upload className="h-3 w-3 mr-1" />
-                            {imageFile.name}
-                          </Badge>
+                        {(imageFile || (editingEvent?.image_url && !imageFile)) && (
+                          <div className="shrink-0">
+                            <img
+                              src={imageFile ? URL.createObjectURL(imageFile) : editingEvent?.image_url}
+                              alt="Event preview"
+                              className="h-12 w-12 object-cover rounded-md border"
+                            />
+                          </div>
                         )}
                       </div>
-                      {editingEvent?.image_url && !imageFile && (
-                        <p className="text-sm text-muted-foreground">
-                          Current image will be kept
-                        </p>
-                      )}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="flyer">Event Flyer</Label>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <Input
                           id="flyer"
                           type="file"
                           accept="image/*"
                           onChange={handleFlyerChange}
-                          className="cursor-pointer"
+                          className="cursor-pointer flex-1"
                         />
-                        {flyerFile && (
-                          <Badge variant="secondary">
-                            <Upload className="h-3 w-3 mr-1" />
-                            {flyerFile.name}
-                          </Badge>
+                        {(flyerFile || (editingEvent?.flyer_url && !flyerFile)) && (
+                          <div className="shrink-0">
+                            <img
+                              src={flyerFile ? URL.createObjectURL(flyerFile) : editingEvent?.flyer_url}
+                              alt="Flyer preview"
+                              className="h-12 w-12 object-cover rounded-md border"
+                            />
+                          </div>
                         )}
                       </div>
-                      {editingEvent?.flyer_url && !flyerFile && (
-                        <p className="text-sm text-muted-foreground">
-                          Current flyer will be kept
-                        </p>
-                      )}
                     </div>
                   </div>
                 </div>

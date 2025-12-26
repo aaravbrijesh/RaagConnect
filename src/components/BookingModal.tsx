@@ -321,19 +321,31 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
           {!isFreeEvent && (
             <div className="space-y-2">
               <Label htmlFor="proof">Proof of Payment *</Label>
-              <Input
-                id="proof"
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleProofUpload}
-                className="cursor-pointer"
-              />
-              {proofFile && (
-                <Badge variant="secondary" className="gap-1">
-                  <Upload className="h-3 w-3" />
-                  {proofFile.name}
-                </Badge>
-              )}
+              <div className="flex items-center gap-3">
+                <Input
+                  id="proof"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleProofUpload}
+                  className="cursor-pointer flex-1"
+                />
+                {proofFile && (
+                  <div className="shrink-0">
+                    {proofFile.type.startsWith('image/') ? (
+                      <img
+                        src={URL.createObjectURL(proofFile)}
+                        alt="Payment proof preview"
+                        className="h-12 w-12 object-cover rounded-md border"
+                      />
+                    ) : (
+                      <Badge variant="secondary" className="gap-1">
+                        <Upload className="h-3 w-3" />
+                        PDF
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Upload a screenshot or receipt (max 5MB)
               </p>
