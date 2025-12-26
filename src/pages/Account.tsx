@@ -126,7 +126,8 @@ export default function Account() {
 
       const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
       
-      setAvatarUrl(data.publicUrl);
+      // Add cache buster to force update
+      setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`);
       toast.success('Avatar uploaded successfully!');
     } catch (error: any) {
       toast.error('Error uploading avatar: ' + error.message);
@@ -262,13 +263,6 @@ export default function Account() {
               </Button>
             </form>
 
-            <div className="pt-4 border-t">
-              <h3 className="text-sm font-semibold mb-2">Account Information</h3>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p>User ID: {user?.id}</p>
-                <p>Provider: {user?.app_metadata?.provider || 'email'}</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
 

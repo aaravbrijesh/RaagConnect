@@ -52,12 +52,29 @@ export default function Home() {
     
     setTotalEvents(count || 0);
     
-    // Get first 8 events with their artists from junction table
-    const { data, error } = await supabase
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Try to get upcoming events first
+    let { data, error } = await supabase
       .from('events')
       .select('*, artists(*), event_artists(artist_id, artists(*))')
+      .gte('date', today)
       .order('date', { ascending: true })
       .limit(8);
+    
+    // If no upcoming events, get past events instead
+    if (!error && (!data || data.length === 0)) {
+      const { data: pastData, error: pastError } = await supabase
+        .from('events')
+        .select('*, artists(*), event_artists(artist_id, artists(*))')
+        .lt('date', today)
+        .order('date', { ascending: false })
+        .limit(8);
+      
+      if (!pastError) {
+        data = pastData;
+      }
+    }
     
     if (error) {
       toast.error('Failed to load events');
@@ -216,7 +233,7 @@ export default function Home() {
       <section className="container mx-auto px-4 pb-16">
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative max-w-sm flex-1">
+            <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
@@ -228,7 +245,8 @@ export default function Home() {
             </div>
 
             <Button 
-              className="gap-2"
+              size="sm"
+              className="gap-1.5 md:gap-2 shrink-0"
               onClick={() => {
                 if (!user || !session) {
                   toast.error('Please sign in to create an event', {
@@ -247,7 +265,8 @@ export default function Home() {
               }}
             >
               <Plus className="h-4 w-4" />
-              Create Event
+              <span className="hidden sm:inline">Create Event</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </div>
 
