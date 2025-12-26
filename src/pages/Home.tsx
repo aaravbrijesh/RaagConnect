@@ -22,7 +22,7 @@ export default function Home() {
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<DateFilter>('upcoming');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [locationFilter, setLocationFilter] = useState('');
   const [zipCode, setZipCode] = useState('');
@@ -202,13 +202,13 @@ export default function Home() {
   }, [events, searchTerm, dateFilter, locationFilter, sortBy]);
 
   const activeFilterCount = [
-    dateFilter !== 'upcoming' ? 1 : 0,
+    dateFilter !== 'all' ? 1 : 0,
     locationFilter ? 1 : 0,
     sortBy !== 'date-asc' ? 1 : 0
   ].reduce((a, b) => a + b, 0);
 
   const clearFilters = () => {
-    setDateFilter('upcoming');
+    setDateFilter('all');
     setSortBy('date-asc');
     setLocationFilter('');
   };
