@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Clock, Ticket, Plus, Edit, Search, ArrowRight } from 'lucide-react';
 import EventFilters, { DateFilter, SortOption, filterAndSortEvents } from '@/components/EventFilters';
@@ -13,18 +13,19 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 import EventsMap from '@/components/EventsMap';
 import { useNavigate } from 'react-router-dom';
+import { fetchAllEventsWithRelations } from '@/lib/events';
 
 export default function Home() {
   const { user, session, needsRoleSelection } = useAuth();
   const { canCreateEvents, isAdmin } = useUserRoles(user?.id);
   const navigate = useNavigate();
   const [events, setEvents] = useState<any[]>([]);
-  const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [locationFilter, setLocationFilter] = useState('');
+  const hasSetInitialDateFilter = useRef(false);
   const [zipCode, setZipCode] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [searchRadius, setSearchRadius] = useState(50);
@@ -44,44 +45,23 @@ export default function Home() {
 
   const fetchEvents = async () => {
     setLoading(true);
-    
-    // Get total count
-    const { count } = await supabase
-      .from('events')
-      .select('*', { count: 'exact', head: true });
-    
-    setTotalEvents(count || 0);
-    
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Try to get upcoming events first
-    let { data, error } = await supabase
-      .from('events')
-      .select('*, artists(*), event_artists(artist_id, artists(*))')
-      .gte('date', today)
-      .order('date', { ascending: true })
-      .limit(8);
-    
-    // If no upcoming events, get past events instead
-    if (!error && (!data || data.length === 0)) {
-      const { data: pastData, error: pastError } = await supabase
-        .from('events')
-        .select('*, artists(*), event_artists(artist_id, artists(*))')
-        .lt('date', today)
-        .order('date', { ascending: false })
-        .limit(8);
-      
-      if (!pastError) {
-        data = pastData;
-      }
-    }
-    
+
+    const { data, error } = await fetchAllEventsWithRelations({ ascending: true });
+
     if (error) {
       toast.error('Failed to load events');
       console.error(error);
     } else {
       setEvents(data || []);
+
+      if (!hasSetInitialDateFilter.current) {
+        const today = new Date().toISOString().split('T')[0];
+        const hasUpcoming = (data || []).some((e: any) => typeof e?.date === 'string' && e.date >= today);
+        if (hasUpcoming) setDateFilter('upcoming');
+        hasSetInitialDateFilter.current = true;
+      }
     }
+
     setLoading(false);
   };
 

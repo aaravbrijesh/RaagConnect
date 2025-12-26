@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, ArrowLeft } from 'lucide-react';
 import EventFilters, { DateFilter, SortOption, filterAndSortEvents } from '@/components/EventFilters';
@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 import { useNavigate } from 'react-router-dom';
+import { fetchAllEventsWithRelations } from '@/lib/events';
 
 export default function Events() {
   const { user, session } = useAuth();
@@ -30,6 +31,7 @@ export default function Events() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [locationFilter, setLocationFilter] = useState('');
+  const hasSetInitialDateFilter = useRef(false);
   const [formData, setFormData] = useState({
     title: '',
     artistId: '',
@@ -51,17 +53,23 @@ export default function Events() {
 
   const fetchEvents = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('events')
-      .select('*, artists(*), event_artists(artist_id, artists(*))')
-      .order('date', { ascending: true });
-    
+
+    const { data, error } = await fetchAllEventsWithRelations({ ascending: true });
+
     if (error) {
       toast.error('Failed to load events');
       console.error(error);
     } else {
       setEvents(data || []);
+
+      if (!hasSetInitialDateFilter.current) {
+        const today = new Date().toISOString().split('T')[0];
+        const hasUpcoming = (data || []).some((e: any) => typeof e?.date === 'string' && e.date >= today);
+        if (hasUpcoming) setDateFilter('upcoming');
+        hasSetInitialDateFilter.current = true;
+      }
     }
+
     setLoading(false);
   };
 
