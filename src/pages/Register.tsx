@@ -32,8 +32,12 @@ export default function Register() {
 
   useEffect(() => {
     if (authMessage) {
-      if (authMessage.includes('successful')) {
-        // Don't automatically navigate to login for artists
+      if (authMessage.includes('check your email') || authMessage.includes('verify')) {
+        toast.success(authMessage);
+        // Navigate to verification pending page
+        setTimeout(() => navigate('/verify-email'), 1500);
+      } else if (authMessage.includes('successful')) {
+        // For artists, go straight to profile creation after email verification
         if (role !== 'artist') {
           toast.success(authMessage);
           setTimeout(() => navigate('/login'), 2000);
@@ -61,10 +65,7 @@ export default function Register() {
 
     try {
       await registerUser(validation.data.email, validation.data.password, role);
-      if (role === 'artist') {
-        // Don't navigate to login, go straight to profile creation
-        navigate('/create-artist-profile');
-      }
+      // Navigation is now handled by authMessage effect
     } catch (err) {
       // Error handled by context
     }

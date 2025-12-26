@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail";
 import Artists from "./pages/Artists";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/create-artist-profile" element={<CreateArtistProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
