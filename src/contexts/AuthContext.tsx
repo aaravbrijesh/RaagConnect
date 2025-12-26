@@ -119,11 +119,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthLoading(true);
     setAuthMessage('');
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        // Handle email not confirmed error
+        if (error.message?.toLowerCase().includes('email not confirmed')) {
+          localStorage.setItem('pendingVerificationEmail', email);
+          setAuthMessage('Please verify your email before signing in. Check your inbox for the verification link.');
+          throw error;
+        }
+        throw error;
+      }
+      
+      // Clear pending email on successful login
+      localStorage.removeItem('pendingVerificationEmail');
       setAuthMessage('Sign in successful!');
     } catch (error: any) {
-      setAuthMessage(error.message || 'Failed to sign in');
+      if (!error.message?.toLowerCase().includes('email not confirmed')) {
+        setAuthMessage(error.message || 'Failed to sign in');
+      }
       throw error;
     } finally {
       setAuthLoading(false);
@@ -153,20 +167,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthLoading(true);
     setAuthMessage('');
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/verify-email`,
           data: {
             role: role
           }
         }
       });
       if (error) throw error;
-      setAuthMessage('Registration successful! You can now log in.');
+      
+      // Store email for potential resend
+      localStorage.setItem('pendingVerificationEmail', email);
+      
+      // Check if user already exists (identities will be empty)
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        setAuthMessage('An account with this email already exists. Please sign in instead.');
+        throw new Error('User already exists');
+      }
+      
+      setAuthMessage('Please check your email to verify your account before logging in.');
     } catch (error: any) {
-      setAuthMessage(error.message || 'Failed to register');
+      if (error.message !== 'User already exists') {
+        setAuthMessage(error.message || 'Failed to register');
+      }
       throw error;
     } finally {
       setAuthLoading(false);
