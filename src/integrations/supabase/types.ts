@@ -385,7 +385,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      bookings_organizer_view: {
+        Row: {
+          amount: number | null
+          attendee_email: string | null
+          attendee_email_masked: string | null
+          attendee_name: string | null
+          attendee_name_masked: string | null
+          created_at: string | null
+          event_id: string | null
+          id: string | null
+          payment_method: string | null
+          proof_of_payment_url: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          attendee_email?: never
+          attendee_email_masked?: never
+          attendee_name?: never
+          attendee_name_masked?: never
+          created_at?: string | null
+          event_id?: string | null
+          id?: string | null
+          payment_method?: string | null
+          proof_of_payment_url?: never
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          attendee_email?: never
+          attendee_email_masked?: never
+          attendee_name?: never
+          attendee_name_masked?: never
+          created_at?: string | null
+          event_id?: string | null
+          id?: string | null
+          payment_method?: string | null
+          proof_of_payment_url?: never
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
