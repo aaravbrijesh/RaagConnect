@@ -48,8 +48,9 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
   }, [eventId]);
 
   const fetchBookings = async () => {
+    // Use the masked view for organizers - sensitive data is redacted unless user is booking owner/admin
     const { data, error } = await supabase
-      .from('bookings')
+      .from('bookings_organizer_view')
       .select('*')
       .eq('event_id', eventId)
       .eq('status', 'pending')
@@ -62,9 +63,18 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
     }
   };
 
-  const updateBookingStatus = async (bookingId: string, status: 'confirmed' | 'rejected', attendeeEmail: string, attendeeName: string) => {
+  const updateBookingStatus = async (bookingId: string, status: 'confirmed' | 'rejected') => {
     setLoading(true);
     try {
+      // Fetch full booking data from bookings table (RLS allows if user owns the event)
+      const { data: bookingData, error: fetchError } = await supabase
+        .from('bookings')
+        .select('attendee_email, attendee_name')
+        .eq('id', bookingId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { error } = await supabase
         .from('bookings')
         .update({ status })
@@ -72,12 +82,12 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
 
       if (error) throw error;
 
-      // Send email notification
+      // Send email notification using full data
       try {
         await supabase.functions.invoke('send-booking-email', {
           body: {
-            to: attendeeEmail,
-            attendeeName,
+            to: bookingData.attendee_email,
+            attendeeName: bookingData.attendee_name,
             eventTitle: eventTitle || 'Event',
             eventDate: eventDate ? new Date(eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : 'TBA',
             eventTime: eventTime || 'TBA',
@@ -130,10 +140,10 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-base">{booking.attendee_name}</CardTitle>
+                <CardTitle className="text-base">{booking.attendee_name || booking.attendee_name_masked}</CardTitle>
                 <CardDescription className="flex items-center gap-2">
                   <Mail className="h-3 w-3" />
-                  {booking.attendee_email}
+                  {booking.attendee_email || booking.attendee_email_masked}
                 </CardDescription>
               </div>
               {getStatusBadge(booking.status)}
@@ -190,7 +200,7 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
                   size="sm"
                   variant="default"
                   className="gap-2 flex-1"
-                  onClick={() => updateBookingStatus(booking.id, 'confirmed', booking.attendee_email, booking.attendee_name)}
+                  onClick={() => updateBookingStatus(booking.id, 'confirmed')}
                   disabled={loading}
                 >
                   <CheckCircle className="h-4 w-4" />
@@ -200,7 +210,7 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
                   size="sm"
                   variant="destructive"
                   className="gap-2 flex-1"
-                  onClick={() => updateBookingStatus(booking.id, 'rejected', booking.attendee_email, booking.attendee_name)}
+                  onClick={() => updateBookingStatus(booking.id, 'rejected')}
                   disabled={loading}
                 >
                   <XCircle className="h-4 w-4" />
