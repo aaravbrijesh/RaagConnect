@@ -122,8 +122,14 @@ export default function ArtistDetail() {
     
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/geocode?q=${encodeURIComponent(formData.locationName)}&limit=1`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          }
+        }
       );
+      if (!response.ok) throw new Error('Geocoding request failed');
       const data = await response.json();
       
       if (data && data.length > 0) {
