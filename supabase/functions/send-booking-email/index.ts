@@ -140,7 +140,7 @@ const handler = async (req: Request): Promise<Response> => {
       `;
 
     const emailResponse = await resend.emails.send({
-      from: "Raag Connect <onboarding@resend.dev>",
+      from: "Raag Connect <noreply@raagconnect.com>",
       to: [to],
       subject,
       html,
