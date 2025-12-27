@@ -139,16 +139,30 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       `;
 
-    const emailResponse = await resend.emails.send({
+    const { data, error: resendError } = await resend.emails.send({
       from: "Raag Connect <noreply@raagconnect.com>",
       to: [to],
       subject,
       html,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (resendError) {
+      console.error("Resend error:", resendError);
+      return new Response(
+        JSON.stringify({
+          error: resendError.message ?? "Failed to send email",
+          resend: resendError,
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
-    return new Response(JSON.stringify(emailResponse), {
+    console.log("Email sent successfully:", data);
+
+    return new Response(JSON.stringify({ data }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
