@@ -8,12 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Loader2, Upload, Music, Eye, Calendar, Settings } from 'lucide-react';
+import { Loader2, Upload, Music, Eye, Calendar } from 'lucide-react';
 import Nav from '@/components/Nav';
 import MyBookings from '@/components/MyBookings';
-import { useSettings } from '@/hooks/useSettings';
 
 export default function Account() {
   const { user, session } = useAuth();
@@ -27,7 +25,6 @@ export default function Account() {
   const [currentRole, setCurrentRole] = useState<string>('viewer');
   const [newRole, setNewRole] = useState<'viewer' | 'artist' | 'organizer'>('viewer');
   const [updatingRole, setUpdatingRole] = useState(false);
-  const { settings, updateSetting } = useSettings();
 
   useEffect(() => {
     if (!user) {
@@ -346,37 +343,6 @@ export default function Account() {
                 'Update Role'
               )}
             </Button>
-          </CardContent>
-        </Card>
-
-        {/* App Settings Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              App Settings
-            </CardTitle>
-            <CardDescription>Customize your app experience</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="stay-signed-in" className="text-sm font-medium">
-                  Stay signed in
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Keep your session active between browser visits
-                </p>
-              </div>
-              <Switch
-                id="stay-signed-in"
-                checked={settings.staySignedIn}
-                onCheckedChange={(checked) => {
-                  updateSetting('staySignedIn', checked);
-                  toast.success(checked ? 'You will stay signed in' : 'Session will expire when you close the browser');
-                }}
-              />
-            </div>
           </CardContent>
         </Card>
 
