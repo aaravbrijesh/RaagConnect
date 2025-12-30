@@ -14,6 +14,7 @@ import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import Admin from "./pages/Admin";
 import Account from "./pages/Account";
+import Settings from "./pages/Settings";
 import SelectRole from "./pages/SelectRole";
 import CreateArtistProfile from "./pages/CreateArtistProfile";
 import CreateEvent from "./pages/CreateEvent";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/about" element={<About />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

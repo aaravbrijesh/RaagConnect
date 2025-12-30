@@ -164,7 +164,15 @@ export default function Nav() {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Settings className="h-5 w-5" />
-                        Account Settings
+                        Account
+                      </NavLink>
+                      <NavLink 
+                        to="/settings" 
+                        className={mobileNavLinkClass}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Settings className="h-5 w-5" />
+                        Settings
                       </NavLink>
                       <button
                         onClick={() => {
@@ -214,7 +222,11 @@ export default function Nav() {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={() => navigate("/account")}>
                     <Settings className="h-4 w-4 mr-2" />
-                    Account Settings
+                    Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
