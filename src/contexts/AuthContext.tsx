@@ -2,6 +2,19 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
+const SETTINGS_KEY = 'user_settings';
+
+const getStaySignedIn = (): boolean => {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) {
+      const settings = JSON.parse(stored);
+      return settings.staySignedIn !== false; // Default to true
+    }
+  } catch {}
+  return true; // Default enabled
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -208,6 +221,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setUserRole(null);
       setIsSignedIn(false);
+      
+      // Clear session storage if user doesn't want to stay signed in
+      if (!getStaySignedIn()) {
+        sessionStorage.clear();
+      }
     } catch (error: any) {
       console.error('Sign out error:', error);
     } finally {
