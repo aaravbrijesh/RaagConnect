@@ -236,6 +236,17 @@ export default function Nav() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            {/* Settings gear icon - always visible */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/settings")}
+              className="hidden md:inline-flex"
+              title="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+            
             {!session && (
               <Button variant="outline" size="sm" onClick={() => navigate("/login")} className="hidden md:inline-flex">
                 Sign In
