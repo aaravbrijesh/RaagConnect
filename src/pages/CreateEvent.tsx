@@ -465,6 +465,9 @@ export default function CreateEvent() {
                 {/* Artist Selection - Multiple */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Featured Artists</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Note: While artists may be proficient in multiple instruments, they typically perform on one instrument per concert.
+                  </p>
                   
                   {selectedArtists.length > 0 && (
                     <div className="space-y-2">
