@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 
 export interface UserSettings {
   staySignedIn: boolean;
-  theme: 'light' | 'dark' | 'system';
+  theme: 'light' | 'dark';
   emailNotifications: boolean;
   eventReminders: boolean;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
   staySignedIn: true,
-  theme: 'system',
+  theme: 'light',
   emailNotifications: true,
   eventReminders: true,
 };
@@ -36,12 +36,7 @@ export function useSettings() {
   // Apply theme on mount and when it changes
   useEffect(() => {
     const applyTheme = () => {
-      if (settings.theme === 'system') {
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.classList.toggle('dark', isDark);
-      } else {
-        document.documentElement.classList.toggle('dark', settings.theme === 'dark');
-      }
+      document.documentElement.classList.toggle('dark', settings.theme === 'dark');
     };
     applyTheme();
   }, [settings.theme]);

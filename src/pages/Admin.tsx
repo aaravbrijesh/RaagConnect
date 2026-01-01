@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import Nav from '@/components/Nav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
+import AboutPageEditor from '@/components/AboutPageEditor';
 
 interface UserWithRoles {
   user_id: string;
@@ -210,8 +211,9 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="content">Site Content</TabsTrigger>
             <TabsTrigger value="audit">Site Edits</TabsTrigger>
           </TabsList>
 
@@ -280,6 +282,10 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="content">
+            <AboutPageEditor />
           </TabsContent>
 
           <TabsContent value="audit">
