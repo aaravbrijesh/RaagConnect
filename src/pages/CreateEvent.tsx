@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, UserPlus, Users, X } from 'lucide-react';
+import { ArrowLeft, Upload, UserPlus, Users, X, Sparkles, AlertTriangle } from 'lucide-react';
 import { z } from 'zod';
 import EventScheduleEditor from '@/components/EventScheduleEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +55,8 @@ export default function CreateEvent() {
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [schedule, setSchedule] = useState<{ id: string; time: string; title: string; description: string }[]>([]);
+  const [analyzingFlyer, setAnalyzingFlyer] = useState(false);
+  const [aiExtracted, setAiExtracted] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -186,9 +188,72 @@ export default function CreateEvent() {
     }
   };
 
-  const handleFlyerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFlyerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFlyerFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setFlyerFile(file);
+      
+      // Ask user if they want AI to extract details
+      const shouldAnalyze = window.confirm(
+        'Would you like AI to automatically extract event details from this flyer?'
+      );
+      
+      if (shouldAnalyze) {
+        await analyzeFlyer(file);
+      }
+    }
+  };
+
+  const analyzeFlyer = async (file: File) => {
+    setAnalyzingFlyer(true);
+    
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove the data URL prefix to get just the base64
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      
+      const imageBase64 = await base64Promise;
+      
+      const { data, error } = await supabase.functions.invoke('analyze-flyer', {
+        body: { imageBase64, mimeType: file.type }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.success && data?.data) {
+        const extracted = data.data;
+        
+        setFormData(prev => ({
+          ...prev,
+          title: extracted.title || prev.title,
+          date: extracted.date || prev.date,
+          time: extracted.time || prev.time,
+          locationName: extracted.location || prev.locationName,
+          price: extracted.price || prev.price,
+          notes: extracted.notes || prev.notes
+        }));
+        
+        setAiExtracted(true);
+        toast.success('Event details extracted from flyer! Please verify the information.');
+      } else {
+        toast.error(data?.error || 'Could not extract details from flyer');
+      }
+    } catch (error: any) {
+      console.error('Error analyzing flyer:', error);
+      toast.error('Failed to analyze flyer. Please enter details manually.');
+    } finally {
+      setAnalyzingFlyer(false);
     }
   };
 
@@ -410,6 +475,27 @@ export default function CreateEvent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* AI Extraction Disclaimer */}
+              {aiExtracted && (
+                <Alert className="mb-6 border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-200">
+                    <strong>AI-Extracted Details:</strong> Event information was automatically extracted from your flyer. 
+                    Please double-check all details for accuracy before submitting.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {/* Analyzing Flyer Indicator */}
+              {analyzingFlyer && (
+                <Alert className="mb-6 border-primary/50 bg-primary/5">
+                  <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                  <AlertDescription className="text-primary">
+                    AI is analyzing your flyer to extract event details...
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Info */}
                 <div className="space-y-4">

@@ -1,1 +1,10 @@
 project_id = "sjwtmymfdtirwrycneup"
+
+[functions.geocode]
+verify_jwt = false
+
+[functions.send-booking-email]
+verify_jwt = true
+
+[functions.analyze-flyer]
+verify_jwt = false
