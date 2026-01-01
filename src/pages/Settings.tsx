@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, Sun, Monitor } from 'lucide-react';
+import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, Sun, Trash2 } from 'lucide-react';
 import Nav from '@/components/Nav';
 import MyBookings from '@/components/MyBookings';
 import { useSettings } from '@/hooks/useSettings';
@@ -139,6 +139,36 @@ export default function Settings() {
     }
   };
 
+  const handleDeleteAvatar = async () => {
+    if (!user) return;
+
+    setUploading(true);
+    try {
+      // List files in user's avatar folder
+      const { data: files, error: listError } = await supabase.storage
+        .from('avatars')
+        .list(user.id);
+
+      if (listError) throw listError;
+
+      if (files && files.length > 0) {
+        const filePaths = files.map(file => `${user.id}/${file.name}`);
+        const { error: deleteError } = await supabase.storage
+          .from('avatars')
+          .remove(filePaths);
+
+        if (deleteError) throw deleteError;
+      }
+
+      setAvatarUrl('');
+      toast.success('Profile photo deleted');
+    } catch (error: any) {
+      toast.error('Error deleting avatar: ' + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleUpdateRole = async () => {
     if (!user || newRole === currentRole) return;
 
@@ -212,23 +242,37 @@ export default function Settings() {
                   <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-center gap-2">
-                  <Label htmlFor="avatar-upload" className="cursor-pointer">
-                    <Button variant="outline" size="sm" disabled={uploading} asChild>
-                      <span>
-                        {uploading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload Photo
-                          </>
-                        )}
-                      </span>
-                    </Button>
-                  </Label>
+                  <div className="flex gap-2">
+                    <Label htmlFor="avatar-upload" className="cursor-pointer">
+                      <Button variant="outline" size="sm" disabled={uploading} asChild>
+                        <span>
+                          {uploading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Photo
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </Label>
+                    {avatarUrl && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleDeleteAvatar}
+                        disabled={uploading}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
                   <input
                     id="avatar-upload"
                     type="file"
@@ -369,14 +413,9 @@ export default function Settings() {
                 <Label className="text-sm font-medium">Theme</Label>
                 <RadioGroup
                   value={settings.theme}
-                  onValueChange={(value: 'light' | 'dark' | 'system') => {
+                  onValueChange={(value: 'light' | 'dark') => {
                     updateSetting('theme', value);
-                    if (value === 'system') {
-                      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                      document.documentElement.classList.toggle('dark', isDark);
-                    } else {
-                      document.documentElement.classList.toggle('dark', value === 'dark');
-                    }
+                    document.documentElement.classList.toggle('dark', value === 'dark');
                     toast.success(`Theme set to ${value}`);
                   }}
                   className="flex flex-col gap-3"
@@ -393,13 +432,6 @@ export default function Settings() {
                     <Moon className="h-4 w-4 text-blue-500" />
                     <Label htmlFor="dark" className="flex-1 cursor-pointer">
                       Dark
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                    <RadioGroupItem value="system" id="system" />
-                    <Monitor className="h-4 w-4 text-muted-foreground" />
-                    <Label htmlFor="system" className="flex-1 cursor-pointer">
-                      System
                     </Label>
                   </div>
                 </RadioGroup>
