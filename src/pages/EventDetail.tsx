@@ -15,6 +15,7 @@ import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
 import EventSchedule from '@/components/EventSchedule';
 import ShareEvent from '@/components/ShareEvent';
+import TransferOwnership from '@/components/TransferOwnership';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -122,11 +123,19 @@ export default function EventDetail() {
               <p className="text-lg text-muted-foreground">{getArtistNames()}</p>
             </div>
             {isOwnerOrAdmin && (
-              <div className="flex gap-2 shrink-0">
+              <div className="flex flex-wrap gap-2 shrink-0">
                 <ShareEvent 
                   title={event.title} 
                   url={window.location.href}
                   date={new Date(event.date).toLocaleDateString()}
+                />
+                <TransferOwnership
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  onTransferred={() => {
+                    toast.info('You no longer have access to manage this event');
+                    navigate('/events');
+                  }}
                 />
                 <Button
                   variant="outline"
@@ -134,7 +143,7 @@ export default function EventDetail() {
                   onClick={() => navigate(`/events/create?edit=${event.id}`)}
                 >
                   <Edit className="h-4 w-4" />
-                  Edit Event
+                  Edit
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
