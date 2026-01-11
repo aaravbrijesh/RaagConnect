@@ -273,8 +273,10 @@ export type Database = {
           notes: string | null
           payment_link: string | null
           price: number | null
+          price_tiers: Json | null
           stripe_price_id: string | null
           stripe_product_id: string | null
+          ticket_capacity: number | null
           time: string
           title: string
           updated_at: string
@@ -295,8 +297,10 @@ export type Database = {
           notes?: string | null
           payment_link?: string | null
           price?: number | null
+          price_tiers?: Json | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
+          ticket_capacity?: number | null
           time: string
           title: string
           updated_at?: string
@@ -317,8 +321,10 @@ export type Database = {
           notes?: string | null
           payment_link?: string | null
           price?: number | null
+          price_tiers?: Json | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
+          ticket_capacity?: number | null
           time?: string
           title?: string
           updated_at?: string

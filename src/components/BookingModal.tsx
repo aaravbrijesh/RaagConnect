@@ -5,11 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, AlertCircle, CheckCircle, Minus, Plus } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Upload, AlertCircle, CheckCircle, Minus, Plus, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+
+interface PriceTier {
+  id: string;
+  name: string;
+  price: string;
+  quantity: string;
+  endDate?: string;
+}
 
 interface BookingModalProps {
   event: any;
@@ -24,46 +33,79 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [userProfile, setUserProfile] = useState<{ full_name: string; email: string } | null>(null);
   const [ticketCount, setTicketCount] = useState(1);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [totalBookings, setTotalBookings] = useState(0);
 
   // Parse payment info from JSON
   const paymentInfo = event.payment_link ? JSON.parse(event.payment_link) : {};
   const hasPaymentInfo = paymentInfo.venmo || paymentInfo.cashapp || paymentInfo.zelle || paymentInfo.paypal;
-  const isFreeEvent = !event.price || event.price === 0;
-  const totalAmount = (event.price || 0) * ticketCount;
+  
+  // Parse price tiers
+  const priceTiers: PriceTier[] = event.price_tiers && Array.isArray(event.price_tiers) 
+    ? event.price_tiers 
+    : [];
+  
+  // Check if event has capacity limit
+  const hasCapacity = event.ticket_capacity && event.ticket_capacity > 0;
+  const remainingTickets = hasCapacity ? event.ticket_capacity - totalBookings : null;
+  const isSoldOut = hasCapacity && remainingTickets !== null && remainingTickets <= 0;
+
+  // Get active price (from tier or base price)
+  const getActivePrice = () => {
+    if (selectedTier && priceTiers.length > 0) {
+      const tier = priceTiers.find(t => t.id === selectedTier);
+      if (tier) return parseFloat(tier.price) || 0;
+    }
+    return event.price || 0;
+  };
+
+  const activePrice = getActivePrice();
+  const isFreeEvent = activePrice === 0;
+  const totalAmount = activePrice * ticketCount;
   
   // Check if event is in the past
   const isPastEvent = new Date(`${event.date}T${event.time}`) < new Date();
 
-  // Fetch user profile for auto-fill - prioritize auth email for Google OAuth users
+  // Fetch user profile and total bookings
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
+    const fetchData = async () => {
+      if (!user || !open) return;
       
-      // For Google OAuth users, user.email is always available and verified
+      // Fetch profile
       const authEmail = user.email || '';
-      
       const { data } = await supabase
         .from('profiles')
         .select('full_name, email')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Use auth email (from Google) first, then profile email as fallback
       const email = authEmail || data?.email || '';
       const fullName = data?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || '';
+      setUserProfile({ full_name: fullName, email });
 
-      setUserProfile({
-        full_name: fullName,
-        email: email
-      });
+      // Fetch total bookings for this event (for capacity check)
+      if (hasCapacity) {
+        const { count } = await supabase
+          .from('bookings')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', event.id)
+          .neq('status', 'cancelled');
+        setTotalBookings(count || 0);
+      }
     };
 
     if (open) {
-      fetchProfile();
+      fetchData();
       setTicketCount(1);
       setProofFile(null);
+      // Default to first tier if available
+      if (priceTiers.length > 0) {
+        setSelectedTier(priceTiers[0].id);
+      } else {
+        setSelectedTier(null);
+      }
     }
-  }, [user, open]);
+  }, [user, open, event.id, hasCapacity]);
 
   const handleProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -80,6 +122,18 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
     if (isPastEvent) {
       toast.error('This event has already passed');
       onOpenChange(false);
+      return;
+    }
+
+    if (isSoldOut) {
+      toast.error('This event is sold out');
+      onOpenChange(false);
+      return;
+    }
+
+    // Check if booking would exceed capacity
+    if (hasCapacity && remainingTickets !== null && ticketCount > remainingTickets) {
+      toast.error(`Only ${remainingTickets} tickets remaining`);
       return;
     }
     
@@ -124,12 +178,13 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       }
 
       // Create bookings for each ticket
+      const selectedTierData = selectedTier ? priceTiers.find(t => t.id === selectedTier) : null;
       const bookingsToInsert = Array.from({ length: ticketCount }, () => ({
         event_id: event.id,
         user_id: user.id,
         attendee_name: userProfile.full_name,
         attendee_email: userProfile.email,
-        amount: event.price || 0,
+        amount: activePrice,
         payment_method: isFreeEvent ? 'free' : 'direct',
         proof_of_payment_url: proofPath,
         status: isFreeEvent ? 'confirmed' : 'pending'
@@ -208,19 +263,41 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Book Event: {event.title}</DialogTitle>
           <DialogDescription>
-            {isPastEvent 
-              ? 'This event has already passed' 
-              : isFreeEvent 
-                ? 'Confirm your free registration' 
-                : 'Complete your booking for this event'}
+            {isSoldOut 
+              ? 'This event is sold out'
+              : isPastEvent 
+                ? 'This event has already passed' 
+                : isFreeEvent 
+                  ? 'Confirm your free registration' 
+                  : 'Complete your booking for this event'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Sold Out Notice */}
+          {isSoldOut && (
+            <Alert className="border-destructive/50 bg-destructive/10">
+              <XCircle className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-destructive">
+                This event has sold out. No more tickets are available.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Remaining Tickets Notice */}
+          {!isSoldOut && hasCapacity && remainingTickets !== null && remainingTickets <= 10 && (
+            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                Only {remainingTickets} ticket{remainingTickets !== 1 ? 's' : ''} remaining!
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Auto-filled User Info */}
           <div className="p-4 bg-muted/50 rounded-lg space-y-2">
             <p className="text-sm font-medium">Booking as:</p>
@@ -233,55 +310,99 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </p>
           </div>
 
+          {/* Price Tiers Selection */}
+          {priceTiers.length > 0 && !isSoldOut && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Select Ticket Type</Label>
+              <RadioGroup value={selectedTier || ''} onValueChange={setSelectedTier}>
+                {priceTiers.map((tier) => {
+                  const tierPrice = parseFloat(tier.price) || 0;
+                  const isExpired = tier.endDate && new Date(tier.endDate) < new Date();
+                  
+                  return (
+                    <div
+                      key={tier.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        selectedTier === tier.id 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      } ${isExpired ? 'opacity-50' : 'cursor-pointer'}`}
+                      onClick={() => !isExpired && setSelectedTier(tier.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value={tier.id} disabled={isExpired} />
+                        <div>
+                          <p className="font-medium text-sm">{tier.name}</p>
+                          {tier.endDate && (
+                            <p className="text-xs text-muted-foreground">
+                              {isExpired ? 'Expired' : `Until ${new Date(tier.endDate).toLocaleDateString()}`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="font-semibold">
+                        {tierPrice === 0 ? 'Free' : `$${tierPrice.toFixed(2)}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </RadioGroup>
+            </div>
+          )}
+
           {/* Ticket Quantity */}
-          <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Number of Tickets</Label>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
-                  disabled={ticketCount <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="text-lg font-semibold w-8 text-center">{ticketCount}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setTicketCount(Math.min(10, ticketCount + 1))}
-                  disabled={ticketCount >= 10}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+          {!isSoldOut && (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Number of Tickets</Label>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
+                    disabled={ticketCount <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-lg font-semibold w-8 text-center">{ticketCount}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTicketCount(Math.min(remainingTickets ?? 10, ticketCount + 1))}
+                    disabled={ticketCount >= (remainingTickets ?? 10)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Price Info */}
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">
-                {isFreeEvent ? 'Event Price' : `Total (${ticketCount} × $${event.price})`}
-              </span>
-              <span className="text-lg font-bold">
-                {isFreeEvent ? (
-                  <span className="flex items-center gap-2 text-green-600">
-                    <CheckCircle className="h-5 w-5" />
-                    Free Entry
-                  </span>
-                ) : (
-                  `$${totalAmount.toFixed(2)}`
-                )}
-              </span>
+          {!isSoldOut && (
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">
+                  {isFreeEvent ? 'Event Price' : `Total (${ticketCount} × $${activePrice.toFixed(2)})`}
+                </span>
+                <span className="text-lg font-bold">
+                  {isFreeEvent ? (
+                    <span className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      Free Entry
+                    </span>
+                  ) : (
+                    `$${totalAmount.toFixed(2)}`
+                  )}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Payment info for paid events */}
-          {!isFreeEvent && hasPaymentInfo && (
+          {!isSoldOut && !isFreeEvent && hasPaymentInfo && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -318,7 +439,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
           )}
 
           {/* Proof of payment for paid events */}
-          {!isFreeEvent && (
+          {!isSoldOut && !isFreeEvent && (
             <div className="space-y-2">
               <Label htmlFor="proof">Proof of Payment *</Label>
               <div className="flex items-center gap-3">
@@ -354,16 +475,18 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
           <Button 
             onClick={handleBooking} 
-            disabled={loading || isPastEvent || (!isFreeEvent && !proofFile) || !userProfile}
+            disabled={loading || isPastEvent || isSoldOut || (!isFreeEvent && !proofFile) || !userProfile}
             className="w-full"
           >
-            {isPastEvent 
-              ? 'Event Has Passed' 
-              : loading 
-                ? 'Processing...' 
-                : isFreeEvent 
-                  ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}` 
-                  : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
+            {isSoldOut 
+              ? 'Sold Out'
+              : isPastEvent 
+                ? 'Event Has Passed' 
+                : loading 
+                  ? 'Processing...' 
+                  : isFreeEvent 
+                    ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}` 
+                    : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
           </Button>
         </div>
       </DialogContent>
