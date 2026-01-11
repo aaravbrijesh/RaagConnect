@@ -417,7 +417,6 @@ export default function Artists() {
                 </CardHeader>
                 
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">{artist.bio}</p>
                   <Button 
                     className="w-full" 
                     variant="outline"
