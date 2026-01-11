@@ -12,7 +12,3 @@ Allow: /
 
 User-agent: *
 Allow: /
-Disallow: /settings
-Disallow: /admin
-
-Sitemap: https://raagconnect.com/sitemap.xml
