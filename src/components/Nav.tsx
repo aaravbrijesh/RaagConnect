@@ -4,7 +4,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink } from "react-router-dom";
 import { Users, Calendar, LogOut, Shield, Settings, Info, Menu, X } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/MusicConnectsLogo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
