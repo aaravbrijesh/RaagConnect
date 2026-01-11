@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, UserPlus, Users, X, Sparkles, AlertTriangle } from 'lucide-react';
 import { z } from 'zod';
 import EventScheduleEditor from '@/components/EventScheduleEditor';
+import PriceTiersEditor, { PriceTier } from '@/components/PriceTiersEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +56,7 @@ export default function CreateEvent() {
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [schedule, setSchedule] = useState<{ id: string; time: string; title: string; description: string }[]>([]);
+  const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
   const [analyzingFlyer, setAnalyzingFlyer] = useState(false);
   const [aiExtracted, setAiExtracted] = useState(false);
   
@@ -66,6 +68,7 @@ export default function CreateEvent() {
     locationLat: null as number | null,
     locationLng: null as number | null,
     price: '',
+    ticketCapacity: '',
     venmo: '',
     cashapp: '',
     zelle: '',
@@ -154,6 +157,7 @@ export default function CreateEvent() {
       locationLat: eventData.location_lat,
       locationLng: eventData.location_lng,
       price: eventData.price?.toString() || '',
+      ticketCapacity: eventData.ticket_capacity?.toString() || '',
       venmo: paymentInfo.venmo || '',
       cashapp: paymentInfo.cashapp || '',
       zelle: paymentInfo.zelle || '',
@@ -161,6 +165,11 @@ export default function CreateEvent() {
       notes: eventData.notes || '',
       confirmationType: (eventData.confirmation_type === 'at_the_door' ? 'at_the_door' : 'online') as 'online' | 'at_the_door'
     });
+
+    // Load price tiers
+    if (eventData.price_tiers && Array.isArray(eventData.price_tiers)) {
+      setPriceTiers(eventData.price_tiers as unknown as PriceTier[]);
+    }
 
     // Set selected artists from junction table
     if (eventArtists && eventArtists.length > 0) {
@@ -383,6 +392,8 @@ export default function CreateEvent() {
         location_lat: formData.locationLat,
         location_lng: formData.locationLng,
         price: formData.price ? parseFloat(formData.price) : null,
+        ticket_capacity: formData.ticketCapacity ? parseInt(formData.ticketCapacity, 10) : null,
+        price_tiers: priceTiers.length > 0 ? JSON.parse(JSON.stringify(priceTiers)) : null,
         payment_link: paymentInfo,
         image_url: imageUrl,
         flyer_url: flyerUrl,
@@ -614,23 +625,53 @@ export default function CreateEvent() {
 
                 <Separator />
 
+                {/* Event Schedule - Moved before Payment */}
+                <EventScheduleEditor schedule={schedule} onChange={setSchedule} />
+
+                <Separator />
+
                 {/* Pricing */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Pricing & Payment</h3>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Ticket Price ($)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      placeholder="0.00 (leave empty for free event)"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Base Ticket Price ($)</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        placeholder="0.00 (leave empty for free event)"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ticketCapacity">Ticket Capacity</Label>
+                      <Input
+                        id="ticketCapacity"
+                        type="number"
+                        min="1"
+                        value={formData.ticketCapacity}
+                        onChange={(e) => setFormData({ ...formData, ticketCapacity: e.target.value })}
+                        placeholder="Unlimited (leave empty)"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Event will show as sold out when capacity is reached
+                      </p>
+                    </div>
                   </div>
 
+                  {/* Price Tiers */}
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <PriceTiersEditor tiers={priceTiers} onChange={setPriceTiers} />
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  <h4 className="text-md font-medium">Payment Methods</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="venmo">Venmo</Label>
@@ -724,11 +765,6 @@ export default function CreateEvent() {
                     />
                   </div>
                 </div>
-
-                <Separator />
-
-                {/* Event Schedule */}
-                <EventScheduleEditor schedule={schedule} onChange={setSchedule} />
 
                 <Separator />
 
