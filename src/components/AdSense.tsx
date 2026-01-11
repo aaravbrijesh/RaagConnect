@@ -13,8 +13,7 @@ interface AdSenseProps {
   className?: string;
 }
 
-// Replace with your actual AdSense Publisher ID
-const ADSENSE_CLIENT = 'ca-pub-XXXXXXXXXXXXXXXX';
+const ADSENSE_CLIENT = 'ca-pub-8400431646684509';
 
 export const AdSense = ({ 
   adSlot, 
