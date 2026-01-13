@@ -156,10 +156,12 @@ export default function EventDiscussion({ eventId, organizerId }: EventDiscussio
           <Card className="bg-card/50">
             <CardContent className="pt-6 text-center text-muted-foreground">
               <Megaphone className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No announcements yet.</p>
-              {!canPostAnnouncements && (
-                <p className="text-sm mt-1">The organizer will post important updates here.</p>
-              )}
+              <p className="font-medium">No announcements yet</p>
+              <p className="text-sm mt-1">
+                {canPostAnnouncements 
+                  ? "Post updates to keep attendees informed about this event."
+                  : "Check back closer to the event for important updates from the organizer."}
+              </p>
             </CardContent>
           </Card>
         ) : (

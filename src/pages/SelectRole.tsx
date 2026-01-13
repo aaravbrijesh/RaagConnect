@@ -93,53 +93,53 @@ export default function SelectRole() {
           <div className="space-y-4">
             <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer')}>
               <div className="space-y-2">
-                <div 
-                  className={`cursor-pointer transition-all rounded-lg border ${role === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  onClick={() => setRole('viewer')}
+                <label 
+                  htmlFor="select-viewer"
+                  className={`cursor-pointer transition-all rounded-lg border block ${role === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                 >
                   <div className="p-4 flex items-center gap-3">
-                    <RadioGroupItem value="viewer" id="viewer" />
+                    <RadioGroupItem value="viewer" id="select-viewer" />
                     <div className="flex-1">
-                      <label htmlFor="viewer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
                         <Eye className="h-4 w-4 text-muted-foreground" />
                         Viewer
-                      </label>
+                      </span>
                       <p className="text-xs text-muted-foreground">Discover and book events</p>
                     </div>
                   </div>
-                </div>
+                </label>
 
-                <div 
-                  className={`cursor-pointer transition-all rounded-lg border ${role === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  onClick={() => setRole('artist')}
+                <label 
+                  htmlFor="select-artist"
+                  className={`cursor-pointer transition-all rounded-lg border block ${role === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                 >
                   <div className="p-4 flex items-center gap-3">
-                    <RadioGroupItem value="artist" id="artist" />
+                    <RadioGroupItem value="artist" id="select-artist" />
                     <div className="flex-1">
-                      <label htmlFor="artist" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
                         <Music className="h-4 w-4 text-muted-foreground" />
                         Artist
-                      </label>
+                      </span>
                       <p className="text-xs text-muted-foreground">Create your profile and showcase music</p>
                     </div>
                   </div>
-                </div>
+                </label>
 
-                <div 
-                  className={`cursor-pointer transition-all rounded-lg border ${role === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  onClick={() => setRole('organizer')}
+                <label 
+                  htmlFor="select-organizer"
+                  className={`cursor-pointer transition-all rounded-lg border block ${role === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                 >
                   <div className="p-4 flex items-center gap-3">
-                    <RadioGroupItem value="organizer" id="organizer" />
+                    <RadioGroupItem value="organizer" id="select-organizer" />
                     <div className="flex-1">
-                      <label htmlFor="organizer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         Organizer
-                      </label>
+                      </span>
                       <p className="text-xs text-muted-foreground">Create and manage events</p>
                     </div>
                   </div>
-                </div>
+                </label>
               </div>
             </RadioGroup>
 

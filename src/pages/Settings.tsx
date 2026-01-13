@@ -335,53 +335,53 @@ export default function Settings() {
 
               <RadioGroup value={newRole} onValueChange={(value) => setNewRole(value as 'viewer' | 'artist' | 'organizer')}>
                 <div className="space-y-2">
-                  <div 
-                    className={`cursor-pointer transition-all rounded-lg border ${newRole === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                    onClick={() => setNewRole('viewer')}
+                  <label 
+                    htmlFor="role-viewer"
+                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                   >
                     <div className="p-3 flex items-center gap-3">
                       <RadioGroupItem value="viewer" id="role-viewer" />
                       <div className="flex-1">
-                        <label htmlFor="role-viewer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <span className="text-sm font-medium flex items-center gap-2">
                           <Eye className="h-4 w-4 text-muted-foreground" />
                           Viewer
-                        </label>
+                        </span>
                         <p className="text-xs text-muted-foreground">Discover and book events</p>
                       </div>
                     </div>
-                  </div>
+                  </label>
 
-                  <div 
-                    className={`cursor-pointer transition-all rounded-lg border ${newRole === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                    onClick={() => setNewRole('artist')}
+                  <label 
+                    htmlFor="role-artist"
+                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                   >
                     <div className="p-3 flex items-center gap-3">
                       <RadioGroupItem value="artist" id="role-artist" />
                       <div className="flex-1">
-                        <label htmlFor="role-artist" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <span className="text-sm font-medium flex items-center gap-2">
                           <Music className="h-4 w-4 text-muted-foreground" />
                           Artist
-                        </label>
+                        </span>
                         <p className="text-xs text-muted-foreground">Create your profile and showcase music</p>
                       </div>
                     </div>
-                  </div>
+                  </label>
 
-                  <div 
-                    className={`cursor-pointer transition-all rounded-lg border ${newRole === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                    onClick={() => setNewRole('organizer')}
+                  <label 
+                    htmlFor="role-organizer"
+                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                   >
                     <div className="p-3 flex items-center gap-3">
                       <RadioGroupItem value="organizer" id="role-organizer" />
                       <div className="flex-1">
-                        <label htmlFor="role-organizer" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <span className="text-sm font-medium flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           Organizer
-                        </label>
+                        </span>
                         <p className="text-xs text-muted-foreground">Create and manage events</p>
                       </div>
                     </div>
-                  </div>
+                  </label>
                 </div>
               </RadioGroup>
 

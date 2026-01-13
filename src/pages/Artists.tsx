@@ -379,7 +379,7 @@ export default function Artists() {
                     <img
                       src={artist.image_url}
                       alt={artist.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center">

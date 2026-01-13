@@ -196,7 +196,10 @@ export default function EventSchedule({ eventId, canEdit }: EventScheduleProps) 
         )}
 
         {schedule.length === 0 && !showAddForm ? (
-          <p className="text-muted-foreground text-sm text-center py-4">Coming Soon</p>
+          <div className="text-center py-6">
+            <Clock className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-muted-foreground text-sm">Schedule will be posted closer to the event</p>
+          </div>
         ) : (
           <div className="space-y-2">
             {schedule.map((item) => (
