@@ -56,7 +56,12 @@ export default function ShareEvent({ title, url, date, variant = 'outline', size
     };
 
     if (shareUrls[platform]) {
-      window.open(shareUrls[platform], '_blank', 'noopener,noreferrer');
+      if (platform === 'email') {
+        // mailto: links work better with location assignment
+        window.location.href = shareUrls[platform];
+      } else {
+        window.open(shareUrls[platform], '_blank', 'noopener,noreferrer');
+      }
     }
   };
 
