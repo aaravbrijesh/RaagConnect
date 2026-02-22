@@ -169,6 +169,8 @@ export default function Classes() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
+                className="cursor-pointer"
+                onClick={() => navigate(`/classes/${cls.id}`)}
               >
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                   {cls.image_url && (

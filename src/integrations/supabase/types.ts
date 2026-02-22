@@ -139,6 +139,113 @@ export type Database = {
           },
         ]
       }
+      class_availability: {
+        Row: {
+          class_id: string
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          slot_duration_minutes: number
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          slot_duration_minutes?: number
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          slot_duration_minutes?: number
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_availability_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_bookings: {
+        Row: {
+          availability_id: string
+          booking_date: string
+          class_id: string
+          created_at: string
+          end_time: string
+          id: string
+          notes: string | null
+          start_time: string
+          status: string
+          student_email: string
+          student_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability_id: string
+          booking_date: string
+          class_id: string
+          created_at?: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          start_time: string
+          status?: string
+          student_email: string
+          student_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability_id?: string
+          booking_date?: string
+          class_id?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          start_time?: string
+          status?: string
+          student_email?: string
+          student_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_bookings_availability_id_fkey"
+            columns: ["availability_id"]
+            isOneToOne: false
+            referencedRelation: "class_availability"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_bookings_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           class_type: string
