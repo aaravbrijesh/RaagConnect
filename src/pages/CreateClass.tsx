@@ -255,8 +255,7 @@ export default function CreateClass() {
                   placeholder="Paste your Google Calendar secret iCal URL"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Find it in Google Calendar → Settings → your calendar → "Secret address in iCal format". 
-                  Students will only see when you're busy — no event details are shared.
+                  Go to <a href="https://calendar.google.com/calendar/r/settings" target="_blank" rel="noopener noreferrer" className="underline text-primary">Google Calendar Settings</a> → click your calendar under "Settings for my calendars" → scroll to "Integrate calendar" → copy the "Secret address in iCal format" URL. Students will only see when you're busy — no event details are shared.
                 </p>
               </div>
 
