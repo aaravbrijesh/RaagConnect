@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Music, Eye, Calendar, EyeOff } from 'lucide-react';
+import { Music, Eye, Calendar, EyeOff, GraduationCap } from 'lucide-react';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -27,7 +27,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState<'viewer' | 'artist' | 'organizer'>('viewer');
+  const [role, setRole] = useState<'viewer' | 'artist' | 'organizer' | 'teacher'>('viewer');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -142,7 +142,7 @@ export default function Register() {
 
             <div className="space-y-2 pt-2">
               <Label className="text-sm">I am a...</Label>
-              <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer')}>
+              <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer' | 'teacher')}>
                 <div className="space-y-2">
                   <label 
                     htmlFor="viewer"
@@ -188,6 +188,22 @@ export default function Register() {
                           Organizer
                         </span>
                         <p className="text-xs text-muted-foreground">Create and manage events</p>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label 
+                    htmlFor="teacher"
+                    className={`cursor-pointer transition-all rounded-lg border block ${role === 'teacher' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                  >
+                    <div className="p-3 flex items-center gap-3">
+                      <RadioGroupItem value="teacher" id="teacher" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                          Teacher
+                        </span>
+                        <p className="text-xs text-muted-foreground">List and manage music classes</p>
                       </div>
                     </div>
                   </label>

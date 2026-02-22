@@ -21,6 +21,8 @@ import SelectArtistForEvent from "./pages/SelectArtistForEvent";
 import CreateArtistForEvent from "./pages/CreateArtistForEvent";
 import ArtistDetail from "./pages/ArtistDetail";
 import About from "./pages/About";
+import Classes from "./pages/Classes";
+import CreateClass from "./pages/CreateClass";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +45,8 @@ const App = () => (
             <Route path="/events/create/createartist" element={<CreateArtistForEvent />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/about" element={<About />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/classes/create" element={<CreateClass />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />

@@ -108,7 +108,7 @@ export default function Admin() {
     try {
       const { error } = await supabase
         .from('user_roles')
-        .insert({ user_id: userId, role: role as 'viewer' | 'artist' | 'organizer' | 'admin' });
+        .insert({ user_id: userId, role: role as 'viewer' | 'artist' | 'organizer' | 'admin' | 'teacher' });
 
       if (error) throw error;
 
@@ -125,7 +125,7 @@ export default function Admin() {
         .from('user_roles')
         .delete()
         .eq('user_id', userId)
-        .eq('role', role as 'viewer' | 'artist' | 'organizer' | 'admin');
+        .eq('role', role as 'viewer' | 'artist' | 'organizer' | 'admin' | 'teacher');
 
       if (error) throw error;
 
@@ -273,6 +273,7 @@ export default function Admin() {
                             <SelectItem value="viewer">Viewer</SelectItem>
                             <SelectItem value="artist">Artist</SelectItem>
                             <SelectItem value="organizer">Organizer</SelectItem>
+                            <SelectItem value="teacher">Teacher</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>

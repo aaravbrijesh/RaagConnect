@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Users, Calendar, LogOut, Shield, Settings, Info, Menu, X } from "lucide-react";
+import { Users, Calendar, LogOut, Shield, Settings, Info, Menu, X, GraduationCap } from "lucide-react";
 import logo from "@/assets/MusicConnectsLogo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -96,6 +96,10 @@ export default function Nav() {
                 <Users className="h-4 w-4" />
                 Discover Artists
               </NavLink>
+              <NavLink to="/classes" className={navLinkClass}>
+                <GraduationCap className="h-4 w-4" />
+                Classes
+              </NavLink>
               <NavLink to="/about" className={navLinkClass}>
                 <Info className="h-4 w-4" />
                 About
@@ -135,6 +139,14 @@ export default function Nav() {
                   >
                     <Users className="h-5 w-5" />
                     Discover Artists
+                  </NavLink>
+                  <NavLink 
+                    to="/classes" 
+                    className={mobileNavLinkClass}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <GraduationCap className="h-5 w-5" />
+                    Classes
                   </NavLink>
                   <NavLink 
                     to="/about" 
