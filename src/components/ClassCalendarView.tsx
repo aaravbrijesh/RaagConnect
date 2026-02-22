@@ -1,11 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { format, addDays, isSameDay } from 'date-fns';
-import { CalendarPlus, Loader2 } from 'lucide-react';
+import { format, addDays, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isBefore } from 'date-fns';
+import { ChevronLeft, ChevronRight, Loader2, Clock } from 'lucide-react';
 
 interface AvailabilitySlot {
   id: string;
@@ -26,7 +23,7 @@ export interface TimeSlot {
   start_time: string;
   end_time: string;
   booked: boolean;
-  busy: boolean; // from Google Calendar
+  busy: boolean;
 }
 
 interface ClassCalendarViewProps {
@@ -36,7 +33,10 @@ interface ClassCalendarViewProps {
   hasIcal: boolean;
   onSelectSlot: (slot: TimeSlot) => void;
   selectedSlot: TimeSlot | null;
+  readOnly?: boolean;
 }
+
+const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 export default function ClassCalendarView({
   classId,
@@ -45,12 +45,17 @@ export default function ClassCalendarView({
   hasIcal,
   onSelectSlot,
   selectedSlot,
+  readOnly = false,
 }: ClassCalendarViewProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [busyTimes, setBusyTimes] = useState<BusyTime[]>([]);
   const [loadingBusy, setLoadingBusy] = useState(false);
 
-  // Fetch busy times from Google Calendar if teacher has linked one
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = addDays(today, 13);
+
   useEffect(() => {
     if (!hasIcal) return;
     const fetchBusy = async () => {
@@ -74,8 +79,7 @@ export default function ClassCalendarView({
   // Generate all time slots for next 14 days
   const allSlots = useMemo(() => {
     const slots: TimeSlot[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
 
     for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
       const date = addDays(today, dayOffset);
@@ -103,14 +107,12 @@ export default function ClassCalendarView({
             b => b.booking_date === dateStr && b.start_time === startStr + ':00' && b.status !== 'cancelled'
           );
 
-          // Check if slot overlaps with any Google Calendar busy time
           const slotStart = new Date(date);
           slotStart.setHours(slotStartH, slotStartM, 0);
           const slotEnd = new Date(date);
           slotEnd.setHours(slotEndH, slotEndMin, 0);
 
-          // Skip past slots
-          if (slotStart <= new Date()) continue;
+          if (slotStart <= now) continue;
 
           const isBusy = busyTimes.some(bt => {
             const busyStart = new Date(bt.start);
@@ -132,111 +134,206 @@ export default function ClassCalendarView({
     return slots;
   }, [availability, existingBookings, busyTimes]);
 
-  // Which dates have available slots
-  const datesWithSlots = useMemo(() => {
-    const dateMap = new Map<string, { total: number; available: number }>();
+  // Dates that have available slots
+  const availableDates = useMemo(() => {
+    const set = new Set<string>();
     for (const slot of allSlots) {
-      const key = format(slot.date, 'yyyy-MM-dd');
-      const existing = dateMap.get(key) || { total: 0, available: 0 };
-      existing.total++;
-      if (!slot.booked && !slot.busy) existing.available++;
-      dateMap.set(key, existing);
+      if (!slot.booked && !slot.busy) {
+        set.add(format(slot.date, 'yyyy-MM-dd'));
+      }
     }
-    return dateMap;
+    return set;
   }, [allSlots]);
 
-  // Slots for the selected date
+  // Slots for selected date
   const slotsForDate = useMemo(() => {
     if (!selectedDate) return [];
     return allSlots.filter(s => isSameDay(s.date, selectedDate));
   }, [allSlots, selectedDate]);
 
-  const today = new Date();
-  const maxDate = addDays(today, 13);
+  // Calendar grid
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const calStart = startOfWeek(monthStart);
+    const calEnd = endOfWeek(monthEnd);
+    return eachDayOfInterval({ start: calStart, end: calEnd });
+  }, [currentMonth]);
+
+  const isDateAvailable = (date: Date) => {
+    return availableDates.has(format(date, 'yyyy-MM-dd'));
+  };
+
+  const isInRange = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d >= today && d <= maxDate;
+  };
+
+  const isCurrentMonth = (date: Date) => {
+    return date.getMonth() === currentMonth.getMonth();
+  };
+
+  const canGoPrev = () => {
+    const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+    return endOfMonth(prevMonth) >= today;
+  };
+
+  const canGoNext = () => {
+    const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+    return startOfMonth(nextMonth) <= maxDate;
+  };
+
+  const handleDateClick = (date: Date) => {
+    if (!isInRange(date) || !isDateAvailable(date)) return;
+    setSelectedDate(date);
+  };
+
+  const formatTime12h = (time24: string) => {
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'pm' : 'am';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-1">
-        <CalendarPlus className="h-4 w-4" />
-        <h3 className="text-base font-semibold">Book a Session</h3>
-        {loadingBusy && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-      </div>
+    <div className="flex flex-col">
+      {/* Header */}
+      <h3 className="text-lg font-semibold text-foreground mb-1">Select a Date & Time</h3>
+      {loadingBusy && (
+        <div className="flex items-center gap-1.5 mb-3">
+          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Checking calendar…</span>
+        </div>
+      )}
 
-      {/* Calendar */}
-      <Calendar
-        mode="single"
-        selected={selectedDate}
-        onSelect={setSelectedDate}
-        disabled={(date) => {
-          const key = format(date, 'yyyy-MM-dd');
-          const info = datesWithSlots.get(key);
-          return !info || info.available === 0;
-        }}
-        modifiers={{
-          hasSlots: (date) => {
-            const key = format(date, 'yyyy-MM-dd');
-            const info = datesWithSlots.get(key);
-            return !!info && info.available > 0;
-          },
-        }}
-        modifiersClassNames={{
-          hasSlots: 'bg-primary/10 font-semibold text-primary',
-        }}
-        fromDate={today}
-        toDate={maxDate}
-        className="rounded-md border w-full"
-      />
+      <div className="flex flex-col sm:flex-row gap-6">
+        {/* Calendar Panel */}
+        <div className="flex-1 min-w-0">
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-medium text-foreground">
+              {format(currentMonth, 'MMMM yyyy')}
+            </h4>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+                disabled={!canGoPrev()}
+                className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4 text-foreground" />
+              </button>
+              <button
+                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                disabled={!canGoNext()}
+                className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="h-4 w-4 text-foreground" />
+              </button>
+            </div>
+          </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-primary/10 border border-primary/30" /> Available
-        </span>
-        {hasIcal && (
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-destructive/20 border border-destructive/30" /> Teacher Busy
-          </span>
-        )}
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-muted border" /> Booked
-        </span>
-      </div>
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 mb-1">
+            {WEEKDAYS.map(day => (
+              <div key={day} className="text-center text-[11px] font-medium text-muted-foreground py-1">
+                {day}
+              </div>
+            ))}
+          </div>
 
-      {/* Time slots for selected date */}
-      {selectedDate && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">
-            {format(selectedDate, 'EEEE, MMMM d')}
-          </p>
-          {slotsForDate.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No slots available</p>
+          {/* Date Grid */}
+          <div className="grid grid-cols-7">
+            {calendarDays.map((day, i) => {
+              const inRange = isInRange(day);
+              const available = isDateAvailable(day);
+              const inMonth = isCurrentMonth(day);
+              const selected = selectedDate && isSameDay(day, selectedDate);
+              const todayDate = isToday(day);
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleDateClick(day)}
+                  disabled={!inRange || !available || readOnly}
+                  className={`
+                    relative aspect-square flex items-center justify-center text-sm transition-all
+                    ${!inMonth ? 'text-muted-foreground/30' : ''}
+                    ${inMonth && !inRange ? 'text-muted-foreground/40 cursor-not-allowed' : ''}
+                    ${inMonth && inRange && !available ? 'text-muted-foreground/50 cursor-not-allowed' : ''}
+                    ${inMonth && inRange && available && !selected ? 'text-foreground font-medium hover:bg-primary/10 cursor-pointer rounded-full' : ''}
+                    ${selected ? 'bg-primary text-primary-foreground font-semibold rounded-full' : ''}
+                    ${todayDate && !selected ? 'font-bold' : ''}
+                  `}
+                >
+                  {format(day, 'd')}
+                  {todayDate && !selected && (
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                  )}
+                  {available && !selected && inMonth && (
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary/50" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Time Slots Panel */}
+        <div className="sm:w-44 sm:border-l sm:pl-6 border-border">
+          {selectedDate ? (
+            <div>
+              <p className="text-sm font-medium text-foreground mb-3">
+                {format(selectedDate, 'EEE, MMM d')}
+              </p>
+              {slotsForDate.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No slots</p>
+              ) : (
+                <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+                  {slotsForDate.map((slot, i) => {
+                    const isUnavailable = slot.booked || slot.busy;
+                    const isSelected = selectedSlot &&
+                      isSameDay(selectedSlot.date, slot.date) &&
+                      selectedSlot.start_time === slot.start_time;
+
+                    if (isUnavailable) return null;
+
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => !readOnly && onSelectSlot(slot)}
+                        disabled={readOnly}
+                        className={`
+                          w-full py-2.5 px-3 rounded-lg text-sm font-medium transition-all border
+                          ${isSelected
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-card text-primary border-primary/30 hover:bg-primary/5 hover:border-primary/60'
+                          }
+                          ${readOnly ? 'cursor-default opacity-70' : 'cursor-pointer'}
+                        `}
+                      >
+                        {formatTime12h(slot.start_time)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {slotsForDate.map((slot, i) => {
-                const isUnavailable = slot.booked || slot.busy;
-                const isSelected = selectedSlot?.date === slot.date &&
-                  selectedSlot?.start_time === slot.start_time;
-
-                return (
-                  <Button
-                    key={i}
-                    size="sm"
-                    variant={isSelected ? 'default' : isUnavailable ? 'ghost' : 'outline'}
-                    disabled={isUnavailable}
-                    className={`text-xs h-7 px-2 ${
-                      slot.busy ? 'line-through text-destructive/50' : ''
-                    } ${slot.booked ? 'text-muted-foreground' : ''}`}
-                    onClick={() => onSelectSlot(slot)}
-                    title={slot.busy ? 'Teacher is busy' : slot.booked ? 'Already booked' : `${slot.start_time} - ${slot.end_time}`}
-                  >
-                    {slot.start_time}
-                  </Button>
-                );
-              })}
+            <div className="flex flex-col items-center justify-center h-full py-8 sm:py-0">
+              <Clock className="h-5 w-5 text-muted-foreground/40 mb-2" />
+              <p className="text-xs text-muted-foreground text-center">
+                Select a date to view available times
+              </p>
             </div>
           )}
         </div>
-      )}
+      </div>
+
+      {/* Timezone hint */}
+      <p className="text-[11px] text-muted-foreground mt-4">
+        {Intl.DateTimeFormat().resolvedOptions().timeZone}
+      </p>
     </div>
   );
 }

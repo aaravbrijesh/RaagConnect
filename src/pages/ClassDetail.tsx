@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
 import AddToCalendar from '@/components/AddToCalendar';
 import ClassCalendarView, { TimeSlot } from '@/components/ClassCalendarView';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import {
-  ArrowLeft, GraduationCap, MapPin, DollarSign, Users, Clock,
-  Globe, User as UserIcon, CalendarPlus, Check, Mail
+  ArrowLeft, MapPin, DollarSign, Users, Clock,
+  Globe, User as UserIcon, Check, Mail
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
@@ -60,11 +60,9 @@ export default function ClassDetail() {
       setAvailability(availData || []);
       setExistingBookings(bookingsData || []);
 
-      // Fetch teacher name
       const { data: profile } = await supabase.from('profiles').select('full_name').eq('user_id', classData.user_id).maybeSingle();
       setTeacherName(profile?.full_name || 'Unknown Teacher');
 
-      // Pre-fill user info
       if (user) {
         setBookingEmail(user.email || '');
         const { data: myProfile } = await supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle();
@@ -77,8 +75,6 @@ export default function ClassDetail() {
       setLoading(false);
     }
   };
-
-  // generateTimeSlots is now handled by ClassCalendarView
 
   const handleBook = async () => {
     if (!user) { toast.error('Please sign in to book'); return; }
@@ -103,7 +99,6 @@ export default function ClassDetail() {
       });
       if (error) throw error;
 
-      // Build calendar event
       const [sH, sM] = selectedSlot.start_time.split(':').map(Number);
       const [eH, eM] = selectedSlot.end_time.split(':').map(Number);
       const startDate = new Date(selectedSlot.date);
@@ -154,154 +149,181 @@ export default function ClassDetail() {
   return (
     <div className="min-h-screen bg-background">
       <Nav />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button variant="ghost" className="mb-4 gap-2" onClick={() => navigate('/classes')}>
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <Button variant="ghost" className="mb-6 gap-2 text-muted-foreground hover:text-foreground" onClick={() => navigate('/classes')}>
           <ArrowLeft className="h-4 w-4" /> Back to Classes
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Class Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {cls.image_url && (
-              <div className="rounded-xl overflow-hidden h-64">
-                <img src={cls.image_url} alt={cls.title} className="w-full h-full object-cover" />
-              </div>
-            )}
-
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{cls.title}</h1>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">{cls.genre}</Badge>
-                <Badge variant="outline" className="capitalize">{cls.skill_level}</Badge>
-                <Badge variant="outline" className="capitalize flex items-center gap-1">
-                  {cls.class_type === 'online' ? <Globe className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+        {/* Teacher Header — Calendly style */}
+        <div className="border-b border-border pb-6 mb-6">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <UserIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm text-muted-foreground">{teacherName}</p>
+              <h1 className="text-2xl font-bold text-foreground leading-tight">{cls.title}</h1>
+              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                {cls.price != null && (
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="h-3.5 w-3.5" />
+                    ${cls.price}/session
+                  </span>
+                )}
+                <Badge variant="secondary" className="text-xs font-normal">{cls.genre}</Badge>
+                <Badge variant="outline" className="text-xs font-normal capitalize">{cls.skill_level}</Badge>
+                <span className="flex items-center gap-1 capitalize">
+                  {cls.class_type === 'online' ? <Globe className="h-3.5 w-3.5" /> : <MapPin className="h-3.5 w-3.5" />}
                   {cls.class_type}
-                </Badge>
+                </span>
               </div>
             </div>
-
-            {cls.description && (
-              <Card>
-                <CardHeader><CardTitle className="text-base">About This Class</CardTitle></CardHeader>
-                <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{cls.description}</p></CardContent>
-              </Card>
-            )}
-
-            <Card>
-              <CardHeader><CardTitle className="text-base">Details</CardTitle></CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <UserIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>Teacher: <span className="font-medium">{teacherName}</span></span>
-                </div>
-                {cls.location_name && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{cls.location_name}</span>
-                  </div>
-                )}
-                {cls.recurring_schedule && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{cls.recurring_schedule}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span>{cls.price != null ? `$${cls.price} per session` : 'Contact for pricing'}</span>
-                </div>
-                {cls.max_capacity && (
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>Max {cls.max_capacity} students</span>
-                  </div>
-                )}
-                {cls.contact_info && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{cls.contact_info}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
+        </div>
 
-          {/* Booking Sidebar */}
-          <div className="space-y-6">
-            {booked && bookedEvent ? (
-              <Card className="border-primary/50 bg-primary/5">
-                <CardContent className="pt-6 text-center space-y-4">
-                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-                    <Check className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-lg">Session Booked!</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {format(bookedEvent.startDate, 'EEEE, MMMM d')} at {format(bookedEvent.startDate, 'h:mm a')}
-                    </p>
-                  </div>
-                  <AddToCalendar event={bookedEvent} variant="default" size="default" className="w-full" />
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => { setBooked(false); setSelectedSlot(null); fetchClass(); }}>
-                    Book Another Session
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : availability.length > 0 || cls.ical_url ? (
+        {/* Main Content */}
+        {booked && bookedEvent ? (
+          <Card className="max-w-lg mx-auto">
+            <CardContent className="pt-8 pb-8 text-center space-y-5">
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Check className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-foreground">You're booked!</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {format(bookedEvent.startDate, 'EEEE, MMMM d')} at {format(bookedEvent.startDate, 'h:mm a')}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {cls.title} with {teacherName}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <AddToCalendar event={bookedEvent} variant="default" size="default" className="w-full" />
+                <Button variant="ghost" size="sm" onClick={() => { setBooked(false); setSelectedSlot(null); fetchClass(); }}>
+                  Book another session
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            {/* Calendar — takes 3 cols */}
+            <div className="lg:col-span-3">
               <Card>
-                <CardContent className="pt-6 space-y-4">
-                  <ClassCalendarView
-                    classId={id!}
-                    availability={availability}
-                    existingBookings={existingBookings}
-                    hasIcal={!!cls.ical_url}
-                    onSelectSlot={isOwner ? () => {} : setSelectedSlot}
-                    selectedSlot={isOwner ? null : selectedSlot}
-                  />
+                <CardContent className="p-6">
+                  {availability.length > 0 || cls.ical_url ? (
+                    <>
+                      <ClassCalendarView
+                        classId={id!}
+                        availability={availability}
+                        existingBookings={existingBookings}
+                        hasIcal={!!cls.ical_url}
+                        onSelectSlot={isOwner ? () => {} : setSelectedSlot}
+                        selectedSlot={isOwner ? null : selectedSlot}
+                        readOnly={isOwner}
+                      />
 
-                  {isOwner && (
-                    <p className="text-xs text-muted-foreground text-center border-t pt-3">
-                      This is your class — students will book from this calendar.
-                      {availability.length === 0 && ' Add availability slots to enable booking.'}
-                    </p>
-                  )}
-
-                  {!isOwner && selectedSlot && (
-                    <div className="space-y-3 pt-2 border-t">
-                      <p className="text-sm font-medium">
-                        {format(selectedSlot.date, 'EEEE, MMMM d')} — {selectedSlot.start_time} to {selectedSlot.end_time}
+                      {isOwner && (
+                        <p className="text-xs text-muted-foreground text-center mt-4 pt-3 border-t border-border">
+                          This is your class — this is what students see.
+                          {availability.length === 0 && ' Add availability slots to enable booking.'}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="py-12 text-center">
+                      <Clock className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">
+                        {isOwner ? 'Add availability slots to enable booking' : 'No scheduling available yet'}
                       </p>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Your Name *</Label>
-                        <Input value={bookingName} onChange={e => setBookingName(e.target.value)} placeholder="Full name" className="h-8 text-sm" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Email *</Label>
-                        <Input type="email" value={bookingEmail} onChange={e => setBookingEmail(e.target.value)} placeholder="Email" className="h-8 text-sm" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Notes (optional)</Label>
-                        <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Anything the teacher should know?" rows={2} className="text-sm" />
-                      </div>
-                      <Button className="w-full" onClick={handleBook} disabled={booking || !user}>
-                        {booking ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking...</> : !user ? 'Sign in to book' : 'Confirm Booking'}
-                      </Button>
+                      {!isOwner && cls.contact_info && (
+                        <p className="text-xs text-primary mt-2">Contact: {cls.contact_info}</p>
+                      )}
                     </div>
                   )}
                 </CardContent>
               </Card>
-            ) : (
+            </div>
+
+            {/* Right Panel — Details + Booking Form */}
+            <div className="lg:col-span-2 space-y-5">
+              {/* Booking Form (shown when slot selected) */}
+              {!isOwner && selectedSlot && (
+                <Card>
+                  <CardContent className="p-5 space-y-4">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {format(selectedSlot.date, 'EEEE, MMMM d')}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedSlot.start_time} – {selectedSlot.end_time}
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Name *</Label>
+                        <Input value={bookingName} onChange={e => setBookingName(e.target.value)} placeholder="Your name" className="h-9" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Email *</Label>
+                        <Input type="email" value={bookingEmail} onChange={e => setBookingEmail(e.target.value)} placeholder="you@email.com" className="h-9" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Anything the teacher should know?" rows={2} className="text-sm resize-none" />
+                      </div>
+                    </div>
+                    <Button className="w-full" onClick={handleBook} disabled={booking || !user}>
+                      {booking ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking…</>
+                      ) : !user ? (
+                        'Sign in to book'
+                      ) : (
+                        'Confirm Booking'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Class Details */}
               <Card>
-                <CardContent className="pt-6 text-center">
-                  <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {isOwner ? 'Add availability slots to enable booking' : 'No scheduling available yet'}
-                  </p>
-                  {!isOwner && cls.contact_info && <p className="text-xs text-primary mt-2">Contact: {cls.contact_info}</p>}
+                <CardContent className="p-5 space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground">Details</h3>
+                  <div className="space-y-2.5 text-sm text-muted-foreground">
+                    {cls.description && (
+                      <p className="whitespace-pre-wrap">{cls.description}</p>
+                    )}
+                    {cls.location_name && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{cls.location_name}</span>
+                      </div>
+                    )}
+                    {cls.recurring_schedule && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{cls.recurring_schedule}</span>
+                      </div>
+                    )}
+                    {cls.max_capacity && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>Max {cls.max_capacity} students</span>
+                      </div>
+                    )}
+                    {cls.contact_info && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{cls.contact_info}</span>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
