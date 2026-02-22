@@ -40,6 +40,7 @@ export default function CreateClass() {
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
+  const [icalUrl, setIcalUrl] = useState('');
 
   if (!user || !canCreate) {
     return (
@@ -96,6 +97,7 @@ export default function CreateClass() {
         image_url: imageUrl || null,
         recurring_schedule: recurringSchedule.trim() || null,
         schedule_details: scheduleDetails.trim() || null,
+        ical_url: icalUrl.trim() || null,
       }).select('id').single();
       if (error) throw error;
 
@@ -242,6 +244,21 @@ export default function CreateClass() {
               </div>
 
               <ClassAvailabilityEditor slots={availabilitySlots} onChange={setAvailabilitySlots} />
+
+              <div className="space-y-2">
+                <Label htmlFor="ical">Google Calendar Link (optional)</Label>
+                <Input
+                  id="ical"
+                  type="url"
+                  value={icalUrl}
+                  onChange={e => setIcalUrl(e.target.value)}
+                  placeholder="Paste your Google Calendar secret iCal URL"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Find it in Google Calendar → Settings → your calendar → "Secret address in iCal format". 
+                  Students will only see when you're busy — no event details are shared.
+                </p>
+              </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</> : 'List Class'}

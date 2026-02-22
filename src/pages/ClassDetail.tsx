@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
 import AddToCalendar from '@/components/AddToCalendar';
+import ClassCalendarView, { TimeSlot } from '@/components/ClassCalendarView';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,14 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { format, addDays, startOfWeek, parse, setHours, setMinutes } from 'date-fns';
+import { format } from 'date-fns';
 import {
   ArrowLeft, GraduationCap, MapPin, DollarSign, Users, Clock,
   Globe, User as UserIcon, CalendarPlus, Check, Mail
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 interface AvailabilitySlot {
   id: string;
@@ -26,14 +25,6 @@ interface AvailabilitySlot {
   start_time: string;
   end_time: string;
   slot_duration_minutes: number;
-}
-
-interface TimeSlot {
-  availability_id: string;
-  date: Date;
-  start_time: string;
-  end_time: string;
-  booked: boolean;
 }
 
 export default function ClassDetail() {
@@ -87,57 +78,7 @@ export default function ClassDetail() {
     }
   };
 
-  // Generate next 2 weeks of time slots from availability
-  const generateTimeSlots = (): TimeSlot[] => {
-    const slots: TimeSlot[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
-      const date = addDays(today, dayOffset);
-      const dayOfWeek = date.getDay();
-
-      const daySlots = availability.filter(a => a.day_of_week === dayOfWeek);
-      for (const avail of daySlots) {
-        // Break each availability window into individual slots
-        const [startH, startM] = avail.start_time.split(':').map(Number);
-        const [endH, endM] = avail.end_time.split(':').map(Number);
-        const startMinutes = startH * 60 + startM;
-        const endMinutes = endH * 60 + endM;
-
-        for (let m = startMinutes; m + avail.slot_duration_minutes <= endMinutes; m += avail.slot_duration_minutes) {
-          const slotStartH = Math.floor(m / 60);
-          const slotStartM = m % 60;
-          const slotEndM = m + avail.slot_duration_minutes;
-          const slotEndH = Math.floor(slotEndM / 60);
-          const slotEndMin = slotEndM % 60;
-
-          const startStr = `${String(slotStartH).padStart(2, '0')}:${String(slotStartM).padStart(2, '0')}`;
-          const endStr = `${String(slotEndH).padStart(2, '0')}:${String(slotEndMin).padStart(2, '0')}`;
-
-          const dateStr = format(date, 'yyyy-MM-dd');
-          const isBooked = existingBookings.some(
-            b => b.booking_date === dateStr && b.start_time === startStr + ':00' && b.status !== 'cancelled'
-          );
-
-          // Skip past slots
-          const now = new Date();
-          const slotDateTime = new Date(date);
-          slotDateTime.setHours(slotStartH, slotStartM);
-          if (slotDateTime <= now) continue;
-
-          slots.push({
-            availability_id: avail.id,
-            date,
-            start_time: startStr,
-            end_time: endStr,
-            booked: isBooked,
-          });
-        }
-      }
-    }
-    return slots;
-  };
+  // generateTimeSlots is now handled by ClassCalendarView
 
   const handleBook = async () => {
     if (!user) { toast.error('Please sign in to book'); return; }
@@ -207,15 +148,6 @@ export default function ClassDetail() {
       </div>
     );
   }
-
-  const timeSlots = generateTimeSlots();
-  // Group by date
-  const slotsByDate = timeSlots.reduce((acc, slot) => {
-    const key = format(slot.date, 'yyyy-MM-dd');
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(slot);
-    return acc;
-  }, {} as Record<string, TimeSlot[]>);
 
   const isOwner = user?.id === cls.user_id;
 
@@ -316,40 +248,15 @@ export default function ClassDetail() {
               </Card>
             ) : availability.length > 0 && !isOwner ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <CalendarPlus className="h-4 w-4" />
-                    Book a Session
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Time Slots */}
-                  <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
-                    {Object.entries(slotsByDate).map(([dateStr, slots]) => (
-                      <div key={dateStr}>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1.5">
-                          {format(new Date(dateStr + 'T12:00:00'), 'EEEE, MMM d')}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {slots.map((slot, i) => (
-                            <Button
-                              key={i}
-                              size="sm"
-                              variant={selectedSlot === slot ? 'default' : 'outline'}
-                              disabled={slot.booked}
-                              className="text-xs h-7 px-2"
-                              onClick={() => setSelectedSlot(slot)}
-                            >
-                              {slot.start_time}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    {Object.keys(slotsByDate).length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">No available slots in the next 2 weeks</p>
-                    )}
-                  </div>
+                <CardContent className="pt-6 space-y-4">
+                  <ClassCalendarView
+                    classId={id!}
+                    availability={availability}
+                    existingBookings={existingBookings}
+                    hasIcal={!!cls.ical_url}
+                    onSelectSlot={setSelectedSlot}
+                    selectedSlot={selectedSlot}
+                  />
 
                   {selectedSlot && (
                     <div className="space-y-3 pt-2 border-t">

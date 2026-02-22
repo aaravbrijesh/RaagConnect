@@ -253,6 +253,7 @@ export type Database = {
           created_at: string
           description: string | null
           genre: string
+          ical_url: string | null
           id: string
           image_url: string | null
           location_lat: number | null
@@ -273,6 +274,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           genre: string
+          ical_url?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
@@ -293,6 +295,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           genre?: string
+          ical_url?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
