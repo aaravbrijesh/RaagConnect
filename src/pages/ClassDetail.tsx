@@ -246,7 +246,7 @@ export default function ClassDetail() {
                   </Button>
                 </CardContent>
               </Card>
-            ) : availability.length > 0 && !isOwner ? (
+            ) : availability.length > 0 || cls.ical_url ? (
               <Card>
                 <CardContent className="pt-6 space-y-4">
                   <ClassCalendarView
@@ -254,11 +254,18 @@ export default function ClassDetail() {
                     availability={availability}
                     existingBookings={existingBookings}
                     hasIcal={!!cls.ical_url}
-                    onSelectSlot={setSelectedSlot}
-                    selectedSlot={selectedSlot}
+                    onSelectSlot={isOwner ? () => {} : setSelectedSlot}
+                    selectedSlot={isOwner ? null : selectedSlot}
                   />
 
-                  {selectedSlot && (
+                  {isOwner && (
+                    <p className="text-xs text-muted-foreground text-center border-t pt-3">
+                      This is your class — students will book from this calendar.
+                      {availability.length === 0 && ' Add availability slots to enable booking.'}
+                    </p>
+                  )}
+
+                  {!isOwner && selectedSlot && (
                     <div className="space-y-3 pt-2 border-t">
                       <p className="text-sm font-medium">
                         {format(selectedSlot.date, 'EEEE, MMMM d')} — {selectedSlot.start_time} to {selectedSlot.end_time}
@@ -282,18 +289,14 @@ export default function ClassDetail() {
                   )}
                 </CardContent>
               </Card>
-            ) : !isOwner ? (
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No scheduling available yet</p>
-                  {cls.contact_info && <p className="text-xs text-primary mt-2">Contact: {cls.contact_info}</p>}
-                </CardContent>
-              </Card>
             ) : (
               <Card>
                 <CardContent className="pt-6 text-center">
-                  <p className="text-sm text-muted-foreground">This is your class listing</p>
+                  <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {isOwner ? 'Add availability slots to enable booking' : 'No scheduling available yet'}
+                  </p>
+                  {!isOwner && cls.contact_info && <p className="text-xs text-primary mt-2">Contact: {cls.contact_info}</p>}
                 </CardContent>
               </Card>
             )}
