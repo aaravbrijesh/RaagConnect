@@ -220,7 +220,7 @@ export type Database = {
       }
       class_bookings: {
         Row: {
-          availability_id: string
+          availability_id: string | null
           booking_date: string
           class_id: string
           created_at: string
@@ -236,7 +236,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          availability_id: string
+          availability_id?: string | null
           booking_date: string
           class_id: string
           created_at?: string
@@ -252,7 +252,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          availability_id?: string
+          availability_id?: string | null
           booking_date?: string
           class_id?: string
           created_at?: string
