@@ -6,17 +6,14 @@ const corsHeaders = {
 };
 
 function parseICalDate(dateStr: string): Date | null {
-  // Handle DTSTART;VALUE=DATE:20260101 and DTSTART:20260101T120000Z formats
   const cleaned = dateStr.replace(/^(DTSTART|DTEND)[^:]*:/, '');
   if (cleaned.length === 8) {
-    // Date only: YYYYMMDD
     const y = parseInt(cleaned.slice(0, 4));
     const m = parseInt(cleaned.slice(4, 6)) - 1;
     const d = parseInt(cleaned.slice(6, 8));
-    return new Date(y, m, d);
+    return new Date(Date.UTC(y, m, d));
   }
   if (cleaned.length >= 15) {
-    // DateTime: YYYYMMDDTHHmmss or YYYYMMDDTHHmmssZ
     const y = parseInt(cleaned.slice(0, 4));
     const m = parseInt(cleaned.slice(4, 6)) - 1;
     const d = parseInt(cleaned.slice(6, 8));
@@ -31,16 +28,22 @@ function parseICalDate(dateStr: string): Date | null {
   return null;
 }
 
-function extractBusyTimes(icalText: string, rangeStart: Date, rangeEnd: Date): Array<{ start: string; end: string }> {
-  const busyTimes: Array<{ start: string; end: string }> = [];
+interface CalendarEvent {
+  start: string;
+  end: string;
+  summary: string;
+}
+
+function extractEvents(icalText: string, rangeStart: Date, rangeEnd: Date): CalendarEvent[] {
+  const events: CalendarEvent[] = [];
   
-  // Unfold lines (lines starting with space/tab are continuations)
   const unfolded = icalText.replace(/\r\n[ \t]/g, '').replace(/\r/g, '');
   const lines = unfolded.split('\n');
   
   let inEvent = false;
   let dtstart: Date | null = null;
   let dtend: Date | null = null;
+  let summary = '';
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -48,13 +51,14 @@ function extractBusyTimes(icalText: string, rangeStart: Date, rangeEnd: Date): A
       inEvent = true;
       dtstart = null;
       dtend = null;
+      summary = '';
     } else if (trimmed === 'END:VEVENT') {
       if (inEvent && dtstart && dtend) {
-        // Only include events that overlap with our range
         if (dtstart < rangeEnd && dtend > rangeStart) {
-          busyTimes.push({
+          events.push({
             start: dtstart.toISOString(),
             end: dtend.toISOString(),
+            summary,
           });
         }
       }
@@ -64,11 +68,13 @@ function extractBusyTimes(icalText: string, rangeStart: Date, rangeEnd: Date): A
         dtstart = parseICalDate(trimmed);
       } else if (trimmed.startsWith('DTEND')) {
         dtend = parseICalDate(trimmed);
+      } else if (trimmed.startsWith('SUMMARY:')) {
+        summary = trimmed.slice(8);
       }
     }
   }
 
-  return busyTimes;
+  return events;
 }
 
 Deno.serve(async (req) => {
@@ -97,7 +103,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (error || !cls?.ical_url) {
-      return new Response(JSON.stringify({ busy_times: [] }), {
+      return new Response(JSON.stringify({ slots: [], busy_times: [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -106,21 +112,33 @@ Deno.serve(async (req) => {
     const icalResponse = await fetch(cls.ical_url);
     if (!icalResponse.ok) {
       console.error('Failed to fetch iCal:', icalResponse.status);
-      return new Response(JSON.stringify({ busy_times: [], error: 'Failed to fetch calendar' }), {
+      return new Response(JSON.stringify({ slots: [], busy_times: [], error: 'Failed to fetch calendar' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const icalText = await icalResponse.text();
     
-    // Only return busy times for the next 14 days
+    // Check if it's valid iCal
+    if (!icalText.includes('BEGIN:VCALENDAR')) {
+      console.error('Not a valid iCal feed. Content starts with:', icalText.slice(0, 200));
+      return new Response(JSON.stringify({ slots: [], busy_times: [], error: 'Invalid iCal feed. Please use the "Secret address in iCal format" from Google Calendar settings.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const now = new Date();
-    const rangeEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const rangeEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    const busyTimes = extractBusyTimes(icalText, now, rangeEnd);
+    const events = extractEvents(icalText, now, rangeEnd);
 
-    // Return ONLY start/end times — no event names, descriptions, or any details
-    return new Response(JSON.stringify({ busy_times: busyTimes }), {
+    // Return events as available slots (start/end/summary only — no private details)
+    const slots = events.map(e => ({
+      start: e.start,
+      end: e.end,
+    }));
+
+    return new Response(JSON.stringify({ slots, busy_times: [] }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

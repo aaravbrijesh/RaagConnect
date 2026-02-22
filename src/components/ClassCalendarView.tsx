@@ -12,7 +12,7 @@ interface AvailabilitySlot {
   slot_duration_minutes: number;
 }
 
-interface BusyTime {
+interface ICalSlot {
   start: string;
   end: string;
 }
@@ -49,90 +49,117 @@ export default function ClassCalendarView({
 }: ClassCalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [busyTimes, setBusyTimes] = useState<BusyTime[]>([]);
-  const [loadingBusy, setLoadingBusy] = useState(false);
+  const [icalSlots, setIcalSlots] = useState<ICalSlot[]>([]);
+  const [loadingIcal, setLoadingIcal] = useState(false);
+  const [icalError, setIcalError] = useState<string | null>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const maxDate = addDays(today, 13);
+  const maxDate = addDays(today, 29); // 30 days window
 
   useEffect(() => {
     if (!hasIcal) return;
-    const fetchBusy = async () => {
-      setLoadingBusy(true);
+    const fetchSlots = async () => {
+      setLoadingIcal(true);
+      setIcalError(null);
       try {
         const { data, error } = await supabase.functions.invoke('fetch-busy-times', {
           body: { class_id: classId },
         });
-        if (!error && data?.busy_times) {
-          setBusyTimes(data.busy_times);
+        if (!error && data?.slots) {
+          setIcalSlots(data.slots);
+        }
+        if (data?.error) {
+          setIcalError(data.error);
         }
       } catch (err) {
-        console.error('Failed to fetch busy times:', err);
+        console.error('Failed to fetch calendar slots:', err);
       } finally {
-        setLoadingBusy(false);
+        setLoadingIcal(false);
       }
     };
-    fetchBusy();
+    fetchSlots();
   }, [classId, hasIcal]);
 
-  // Generate all time slots for next 14 days
+  // Generate time slots from EITHER class_availability records OR iCal events
   const allSlots = useMemo(() => {
     const slots: TimeSlot[] = [];
     const now = new Date();
 
-    for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
-      const date = addDays(today, dayOffset);
-      const dayOfWeek = date.getDay();
+    // If we have class_availability records, use those (original behavior)
+    if (availability.length > 0) {
+      for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+        const date = addDays(today, dayOffset);
+        const dayOfWeek = date.getDay();
 
-      const daySlots = availability.filter(a => a.day_of_week === dayOfWeek);
-      for (const avail of daySlots) {
-        const [startH, startM] = avail.start_time.split(':').map(Number);
-        const [endH, endM] = avail.end_time.split(':').map(Number);
-        const startMinutes = startH * 60 + startM;
-        const endMinutes = endH * 60 + endM;
+        const daySlots = availability.filter(a => a.day_of_week === dayOfWeek);
+        for (const avail of daySlots) {
+          const [startH, startM] = avail.start_time.split(':').map(Number);
+          const [endH, endM] = avail.end_time.split(':').map(Number);
+          const startMinutes = startH * 60 + startM;
+          const endMinutes = endH * 60 + endM;
 
-        for (let m = startMinutes; m + avail.slot_duration_minutes <= endMinutes; m += avail.slot_duration_minutes) {
-          const slotStartH = Math.floor(m / 60);
-          const slotStartM = m % 60;
-          const slotEndTotal = m + avail.slot_duration_minutes;
-          const slotEndH = Math.floor(slotEndTotal / 60);
-          const slotEndMin = slotEndTotal % 60;
+          for (let m = startMinutes; m + avail.slot_duration_minutes <= endMinutes; m += avail.slot_duration_minutes) {
+            const slotStartH = Math.floor(m / 60);
+            const slotStartM = m % 60;
+            const slotEndTotal = m + avail.slot_duration_minutes;
+            const slotEndH = Math.floor(slotEndTotal / 60);
+            const slotEndMin = slotEndTotal % 60;
 
-          const startStr = `${String(slotStartH).padStart(2, '0')}:${String(slotStartM).padStart(2, '0')}`;
-          const endStr = `${String(slotEndH).padStart(2, '0')}:${String(slotEndMin).padStart(2, '0')}`;
+            const startStr = `${String(slotStartH).padStart(2, '0')}:${String(slotStartM).padStart(2, '0')}`;
+            const endStr = `${String(slotEndH).padStart(2, '0')}:${String(slotEndMin).padStart(2, '0')}`;
 
-          const dateStr = format(date, 'yyyy-MM-dd');
-          const isBooked = existingBookings.some(
-            b => b.booking_date === dateStr && b.start_time === startStr + ':00' && b.status !== 'cancelled'
-          );
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const isBooked = existingBookings.some(
+              b => b.booking_date === dateStr && b.start_time === startStr + ':00' && b.status !== 'cancelled'
+            );
 
-          const slotStart = new Date(date);
-          slotStart.setHours(slotStartH, slotStartM, 0);
-          const slotEnd = new Date(date);
-          slotEnd.setHours(slotEndH, slotEndMin, 0);
+            const slotStart = new Date(date);
+            slotStart.setHours(slotStartH, slotStartM, 0);
+            if (slotStart <= now) continue;
 
-          if (slotStart <= now) continue;
-
-          const isBusy = busyTimes.some(bt => {
-            const busyStart = new Date(bt.start);
-            const busyEnd = new Date(bt.end);
-            return slotStart < busyEnd && slotEnd > busyStart;
-          });
-
-          slots.push({
-            availability_id: avail.id,
-            date,
-            start_time: startStr,
-            end_time: endStr,
-            booked: isBooked,
-            busy: isBusy,
-          });
+            slots.push({
+              availability_id: avail.id,
+              date,
+              start_time: startStr,
+              end_time: endStr,
+              booked: isBooked,
+              busy: false,
+            });
+          }
         }
       }
     }
+    // If no class_availability but we have iCal slots, use those as available times
+    else if (icalSlots.length > 0) {
+      for (const ical of icalSlots) {
+        const slotStart = new Date(ical.start);
+        const slotEnd = new Date(ical.end);
+
+        if (slotStart <= now) continue;
+        if (slotStart > maxDate) continue;
+
+        const startStr = `${String(slotStart.getHours()).padStart(2, '0')}:${String(slotStart.getMinutes()).padStart(2, '0')}`;
+        const endStr = `${String(slotEnd.getHours()).padStart(2, '0')}:${String(slotEnd.getMinutes()).padStart(2, '0')}`;
+
+        const dateStr = format(slotStart, 'yyyy-MM-dd');
+        const isBooked = existingBookings.some(
+          b => b.booking_date === dateStr && b.start_time === startStr + ':00' && b.status !== 'cancelled'
+        );
+
+        slots.push({
+          availability_id: 'ical', // placeholder for iCal-sourced slots
+          date: new Date(slotStart.getFullYear(), slotStart.getMonth(), slotStart.getDate()),
+          start_time: startStr,
+          end_time: endStr,
+          booked: isBooked,
+          busy: false,
+        });
+      }
+    }
+
     return slots;
-  }, [availability, existingBookings, busyTimes]);
+  }, [availability, existingBookings, icalSlots]);
 
   // Dates that have available slots
   const availableDates = useMemo(() => {
@@ -200,11 +227,14 @@ export default function ClassCalendarView({
     <div className="flex flex-col">
       {/* Header */}
       <h3 className="text-lg font-semibold text-foreground mb-1">Select a Date & Time</h3>
-      {loadingBusy && (
+      {loadingIcal && (
         <div className="flex items-center gap-1.5 mb-3">
           <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Checking calendar…</span>
+          <span className="text-xs text-muted-foreground">Loading calendar…</span>
         </div>
+      )}
+      {icalError && (
+        <p className="text-xs text-destructive mb-3">{icalError}</p>
       )}
 
       <div className="flex flex-col sm:flex-row gap-6">
