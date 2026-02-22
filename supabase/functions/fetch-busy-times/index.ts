@@ -108,10 +108,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Convert Google Calendar sharing links to iCal feed URLs
+    let icalUrl = cls.ical_url;
+    const cidMatch = icalUrl.match(/[?&]cid=([A-Za-z0-9+/=]+)/);
+    if (cidMatch) {
+      try {
+        // Decode base64 email from cid parameter
+        const decoded = atob(cidMatch[1]);
+        if (decoded.includes('@')) {
+          icalUrl = `https://calendar.google.com/calendar/ical/${encodeURIComponent(decoded)}/public/basic.ics`;
+          console.log('Converted sharing link to iCal URL for:', decoded);
+        }
+      } catch (e) {
+        console.error('Failed to decode cid:', e);
+      }
+    }
+
     // Fetch iCal feed
-    const icalResponse = await fetch(cls.ical_url);
+    const icalResponse = await fetch(icalUrl);
     if (!icalResponse.ok) {
-      console.error('Failed to fetch iCal:', icalResponse.status);
+      console.error('Failed to fetch iCal:', icalResponse.status, 'URL:', icalUrl);
       return new Response(JSON.stringify({ slots: [], busy_times: [], error: 'Failed to fetch calendar' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
