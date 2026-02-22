@@ -326,95 +326,15 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle>Role</CardTitle>
-              <CardDescription>Change how you use Raag Connect</CardDescription>
+              <CardDescription>Your current role on Raag Connect</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm text-muted-foreground mb-4">
+            <CardContent>
+              <div className="text-sm text-muted-foreground">
                 Current role: <span className="font-medium text-foreground capitalize">{currentRole}</span>
               </div>
-
-              <RadioGroup value={newRole} onValueChange={(value) => setNewRole(value as 'viewer' | 'artist' | 'organizer' | 'teacher')}>
-                <div className="space-y-2">
-                  <label 
-                    htmlFor="role-viewer"
-                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="viewer" id="role-viewer" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                          Viewer
-                        </span>
-                        <p className="text-xs text-muted-foreground">Discover and book events</p>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label 
-                    htmlFor="role-artist"
-                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="artist" id="role-artist" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <Music className="h-4 w-4 text-muted-foreground" />
-                          Artist
-                        </span>
-                        <p className="text-xs text-muted-foreground">Create your profile and showcase music</p>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label 
-                    htmlFor="role-organizer"
-                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="organizer" id="role-organizer" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          Organizer
-                        </span>
-                        <p className="text-xs text-muted-foreground">Create and manage events</p>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label 
-                    htmlFor="role-teacher"
-                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'teacher' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="teacher" id="role-teacher" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                          Teacher
-                        </span>
-                        <p className="text-xs text-muted-foreground">List and manage music classes</p>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </RadioGroup>
-
-              <Button 
-                onClick={handleUpdateRole} 
-                disabled={updatingRole || newRole === currentRole}
-                className="w-full"
-              >
-                {updatingRole ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  'Update Role'
-                )}
-              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                To change your role, please contact an administrator.
+              </p>
             </CardContent>
           </Card>
 
