@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, Sun, Trash2 } from 'lucide-react';
+import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, Sun, Trash2, GraduationCap } from 'lucide-react';
 import Nav from '@/components/Nav';
 import MyBookings from '@/components/MyBookings';
 import { useSettings } from '@/hooks/useSettings';
@@ -26,7 +26,7 @@ export default function Settings() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [currentRole, setCurrentRole] = useState<string>('viewer');
-  const [newRole, setNewRole] = useState<'viewer' | 'artist' | 'organizer'>('viewer');
+  const [newRole, setNewRole] = useState<'viewer' | 'artist' | 'organizer' | 'teacher'>('viewer');
   const [updatingRole, setUpdatingRole] = useState(false);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function Settings() {
 
         if (roleData?.role) {
           setCurrentRole(roleData.role);
-          setNewRole(roleData.role as 'viewer' | 'artist' | 'organizer');
+          setNewRole(roleData.role as 'viewer' | 'artist' | 'organizer' | 'teacher');
         }
 
         // Check if user has artist profile with image
@@ -333,7 +333,7 @@ export default function Settings() {
                 Current role: <span className="font-medium text-foreground capitalize">{currentRole}</span>
               </div>
 
-              <RadioGroup value={newRole} onValueChange={(value) => setNewRole(value as 'viewer' | 'artist' | 'organizer')}>
+              <RadioGroup value={newRole} onValueChange={(value) => setNewRole(value as 'viewer' | 'artist' | 'organizer' | 'teacher')}>
                 <div className="space-y-2">
                   <label 
                     htmlFor="role-viewer"
@@ -379,6 +379,22 @@ export default function Settings() {
                           Organizer
                         </span>
                         <p className="text-xs text-muted-foreground">Create and manage events</p>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label 
+                    htmlFor="role-teacher"
+                    className={`cursor-pointer transition-all rounded-lg border block ${newRole === 'teacher' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                  >
+                    <div className="p-3 flex items-center gap-3">
+                      <RadioGroupItem value="teacher" id="role-teacher" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                          Teacher
+                        </span>
+                        <p className="text-xs text-muted-foreground">List and manage music classes</p>
                       </div>
                     </div>
                   </label>

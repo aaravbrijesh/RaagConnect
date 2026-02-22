@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'viewer' | 'artist' | 'organizer' | 'admin';
+export type UserRole = 'viewer' | 'artist' | 'organizer' | 'admin' | 'teacher';
 
 export const useUserRoles = (userId: string | undefined) => {
   const [roles, setRoles] = useState<UserRole[]>([]);
@@ -42,9 +42,11 @@ export const useUserRoles = (userId: string | undefined) => {
   const isArtist = hasRole('artist');
   const isOrganizer = hasRole('organizer');
   const isViewer = hasRole('viewer');
+  const isTeacher = hasRole('teacher');
   
   const canCreateEvents = isArtist || isOrganizer || isAdmin;
   const canCreateArtistProfile = isArtist || isOrganizer || isAdmin;
+  const canCreateClasses = isArtist || isOrganizer || isTeacher || isAdmin;
 
   return {
     roles,
@@ -54,8 +56,10 @@ export const useUserRoles = (userId: string | undefined) => {
     isArtist,
     isOrganizer,
     isViewer,
+    isTeacher,
     canCreateEvents,
     canCreateArtistProfile,
+    canCreateClasses,
     refetch: fetchRoles
   };
 };

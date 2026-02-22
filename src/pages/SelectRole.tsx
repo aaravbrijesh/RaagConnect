@@ -6,12 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Music, Eye, Calendar, Loader2 } from 'lucide-react';
+import { Music, Eye, Calendar, Loader2, GraduationCap } from 'lucide-react';
 
 export default function SelectRole() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
-  const [role, setRole] = useState<'viewer' | 'artist' | 'organizer'>('viewer');
+  const [role, setRole] = useState<'viewer' | 'artist' | 'organizer' | 'teacher'>('viewer');
   const [loading, setLoading] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
 
@@ -55,6 +55,8 @@ export default function SelectRole() {
       
       if (role === 'artist') {
         navigate('/create-artist-profile');
+      } else if (role === 'teacher') {
+        navigate('/classes/create');
       } else {
         navigate('/');
       }
@@ -91,7 +93,7 @@ export default function SelectRole() {
           </p>
 
           <div className="space-y-4">
-            <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer')}>
+            <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer' | 'teacher')}>
               <div className="space-y-2">
                 <label 
                   htmlFor="select-viewer"
@@ -137,6 +139,22 @@ export default function SelectRole() {
                         Organizer
                       </span>
                       <p className="text-xs text-muted-foreground">Create and manage events</p>
+                    </div>
+                  </div>
+                </label>
+
+                <label 
+                  htmlFor="select-teacher"
+                  className={`cursor-pointer transition-all rounded-lg border block ${role === 'teacher' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                >
+                  <div className="p-4 flex items-center gap-3">
+                    <RadioGroupItem value="teacher" id="select-teacher" />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                        Teacher
+                      </span>
+                      <p className="text-xs text-muted-foreground">List and manage music classes</p>
                     </div>
                   </div>
                 </label>

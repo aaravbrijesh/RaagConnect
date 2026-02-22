@@ -139,6 +139,69 @@ export type Database = {
           },
         ]
       }
+      classes: {
+        Row: {
+          class_type: string
+          contact_info: string | null
+          created_at: string
+          description: string | null
+          genre: string
+          id: string
+          image_url: string | null
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
+          max_capacity: number | null
+          price: number | null
+          recurring_schedule: string | null
+          schedule_details: string | null
+          skill_level: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_type?: string
+          contact_info?: string | null
+          created_at?: string
+          description?: string | null
+          genre: string
+          id?: string
+          image_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          max_capacity?: number | null
+          price?: number | null
+          recurring_schedule?: string | null
+          schedule_details?: string | null
+          skill_level?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_type?: string
+          contact_info?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string
+          id?: string
+          image_url?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          max_capacity?: number | null
+          price?: number | null
+          recurring_schedule?: string | null
+          schedule_details?: string | null
+          skill_level?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_artists: {
         Row: {
           artist_id: string
