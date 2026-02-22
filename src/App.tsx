@@ -23,6 +23,7 @@ import ArtistDetail from "./pages/ArtistDetail";
 import About from "./pages/About";
 import Classes from "./pages/Classes";
 import CreateClass from "./pages/CreateClass";
+import ClassDetail from "./pages/ClassDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="/classes/create" element={<CreateClass />} />
+            <Route path="/classes/:id" element={<ClassDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />

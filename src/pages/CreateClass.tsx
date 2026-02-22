@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
+import ClassAvailabilityEditor, { AvailabilitySlot } from '@/components/ClassAvailabilityEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ export default function CreateClass() {
   const [scheduleDetails, setScheduleDetails] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
 
   if (!user || !canCreate) {
     return (
@@ -78,7 +80,7 @@ export default function CreateClass() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.from('classes').insert({
+      const { data: classData, error } = await supabase.from('classes').insert({
         user_id: user.id,
         title: title.trim(),
         description: description.trim() || null,
@@ -94,8 +96,24 @@ export default function CreateClass() {
         image_url: imageUrl || null,
         recurring_schedule: recurringSchedule.trim() || null,
         schedule_details: scheduleDetails.trim() || null,
-      });
+      }).select('id').single();
       if (error) throw error;
+
+      // Save availability slots
+      if (availabilitySlots.length > 0 && classData) {
+        const { error: availError } = await supabase.from('class_availability').insert(
+          availabilitySlots.map(slot => ({
+            class_id: classData.id,
+            user_id: user.id,
+            day_of_week: slot.day_of_week,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            slot_duration_minutes: slot.slot_duration_minutes,
+          }))
+        );
+        if (availError) console.error('Failed to save availability:', availError);
+      }
+
       toast.success('Class listed successfully!');
       navigate('/classes');
     } catch (err: any) {
@@ -222,6 +240,8 @@ export default function CreateClass() {
                 {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
                 {imageUrl && <img src={imageUrl} alt="Preview" className="h-32 rounded-lg object-cover mt-2" />}
               </div>
+
+              <ClassAvailabilityEditor slots={availabilitySlots} onChange={setAvailabilitySlots} />
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</> : 'List Class'}
