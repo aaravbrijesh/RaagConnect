@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -16,19 +16,25 @@ import { toast } from 'sonner';
 import { Loader2, GraduationCap, ArrowLeft } from 'lucide-react';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 export default function CreateClass() {
   const { user } = useAuth();
   const { isArtist, isOrganizer, isAdmin, hasRole } = useUserRoles(user?.id);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
   const isTeacher = hasRole('teacher' as any);
   const canCreate = isArtist || isOrganizer || isTeacher || isAdmin;
 
   const [loading, setLoading] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(!!editId);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [genre, setGenre] = useState('');
   const [skillLevel, setSkillLevel] = useState('all');
   const [classType, setClassType] = useState('in-person');
+  const [classMode, setClassMode] = useState('1-on-1');
   const [locationName, setLocationName] = useState('');
   const [locationLat, setLocationLat] = useState<number | null>(null);
   const [locationLng, setLocationLng] = useState<number | null>(null);
@@ -41,6 +47,60 @@ export default function CreateClass() {
   const [uploading, setUploading] = useState(false);
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
   const [icalUrl, setIcalUrl] = useState('');
+  // Group class schedule fields
+  const [groupDay, setGroupDay] = useState('');
+  const [groupTime, setGroupTime] = useState('');
+  const [groupEndTime, setGroupEndTime] = useState('');
+
+  // Load existing class data when editing
+  useEffect(() => {
+    if (!editId || !user) return;
+    const loadClass = async () => {
+      setLoadingEdit(true);
+      try {
+        const { data: cls, error } = await supabase.from('classes').select('*').eq('id', editId).single();
+        if (error) throw error;
+        if (cls.user_id !== user.id) { toast.error('Not authorized'); navigate('/classes'); return; }
+
+        setTitle(cls.title);
+        setDescription(cls.description || '');
+        setGenre(cls.genre);
+        setSkillLevel(cls.skill_level);
+        setClassType(cls.class_type);
+        setClassMode((cls as any).class_mode || '1-on-1');
+        setLocationName(cls.location_name || '');
+        setLocationLat(cls.location_lat);
+        setLocationLng(cls.location_lng);
+        setPrice(cls.price?.toString() || '');
+        setMaxCapacity(cls.max_capacity?.toString() || '');
+        setContactInfo(cls.contact_info || '');
+        setRecurringSchedule(cls.recurring_schedule || '');
+        setScheduleDetails(cls.schedule_details || '');
+        setImageUrl(cls.image_url || '');
+        setIcalUrl(cls.ical_url || '');
+        setGroupDay((cls as any).group_schedule_day?.toString() || '');
+        setGroupTime((cls as any).group_schedule_time?.slice(0, 5) || '');
+        setGroupEndTime((cls as any).group_schedule_end_time?.slice(0, 5) || '');
+
+        // Load availability slots
+        const { data: avail } = await supabase.from('class_availability').select('*').eq('class_id', editId);
+        if (avail?.length) {
+          setAvailabilitySlots(avail.map(a => ({
+            day_of_week: a.day_of_week,
+            start_time: a.start_time.slice(0, 5),
+            end_time: a.end_time.slice(0, 5),
+            slot_duration_minutes: a.slot_duration_minutes,
+          })));
+        }
+      } catch (err: any) {
+        toast.error('Failed to load class');
+        navigate('/classes');
+      } finally {
+        setLoadingEdit(false);
+      }
+    };
+    loadClass();
+  }, [editId, user]);
 
   if (!user || !canCreate) {
     return (
@@ -81,13 +141,14 @@ export default function CreateClass() {
     }
     setLoading(true);
     try {
-      const { data: classData, error } = await supabase.from('classes').insert({
+      const classPayload: any = {
         user_id: user.id,
         title: title.trim(),
         description: description.trim() || null,
         genre: genre.trim(),
         skill_level: skillLevel,
         class_type: classType,
+        class_mode: classMode,
         location_name: locationName || null,
         location_lat: locationLat,
         location_lng: locationLng,
@@ -98,14 +159,31 @@ export default function CreateClass() {
         recurring_schedule: recurringSchedule.trim() || null,
         schedule_details: scheduleDetails.trim() || null,
         ical_url: icalUrl.trim() || null,
-      }).select('id').single();
-      if (error) throw error;
+        group_schedule_day: classMode === 'group' && groupDay ? parseInt(groupDay) : null,
+        group_schedule_time: classMode === 'group' && groupTime ? groupTime : null,
+        group_schedule_end_time: classMode === 'group' && groupEndTime ? groupEndTime : null,
+      };
 
-      // Save availability slots
-      if (availabilitySlots.length > 0 && classData) {
+      let classId: string;
+
+      if (editId) {
+        const { error } = await supabase.from('classes').update(classPayload).eq('id', editId);
+        if (error) throw error;
+        classId = editId;
+
+        // Delete old availability and re-insert
+        await supabase.from('class_availability').delete().eq('class_id', editId);
+      } else {
+        const { data: classData, error } = await supabase.from('classes').insert(classPayload).select('id').single();
+        if (error) throw error;
+        classId = classData.id;
+      }
+
+      // Save availability slots (for 1-on-1 mode)
+      if (availabilitySlots.length > 0 && classMode === '1-on-1') {
         const { error: availError } = await supabase.from('class_availability').insert(
           availabilitySlots.map(slot => ({
-            class_id: classData.id,
+            class_id: classId,
             user_id: user.id,
             day_of_week: slot.day_of_week,
             start_time: slot.start_time,
@@ -116,14 +194,25 @@ export default function CreateClass() {
         if (availError) console.error('Failed to save availability:', availError);
       }
 
-      toast.success('Class listed successfully!');
-      navigate('/classes');
+      toast.success(editId ? 'Class updated!' : 'Class listed successfully!');
+      navigate(editId ? `/classes/${editId}` : '/classes');
     } catch (err: any) {
-      toast.error('Failed to create class: ' + err.message);
+      toast.error('Failed to save class: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (loadingEdit) {
+    return (
+      <div className="min-h-screen">
+        <Nav />
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -137,7 +226,7 @@ export default function CreateClass() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
-              List a New Class
+              {editId ? 'Edit Class' : 'List a New Class'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -169,6 +258,26 @@ export default function CreateClass() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Class Mode */}
+              <div className="space-y-2">
+                <Label>Class Mode *</Label>
+                <RadioGroup value={classMode} onValueChange={setClassMode} className="flex gap-4">
+                  <label htmlFor="cm-1on1" className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="1-on-1" id="cm-1on1" />
+                    <span className="text-sm">1-on-1</span>
+                  </label>
+                  <label htmlFor="cm-group" className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="group" id="cm-group" />
+                    <span className="text-sm">Group Class</span>
+                  </label>
+                </RadioGroup>
+                <p className="text-xs text-muted-foreground">
+                  {classMode === '1-on-1'
+                    ? 'Students can browse your calendar and book individual time slots.'
+                    : 'You set a fixed schedule. Students see the timing and contact you to join.'}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -221,10 +330,60 @@ export default function CreateClass() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="schedule">Schedule (e.g. "Tuesdays & Thursdays, 5-6 PM")</Label>
-                <Input id="schedule" value={recurringSchedule} onChange={e => setRecurringSchedule(e.target.value)} placeholder="When do classes happen?" />
-              </div>
+              {/* Group class schedule */}
+              {classMode === 'group' && (
+                <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                  <Label className="text-sm font-semibold">Group Class Schedule</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Day</Label>
+                      <Select value={groupDay} onValueChange={setGroupDay}>
+                        <SelectTrigger><SelectValue placeholder="Select day" /></SelectTrigger>
+                        <SelectContent>
+                          {DAYS.map((d, i) => <SelectItem key={i} value={i.toString()}>{d}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Start Time</Label>
+                      <Input type="time" value={groupTime} onChange={e => setGroupTime(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">End Time</Label>
+                      <Input type="time" value={groupEndTime} onChange={e => setGroupEndTime(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-2">
+                    <Label htmlFor="schedule">Schedule Description</Label>
+                    <Input id="schedule" value={recurringSchedule} onChange={e => setRecurringSchedule(e.target.value)} placeholder="e.g. Every Tuesday & Thursday, 5-6 PM" />
+                  </div>
+                </div>
+              )}
+
+              {classMode === '1-on-1' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule">Schedule (e.g. "Tuesdays & Thursdays, 5-6 PM")</Label>
+                    <Input id="schedule" value={recurringSchedule} onChange={e => setRecurringSchedule(e.target.value)} placeholder="When do classes happen?" />
+                  </div>
+
+                  <ClassAvailabilityEditor slots={availabilitySlots} onChange={setAvailabilitySlots} />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ical">Google Calendar Link (optional)</Label>
+                    <Input
+                      id="ical"
+                      type="url"
+                      value={icalUrl}
+                      onChange={e => setIcalUrl(e.target.value)}
+                      placeholder="Paste your Google Calendar shareable link"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Paste the shareable link from your Google Calendar. Your calendar events will show up as bookable time slots for students.
+                    </p>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="scheduleDetails">Additional Schedule Details</Label>
@@ -243,24 +402,8 @@ export default function CreateClass() {
                 {imageUrl && <img src={imageUrl} alt="Preview" className="h-32 rounded-lg object-cover mt-2" />}
               </div>
 
-              <ClassAvailabilityEditor slots={availabilitySlots} onChange={setAvailabilitySlots} />
-
-              <div className="space-y-2">
-                <Label htmlFor="ical">Google Calendar Link (optional)</Label>
-                <Input
-                  id="ical"
-                  type="url"
-                  value={icalUrl}
-                  onChange={e => setIcalUrl(e.target.value)}
-                  placeholder="Paste your Google Calendar secret iCal URL"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Go to <a href="https://calendar.google.com/calendar/r/settings" target="_blank" rel="noopener noreferrer" className="underline text-primary">Google Calendar Settings</a> → click your calendar under "Settings for my calendars" → scroll to "Integrate calendar" → copy the "Secret address in iCal format" URL. Students will only see when you're busy — no event details are shared.
-                </p>
-              </div>
-
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</> : 'List Class'}
+                {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {editId ? 'Saving...' : 'Creating...'}</> : editId ? 'Save Changes' : 'List Class'}
               </Button>
             </form>
           </CardContent>

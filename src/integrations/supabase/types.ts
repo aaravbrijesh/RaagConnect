@@ -139,6 +139,41 @@ export type Database = {
           },
         ]
       }
+      class_announcements: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          message: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          message: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_announcements_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_availability: {
         Row: {
           class_id: string
@@ -191,6 +226,7 @@ export type Database = {
           created_at: string
           end_time: string
           id: string
+          is_recurring: boolean
           notes: string | null
           start_time: string
           status: string
@@ -206,6 +242,7 @@ export type Database = {
           created_at?: string
           end_time: string
           id?: string
+          is_recurring?: boolean
           notes?: string | null
           start_time: string
           status?: string
@@ -221,6 +258,7 @@ export type Database = {
           created_at?: string
           end_time?: string
           id?: string
+          is_recurring?: boolean
           notes?: string | null
           start_time?: string
           status?: string
@@ -248,11 +286,15 @@ export type Database = {
       }
       classes: {
         Row: {
+          class_mode: string
           class_type: string
           contact_info: string | null
           created_at: string
           description: string | null
           genre: string
+          group_schedule_day: number | null
+          group_schedule_end_time: string | null
+          group_schedule_time: string | null
           ical_url: string | null
           id: string
           image_url: string | null
@@ -269,11 +311,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          class_mode?: string
           class_type?: string
           contact_info?: string | null
           created_at?: string
           description?: string | null
           genre: string
+          group_schedule_day?: number | null
+          group_schedule_end_time?: string | null
+          group_schedule_time?: string | null
           ical_url?: string | null
           id?: string
           image_url?: string | null
@@ -290,11 +336,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          class_mode?: string
           class_type?: string
           contact_info?: string | null
           created_at?: string
           description?: string | null
           genre?: string
+          group_schedule_day?: number | null
+          group_schedule_end_time?: string | null
+          group_schedule_time?: string | null
           ical_url?: string | null
           id?: string
           image_url?: string | null
