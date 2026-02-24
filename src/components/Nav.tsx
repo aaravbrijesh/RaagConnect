@@ -100,13 +100,13 @@ export default function Nav() {
                 <GraduationCap className="h-4 w-4" />
                 Classes
               </NavLink>
-              <NavLink to="/about" className={navLinkClass}>
-                <Info className="h-4 w-4" />
-                About
-              </NavLink>
               <NavLink to="/tools" className={navLinkClass}>
                 <Wrench className="h-4 w-4" />
                 Tools
+              </NavLink>
+              <NavLink to="/about" className={navLinkClass}>
+                <Info className="h-4 w-4" />
+                About
               </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>
@@ -153,20 +153,20 @@ export default function Nav() {
                     Classes
                   </NavLink>
                   <NavLink 
-                    to="/about" 
-                    className={mobileNavLinkClass}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Info className="h-5 w-5" />
-                    About
-                  </NavLink>
-                  <NavLink 
                     to="/tools" 
                     className={mobileNavLinkClass}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Wrench className="h-5 w-5" />
                     Tools
+                  </NavLink>
+                  <NavLink 
+                    to="/about" 
+                    className={mobileNavLinkClass}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Info className="h-5 w-5" />
+                    About
                   </NavLink>
                   {isAdmin && (
                     <NavLink 
