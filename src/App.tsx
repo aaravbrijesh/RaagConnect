@@ -24,6 +24,7 @@ import About from "./pages/About";
 import Classes from "./pages/Classes";
 import CreateClass from "./pages/CreateClass";
 import ClassDetail from "./pages/ClassDetail";
+import Tools from "./pages/Tools";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/classes" element={<Classes />} />
             <Route path="/classes/create" element={<CreateClass />} />
             <Route path="/classes/:id" element={<ClassDetail />} />
+            <Route path="/tools" element={<Tools />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />
