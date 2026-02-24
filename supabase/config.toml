@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.fetch-busy-times]
 verify_jwt = false
+
+[functions.analyze-raag]
+verify_jwt = false
