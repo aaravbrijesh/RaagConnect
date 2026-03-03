@@ -378,8 +378,13 @@ export default function CreateClass() {
                       onChange={e => setIcalUrl(e.target.value)}
                       placeholder="Paste your Google Calendar shareable link"
                     />
+                    {icalUrl && !icalUrl.includes('calendar.google.com/calendar/ical/') && !icalUrl.includes('?cid=') && (
+                      <p className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30 p-2 rounded">
+                        ⚠️ This doesn't look like a Google Calendar iCal link. For best results, use the <strong>"Secret address in iCal format"</strong> from Google Calendar → Settings → your calendar → "Integrate calendar". This keeps your calendar private and secure.
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
-                      Paste the shareable link from your Google Calendar. Your calendar events will show up as bookable time slots for students.
+                      Use the "Secret address in iCal format" from your Google Calendar settings for secure access. Your calendar URL is stored securely and never shared publicly.
                     </p>
                   </div>
                 </>
