@@ -66,8 +66,8 @@ export default function Home() {
   };
 
   const handleZipSearch = async () => {
-    if (!zipCode) {
-      toast.error('Please enter a zip code');
+    if (!zipCode.trim()) {
+      toast.error('Please enter a location');
       return;
     }
 
@@ -115,7 +115,7 @@ export default function Home() {
         }
         toast.success('Location found!');
       } else {
-        toast.error('Zip code not found. Try a US zip code like 10001');
+        toast.error('Location not found. Try a city name or address.');
       }
     } catch (error) {
       console.error('Zip search error:', error);
@@ -411,7 +411,7 @@ export default function Home() {
               Find Events Near You
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Enter your zip code to discover classical music performances in your area
+              Search by city, neighborhood, or address to discover performances in your area
             </p>
           </div>
           
@@ -419,9 +419,10 @@ export default function Home() {
             <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="Enter zip code"
+                placeholder="Search a location (e.g. Mumbai, London, NYC)"
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleZipSearch(); }}
                 className="flex-1"
               />
               <Button onClick={handleZipSearch} disabled={mapLoading}>
@@ -461,7 +462,7 @@ export default function Home() {
           {!userLocation && (
             <div className="bg-muted/50 rounded-2xl p-12 text-center">
               <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Enter a zip code above to see events on the map</p>
+              <p className="text-muted-foreground">Search a location above to see events on the map</p>
             </div>
           )}
         </motion.div>
