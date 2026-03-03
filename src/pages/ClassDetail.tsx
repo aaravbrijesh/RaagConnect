@@ -63,7 +63,7 @@ export default function ClassDetail() {
   const fetchClass = async () => {
     try {
       const [{ data: classData, error }, { data: availData }, { data: bookingsData }] = await Promise.all([
-        supabase.from('classes').select('*').eq('id', id!).single(),
+        supabase.from('classes').select('id, user_id, title, description, genre, skill_level, class_type, class_mode, location_name, location_lat, location_lng, price, max_capacity, contact_info, image_url, recurring_schedule, schedule_details, group_schedule_day, group_schedule_time, group_schedule_end_time, created_at, updated_at').eq('id', id!).single(),
         supabase.from('class_availability').select('*').eq('class_id', id!).order('day_of_week'),
         supabase.from('class_bookings').select('*').eq('class_id', id!).gte('booking_date', new Date().toISOString().split('T')[0]),
       ]);
@@ -335,13 +335,13 @@ export default function ClassDetail() {
             <div className="lg:col-span-3">
               <Card>
                 <CardContent className="p-6">
-                  {availability.length > 0 || cls.ical_url ? (
+                  {availability.length > 0 || cls.class_mode === '1-on-1' ? (
                     <>
                       <ClassCalendarView
                         classId={id!}
                         availability={availability}
                         existingBookings={existingBookings}
-                        hasIcal={!!cls.ical_url}
+                        hasIcal={true}
                         onSelectSlot={isOwner ? () => {} : setSelectedSlot}
                         selectedSlot={isOwner ? null : selectedSlot}
                         readOnly={isOwner}
@@ -349,7 +349,7 @@ export default function ClassDetail() {
                       {isOwner && (
                         <p className="text-xs text-muted-foreground text-center mt-4 pt-3 border-t border-border">
                           This is your class — this is what students see.
-                          {availability.length === 0 && !cls.ical_url && ' Add availability slots or link your calendar to enable booking.'}
+                          {availability.length === 0 && ' Add availability slots or link your calendar to enable booking.'}
                         </p>
                       )}
                     </>

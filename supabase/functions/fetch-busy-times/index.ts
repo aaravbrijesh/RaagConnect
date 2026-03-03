@@ -91,11 +91,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Validate class_id format (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(class_id)) {
+      return new Response(JSON.stringify({ error: 'Invalid class_id format' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Use service role key to read ical_url securely (not exposed to client)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
+    // Only select ical_url - don't expose other data
     const { data: cls, error } = await supabase
       .from('classes')
       .select('ical_url')
@@ -113,11 +124,9 @@ Deno.serve(async (req) => {
     const cidMatch = icalUrl.match(/[?&]cid=([A-Za-z0-9+/=]+)/);
     if (cidMatch) {
       try {
-        // Decode base64 email from cid parameter
         const decoded = atob(cidMatch[1]);
         if (decoded.includes('@')) {
           icalUrl = `https://calendar.google.com/calendar/ical/${encodeURIComponent(decoded)}/public/basic.ics`;
-          console.log('Converted sharing link to iCal URL for:', decoded);
         }
       } catch (e) {
         console.error('Failed to decode cid:', e);
@@ -127,7 +136,7 @@ Deno.serve(async (req) => {
     // Fetch iCal feed
     const icalResponse = await fetch(icalUrl);
     if (!icalResponse.ok) {
-      console.error('Failed to fetch iCal:', icalResponse.status, 'URL:', icalUrl);
+      console.error('Failed to fetch iCal:', icalResponse.status);
       return new Response(JSON.stringify({ slots: [], busy_times: [], error: 'Failed to fetch calendar' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -137,7 +146,6 @@ Deno.serve(async (req) => {
     
     // Check if it's valid iCal
     if (!icalText.includes('BEGIN:VCALENDAR')) {
-      console.error('Not a valid iCal feed. Content starts with:', icalText.slice(0, 200));
       return new Response(JSON.stringify({ slots: [], busy_times: [], error: 'Invalid iCal feed. Please use the "Secret address in iCal format" from Google Calendar settings.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -148,7 +156,7 @@ Deno.serve(async (req) => {
 
     const events = extractEvents(icalText, now, rangeEnd);
 
-    // Return events as available slots (start/end/summary only — no private details)
+    // Return events as available slots (start/end only — no private details like summary)
     const slots = events.map(e => ({
       start: e.start,
       end: e.end,
