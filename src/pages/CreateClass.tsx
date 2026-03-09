@@ -243,6 +243,24 @@ export default function CreateClass() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Admin: assign to another user */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label>Assign to User</Label>
+                  <Select value={targetUserId} onValueChange={setTargetUserId}>
+                    <SelectTrigger><SelectValue placeholder="Select a user (defaults to you)" /></SelectTrigger>
+                    <SelectContent>
+                      {allProfiles.map(p => (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                          {p.full_name || p.email || p.user_id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">As admin, you can create/edit a class on behalf of another user.</p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="title">Class Title *</Label>
                 <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Beginner Sitar Lessons" required />

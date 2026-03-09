@@ -211,10 +211,31 @@ export default function ClassDetail() {
           <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => navigate('/classes')}>
             <ArrowLeft className="h-4 w-4" /> Back to Classes
           </Button>
-          {isOwner && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/classes/create?edit=${id}`)}>
-              <Pencil className="h-3.5 w-3.5" /> Edit Class
-            </Button>
+          {canManage && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/classes/create?edit=${id}`)}>
+                <Pencil className="h-3.5 w-3.5" /> Edit Class
+              </Button>
+              {isAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-1.5">
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this class?</AlertDialogTitle>
+                      <AlertDialogDescription>This will permanently remove the class, its availability slots, bookings, and announcements.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           )}
         </div>
 
