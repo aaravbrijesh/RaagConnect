@@ -152,8 +152,9 @@ export default function CreateClass() {
     }
     setLoading(true);
     try {
+      const effectiveUserId = isAdmin && targetUserId ? targetUserId : user.id;
       const classPayload: any = {
-        user_id: user.id,
+        user_id: effectiveUserId,
         title: title.trim(),
         description: description.trim() || null,
         genre: genre.trim(),
