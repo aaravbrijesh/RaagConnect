@@ -196,7 +196,7 @@ export default function CreateClass() {
         const { error: availError } = await supabase.from('class_availability').insert(
           availabilitySlots.map(slot => ({
             class_id: classId,
-            user_id: user.id,
+            user_id: effectiveUserId,
             day_of_week: slot.day_of_week,
             start_time: slot.start_time,
             end_time: slot.end_time,
