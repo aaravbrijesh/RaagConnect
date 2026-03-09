@@ -412,49 +412,58 @@ export default function ClassDetail() {
               {!isOwner && selectedSlot && (
                 <Card>
                   <CardContent className="p-5 space-y-4">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {format(selectedSlot.date, 'EEEE, MMMM d')}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedSlot.start_time} – {selectedSlot.end_time}
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium">Name *</Label>
-                        <Input value={bookingName} onChange={e => setBookingName(e.target.value)} placeholder="Your name" className="h-9" />
+                    {!user ? (
+                      <div className="text-center space-y-3 py-2">
+                        <p className="text-sm text-muted-foreground">Sign in to book this session</p>
+                        <Button className="w-full" onClick={() => { toast.error('Please sign in to book a class'); navigate('/login'); }}>
+                          Sign In to Book
+                        </Button>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium">Email *</Label>
-                        <Input type="email" value={bookingEmail} onChange={e => setBookingEmail(e.target.value)} placeholder="you@email.com" className="h-9" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                        <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Anything the teacher should know?" rows={2} className="text-sm resize-none" />
-                      </div>
-                      <div className="flex items-center gap-2 pt-1">
-                        <Checkbox
-                          id="recurring"
-                          checked={isRecurring}
-                          onCheckedChange={(checked) => setIsRecurring(checked === true)}
-                        />
-                        <label htmlFor="recurring" className="text-sm text-foreground cursor-pointer">
-                          Book weekly (same time, 4 weeks)
-                        </label>
-                      </div>
-                    </div>
-                    <Button className="w-full" onClick={handleBook} disabled={booking || !user}>
-                      {booking ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking…</>
-                      ) : !user ? (
-                        'Sign in to book'
-                      ) : isRecurring ? (
-                        'Book 4 Sessions'
-                      ) : (
-                        'Confirm Booking'
-                      )}
-                    </Button>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            {format(selectedSlot.date, 'EEEE, MMMM d')}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedSlot.start_time} – {selectedSlot.end_time}
+                          </p>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-medium">Name *</Label>
+                            <Input value={bookingName} onChange={e => setBookingName(e.target.value)} placeholder="Your name" className="h-9" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-medium">Email *</Label>
+                            <Input type="email" value={bookingEmail} onChange={e => setBookingEmail(e.target.value)} placeholder="you@email.com" className="h-9" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                            <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Anything the teacher should know?" rows={2} className="text-sm resize-none" />
+                          </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            <Checkbox
+                              id="recurring"
+                              checked={isRecurring}
+                              onCheckedChange={(checked) => setIsRecurring(checked === true)}
+                            />
+                            <label htmlFor="recurring" className="text-sm text-foreground cursor-pointer">
+                              Book weekly (same time, 4 weeks)
+                            </label>
+                          </div>
+                        </div>
+                        <Button className="w-full" onClick={handleBook} disabled={booking}>
+                          {booking ? (
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking…</>
+                          ) : isRecurring ? (
+                            'Book 4 Sessions'
+                          ) : (
+                            'Confirm Booking'
+                          )}
+                        </Button>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               )}

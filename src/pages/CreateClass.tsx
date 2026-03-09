@@ -27,6 +27,14 @@ export default function CreateClass() {
   const isTeacher = hasRole('teacher' as any);
   const canCreate = isArtist || isOrganizer || isTeacher || isAdmin;
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      toast.error('Please sign in to create or edit a class');
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
   const [loading, setLoading] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(!!editId);
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string | null; email: string | null }[]>([]);
