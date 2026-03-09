@@ -104,8 +104,13 @@ export default function Classes() {
             </h1>
             <p className="text-muted-foreground mt-1">Find teachers and learn classical music</p>
           </div>
-          {canCreateClass && (
+          {canCreateClass ? (
             <Button onClick={() => navigate('/classes/create')} className="gap-2">
+              <Plus className="h-4 w-4" />
+              List a Class
+            </Button>
+          ) : user ? null : (
+            <Button onClick={() => { toast.error('Please sign in to list a class'); navigate('/login'); }} variant="outline" className="gap-2">
               <Plus className="h-4 w-4" />
               List a Class
             </Button>
