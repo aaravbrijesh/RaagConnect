@@ -183,9 +183,25 @@ export default function ClassDetail() {
     );
   }
 
+  const { isAdmin } = useUserRoles(user?.id);
   const isOwner = user?.id === cls.user_id;
+  const canManage = isOwner || isAdmin;
   const classMode = (cls as any).class_mode || '1-on-1';
   const isGroupClass = classMode === 'group';
+
+  const handleDelete = async () => {
+    try {
+      await supabase.from('class_availability').delete().eq('class_id', id!);
+      await supabase.from('class_bookings').delete().eq('class_id', id!);
+      await supabase.from('class_announcements').delete().eq('class_id', id!);
+      const { error } = await supabase.from('classes').delete().eq('id', id!);
+      if (error) throw error;
+      toast.success('Class deleted');
+      navigate('/classes');
+    } catch (err: any) {
+      toast.error('Failed to delete: ' + err.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
