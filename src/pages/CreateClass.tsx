@@ -54,6 +54,14 @@ export default function CreateClass() {
   const [groupTime, setGroupTime] = useState('');
   const [groupEndTime, setGroupEndTime] = useState('');
 
+  // Load profiles for admin user picker
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from('profiles').select('user_id, full_name, email').then(({ data }) => {
+      if (data) setAllProfiles(data);
+    });
+  }, [isAdmin]);
+
   // Load existing class data when editing
   useEffect(() => {
     if (!editId || !user) return;
@@ -62,7 +70,8 @@ export default function CreateClass() {
       try {
         const { data: cls, error } = await supabase.from('classes').select('*').eq('id', editId).single();
         if (error) throw error;
-        if (cls.user_id !== user.id) { toast.error('Not authorized'); navigate('/classes'); return; }
+        if (cls.user_id !== user.id && !isAdmin) { toast.error('Not authorized'); navigate('/classes'); return; }
+        setTargetUserId(cls.user_id);
 
         setTitle(cls.title);
         setDescription(cls.description || '');
