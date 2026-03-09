@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 import AddToCalendar from '@/components/AddToCalendar';
 import ClassCalendarView, { TimeSlot } from '@/components/ClassCalendarView';
@@ -13,11 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import {
   ArrowLeft, MapPin, DollarSign, Users, Clock,
-  Globe, User as UserIcon, Check, Mail, Pencil
+  Globe, User as UserIcon, Check, Mail, Pencil, Trash2
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
@@ -181,9 +183,25 @@ export default function ClassDetail() {
     );
   }
 
+  const { isAdmin } = useUserRoles(user?.id);
   const isOwner = user?.id === cls.user_id;
+  const canManage = isOwner || isAdmin;
   const classMode = (cls as any).class_mode || '1-on-1';
   const isGroupClass = classMode === 'group';
+
+  const handleDelete = async () => {
+    try {
+      await supabase.from('class_availability').delete().eq('class_id', id!);
+      await supabase.from('class_bookings').delete().eq('class_id', id!);
+      await supabase.from('class_announcements').delete().eq('class_id', id!);
+      const { error } = await supabase.from('classes').delete().eq('id', id!);
+      if (error) throw error;
+      toast.success('Class deleted');
+      navigate('/classes');
+    } catch (err: any) {
+      toast.error('Failed to delete: ' + err.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -193,10 +211,31 @@ export default function ClassDetail() {
           <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => navigate('/classes')}>
             <ArrowLeft className="h-4 w-4" /> Back to Classes
           </Button>
-          {isOwner && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/classes/create?edit=${id}`)}>
-              <Pencil className="h-3.5 w-3.5" /> Edit Class
-            </Button>
+          {canManage && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/classes/create?edit=${id}`)}>
+                <Pencil className="h-3.5 w-3.5" /> Edit Class
+              </Button>
+              {isAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-1.5">
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this class?</AlertDialogTitle>
+                      <AlertDialogDescription>This will permanently remove the class, its availability slots, bookings, and announcements.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           )}
         </div>
 

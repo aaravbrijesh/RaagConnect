@@ -29,6 +29,8 @@ export default function CreateClass() {
 
   const [loading, setLoading] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(!!editId);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string | null; email: string | null }[]>([]);
+  const [targetUserId, setTargetUserId] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [genre, setGenre] = useState('');
@@ -52,6 +54,14 @@ export default function CreateClass() {
   const [groupTime, setGroupTime] = useState('');
   const [groupEndTime, setGroupEndTime] = useState('');
 
+  // Load profiles for admin user picker
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from('profiles').select('user_id, full_name, email').then(({ data }) => {
+      if (data) setAllProfiles(data);
+    });
+  }, [isAdmin]);
+
   // Load existing class data when editing
   useEffect(() => {
     if (!editId || !user) return;
@@ -60,7 +70,8 @@ export default function CreateClass() {
       try {
         const { data: cls, error } = await supabase.from('classes').select('*').eq('id', editId).single();
         if (error) throw error;
-        if (cls.user_id !== user.id) { toast.error('Not authorized'); navigate('/classes'); return; }
+        if (cls.user_id !== user.id && !isAdmin) { toast.error('Not authorized'); navigate('/classes'); return; }
+        setTargetUserId(cls.user_id);
 
         setTitle(cls.title);
         setDescription(cls.description || '');
@@ -141,8 +152,9 @@ export default function CreateClass() {
     }
     setLoading(true);
     try {
+      const effectiveUserId = isAdmin && targetUserId ? targetUserId : user.id;
       const classPayload: any = {
-        user_id: user.id,
+        user_id: effectiveUserId,
         title: title.trim(),
         description: description.trim() || null,
         genre: genre.trim(),
@@ -184,7 +196,7 @@ export default function CreateClass() {
         const { error: availError } = await supabase.from('class_availability').insert(
           availabilitySlots.map(slot => ({
             class_id: classId,
-            user_id: user.id,
+            user_id: effectiveUserId,
             day_of_week: slot.day_of_week,
             start_time: slot.start_time,
             end_time: slot.end_time,
@@ -231,6 +243,24 @@ export default function CreateClass() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Admin: assign to another user */}
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label>Assign to User</Label>
+                  <Select value={targetUserId} onValueChange={setTargetUserId}>
+                    <SelectTrigger><SelectValue placeholder="Select a user (defaults to you)" /></SelectTrigger>
+                    <SelectContent>
+                      {allProfiles.map(p => (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                          {p.full_name || p.email || p.user_id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">As admin, you can create/edit a class on behalf of another user.</p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="title">Class Title *</Label>
                 <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Beginner Sitar Lessons" required />
