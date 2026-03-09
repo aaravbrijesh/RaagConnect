@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
 import AddToCalendar from '@/components/AddToCalendar';
 import ClassCalendarView, { TimeSlot } from '@/components/ClassCalendarView';
@@ -13,11 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import {
   ArrowLeft, MapPin, DollarSign, Users, Clock,
-  Globe, User as UserIcon, Check, Mail, Pencil
+  Globe, User as UserIcon, Check, Mail, Pencil, Trash2
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
