@@ -29,6 +29,8 @@ export default function CreateClass() {
 
   const [loading, setLoading] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(!!editId);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string | null; email: string | null }[]>([]);
+  const [targetUserId, setTargetUserId] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [genre, setGenre] = useState('');
