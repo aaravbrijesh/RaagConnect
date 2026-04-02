@@ -34,7 +34,7 @@ export default function LocationAutocomplete({
   const [isSelected, setIsSelected] = useState(!!value);
   const [isSearching, setIsSearching] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
