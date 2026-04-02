@@ -32,7 +32,6 @@ export default function Events() {
   const [showMap, setShowMap] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mapRadius, setMapRadius] = useState(50);
-  const hasSetInitialDateFilter = useRef(false);
 
   useEffect(() => {
     fetchEvents();
