@@ -29,6 +29,10 @@ export default function Events() {
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [locationFilter, setLocationFilter] = useState('');
   const hasSetInitialDateFilter = useRef(false);
+  const [showMap, setShowMap] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapRadius, setMapRadius] = useState(50);
+  const hasSetInitialDateFilter = useRef(false);
 
   useEffect(() => {
     fetchEvents();
