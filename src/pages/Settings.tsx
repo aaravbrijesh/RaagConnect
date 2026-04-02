@@ -14,18 +14,24 @@ import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, 
 import Nav from '@/components/Nav';
 import MyBookings from '@/components/MyBookings';
 import { useSettings } from '@/hooks/useSettings';
+import { useUserRoles, type UserRole } from '@/hooks/useUserRoles';
+
+const ROLE_PRIORITY: UserRole[] = ['admin', 'organizer', 'artist', 'teacher', 'viewer'];
+const SELF_SERVICE_ROLES: Exclude<UserRole, 'admin'>[] = ['viewer', 'artist', 'organizer', 'teacher'];
 
 export default function Settings() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
+  const { roles, loading: rolesLoading, refetch: refetchRoles } = useUserRoles(user?.id);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [currentRole, setCurrentRole] = useState<string>('viewer');
+  const [currentRole, setCurrentRole] = useState<UserRole>('viewer');
+  const [currentEditableRole, setCurrentEditableRole] = useState<Exclude<UserRole, 'admin'>>('viewer');
   const [newRole, setNewRole] = useState<'viewer' | 'artist' | 'organizer' | 'teacher'>('viewer');
   const [updatingRole, setUpdatingRole] = useState(false);
 
@@ -52,18 +58,6 @@ export default function Settings() {
           setEmail(user.email || '');
         }
 
-        // Load user role
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (roleData?.role) {
-          setCurrentRole(roleData.role);
-          setNewRole(roleData.role as 'viewer' | 'artist' | 'organizer' | 'teacher');
-        }
-
         // Check if user has artist profile with image
         const { data: artistData } = await supabase
           .from('artists')
@@ -86,6 +80,17 @@ export default function Settings() {
 
     loadProfile();
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (rolesLoading) return;
+
+    const nextCurrentRole = ROLE_PRIORITY.find((role) => roles.includes(role)) ?? 'viewer';
+    const nextEditableRole = SELF_SERVICE_ROLES.find((role) => roles.includes(role)) ?? 'viewer';
+
+    setCurrentRole(nextCurrentRole);
+    setCurrentEditableRole(nextEditableRole);
+    setNewRole(nextEditableRole);
+  }, [roles, rolesLoading]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,19 +175,38 @@ export default function Settings() {
   };
 
   const handleUpdateRole = async () => {
-    if (!user || newRole === currentRole) return;
+    if (!user || newRole === currentEditableRole) return;
 
     setUpdatingRole(true);
     try {
-      // Update existing role
-      const { error } = await supabase
+      const { data: roleRows, error: fetchError } = await supabase
         .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', user.id);
+        .select('id, role')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
+      const editableRoleRow = roleRows?.find((roleRow) => roleRow.role !== 'admin');
+
+      if (editableRoleRow) {
+        const { error } = await supabase
+          .from('user_roles')
+          .update({ role: newRole })
+          .eq('id', editableRoleRow.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: user.id, role: newRole });
+
+        if (error) throw error;
+      }
+
+      await refetchRoles();
       setCurrentRole(newRole);
+      setCurrentEditableRole(newRole);
       toast.success('Role updated successfully!');
 
       // If changed to artist, offer to create profile
@@ -201,7 +225,7 @@ export default function Settings() {
     }
   };
 
-  if (loading) {
+  if (loading || rolesLoading) {
     return (
       <>
         <Nav />
@@ -332,9 +356,62 @@ export default function Settings() {
               <div className="text-sm text-muted-foreground">
                 Current role: <span className="font-medium text-foreground capitalize">{currentRole}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                To change your role, please contact an administrator.
-              </p>
+              {roles.includes('admin') && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Your admin access stays unchanged. You can update your regular user role below.
+                </p>
+              )}
+
+              <div className="mt-5 space-y-4">
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Choose your role</Label>
+                  <RadioGroup
+                    value={newRole}
+                    onValueChange={(value: 'viewer' | 'artist' | 'organizer' | 'teacher') => setNewRole(value)}
+                    className="flex flex-col gap-3"
+                  >
+                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                      <RadioGroupItem value="viewer" id="role-viewer" />
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor="role-viewer" className="flex-1 cursor-pointer">
+                        Viewer
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                      <RadioGroupItem value="artist" id="role-artist" />
+                      <Music className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor="role-artist" className="flex-1 cursor-pointer">
+                        Artist
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                      <RadioGroupItem value="organizer" id="role-organizer" />
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor="role-organizer" className="flex-1 cursor-pointer">
+                        Organizer
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                      <RadioGroupItem value="teacher" id="role-teacher" />
+                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor="role-teacher" className="flex-1 cursor-pointer">
+                        Teacher
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <Button onClick={handleUpdateRole} disabled={updatingRole || newRole === currentEditableRole} className="w-full">
+                  {updatingRole ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating role...
+                    </>
+                  ) : (
+                    'Save Role'
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

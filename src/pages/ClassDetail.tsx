@@ -43,6 +43,7 @@ function formatTime12h(time24: string) {
 export default function ClassDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { isAdmin } = useUserRoles(user?.id);
   const navigate = useNavigate();
   const [cls, setCls] = useState<any>(null);
   const [teacherName, setTeacherName] = useState('');
@@ -183,7 +184,6 @@ export default function ClassDetail() {
     );
   }
 
-  const { isAdmin } = useUserRoles(user?.id);
   const isOwner = user?.id === cls.user_id;
   const canManage = isOwner || isAdmin;
   const classMode = (cls as any).class_mode || '1-on-1';
