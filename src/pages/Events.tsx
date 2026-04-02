@@ -288,6 +288,72 @@ export default function Events() {
           </div>
         )}
 
+        {/* Map Section */}
+        <div className="mt-12 border-t border-border pt-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold">
+                <Map className="inline h-6 w-6 mr-2 text-primary" />
+                Events Near You
+              </h2>
+              <p className="text-muted-foreground mt-1">Find events on the map based on your location</p>
+            </div>
+            <Button
+              variant={showMap ? "default" : "outline"}
+              className="gap-2"
+              onClick={() => {
+                if (!showMap && !userLocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                      setShowMap(true);
+                    },
+                    () => {
+                      toast.error('Could not get your location. Please enable location access.');
+                    }
+                  );
+                } else {
+                  setShowMap(!showMap);
+                }
+              }}
+            >
+              <MapPin className="h-4 w-4" />
+              {showMap ? 'Hide Map' : 'Show Map'}
+            </Button>
+          </div>
+
+          {showMap && userLocation && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 max-w-sm">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Radius: {mapRadius} mi</span>
+                <Slider
+                  value={[mapRadius]}
+                  onValueChange={(v) => setMapRadius(v[0])}
+                  min={10}
+                  max={200}
+                  step={10}
+                  className="flex-1"
+                />
+              </div>
+              <EventsMap
+                events={filteredEvents.filter(e => e.location_lat && e.location_lng).map(e => ({
+                  id: e.id,
+                  title: e.title,
+                  date: e.date,
+                  time: e.time,
+                  location_name: e.location_name,
+                  location_lat: e.location_lat,
+                  location_lng: e.location_lng,
+                  price: e.price,
+                }))}
+                userLocation={userLocation}
+                radius={mapRadius}
+                onEventClick={(id) => navigate(`/events/${id}`)}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Artists Section */}
         <div className="mt-16 border-t border-border pt-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
