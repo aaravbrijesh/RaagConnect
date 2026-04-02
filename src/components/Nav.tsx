@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Users, Calendar, LogOut, Shield, Settings, Info, Menu, X, GraduationCap, Wrench } from "lucide-react";
+import { Calendar, LogOut, Shield, Settings, Menu, X, GraduationCap, Wrench, Home } from "lucide-react";
 import logo from "@/assets/MusicConnectsLogo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -89,12 +89,12 @@ export default function Nav() {
 
             <div className="hidden md:flex items-center gap-1">
               <NavLink to="/" end className={navLinkClass}>
-                <Calendar className="h-4 w-4" />
-                Discover Events
+                <Home className="h-4 w-4" />
+                Home
               </NavLink>
-              <NavLink to="/artists" className={navLinkClass}>
-                <Users className="h-4 w-4" />
-                Discover Artists
+              <NavLink to="/events" className={navLinkClass}>
+                <Calendar className="h-4 w-4" />
+                Discover
               </NavLink>
               <NavLink to="/classes" className={navLinkClass}>
                 <GraduationCap className="h-4 w-4" />
@@ -103,10 +103,6 @@ export default function Nav() {
               <NavLink to="/tools" className={navLinkClass}>
                 <Wrench className="h-4 w-4" />
                 Tools
-              </NavLink>
-              <NavLink to="/about" className={navLinkClass}>
-                <Info className="h-4 w-4" />
-                About
               </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>
@@ -133,16 +129,16 @@ export default function Nav() {
                     className={mobileNavLinkClass}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Calendar className="h-5 w-5" />
-                    Discover Events
+                    <Home className="h-5 w-5" />
+                    Home
                   </NavLink>
                   <NavLink 
-                    to="/artists" 
+                    to="/events" 
                     className={mobileNavLinkClass}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Users className="h-5 w-5" />
-                    Discover Artists
+                    <Calendar className="h-5 w-5" />
+                    Discover
                   </NavLink>
                   <NavLink 
                     to="/classes" 
@@ -159,14 +155,6 @@ export default function Nav() {
                   >
                     <Wrench className="h-5 w-5" />
                     Tools
-                  </NavLink>
-                  <NavLink 
-                    to="/about" 
-                    className={mobileNavLinkClass}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Info className="h-5 w-5" />
-                    About
                   </NavLink>
                   {isAdmin && (
                     <NavLink 

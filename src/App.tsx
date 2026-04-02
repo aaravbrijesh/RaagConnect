@@ -9,7 +9,6 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
-import Artists from "./pages/Artists";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import Admin from "./pages/Admin";
@@ -38,7 +37,6 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/artists" element={<Artists />} />
             <Route path="/artists/:id" element={<ArtistDetail />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetail />} />
