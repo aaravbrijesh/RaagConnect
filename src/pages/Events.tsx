@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, ArrowLeft, Music } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Plus, Upload, Edit, Search, ArrowLeft, Music, Map } from 'lucide-react';
+import EventsMap from '@/components/EventsMap';
+import { Slider } from '@/components/ui/slider';
 import EventFilters, { DateFilter, SortOption, filterAndSortEvents } from '@/components/EventFilters';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
