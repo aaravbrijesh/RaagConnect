@@ -104,6 +104,10 @@ export default function Nav() {
                 <Wrench className="h-4 w-4" />
                 Tools
               </NavLink>
+              <NavLink to="/knowledge" className={navLinkClass}>
+                <BookOpen className="h-4 w-4" />
+                Knowledge
+              </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>
                   <Shield className="h-4 w-4" />
