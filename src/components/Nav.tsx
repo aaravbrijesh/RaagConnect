@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Calendar, LogOut, Shield, Settings, Menu, X, GraduationCap, Wrench, Home } from "lucide-react";
+import { Calendar, LogOut, Shield, Settings, Menu, X, GraduationCap, Wrench, Home, BookOpen } from "lucide-react";
 import logo from "@/assets/MusicConnectsLogo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -104,6 +104,10 @@ export default function Nav() {
                 <Wrench className="h-4 w-4" />
                 Tools
               </NavLink>
+              <NavLink to="/knowledge" className={navLinkClass}>
+                <BookOpen className="h-4 w-4" />
+                Knowledge
+              </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className={navLinkClass}>
                   <Shield className="h-4 w-4" />
@@ -155,6 +159,14 @@ export default function Nav() {
                   >
                     <Wrench className="h-5 w-5" />
                     Tools
+                  </NavLink>
+                  <NavLink 
+                    to="/knowledge" 
+                    className={mobileNavLinkClass}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    Knowledge
                   </NavLink>
                   {isAdmin && (
                     <NavLink 
