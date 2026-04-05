@@ -160,6 +160,14 @@ export default function Nav() {
                     <Wrench className="h-5 w-5" />
                     Tools
                   </NavLink>
+                  <NavLink 
+                    to="/knowledge" 
+                    className={mobileNavLinkClass}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    Knowledge
+                  </NavLink>
                   {isAdmin && (
                     <NavLink 
                       to="/admin" 
