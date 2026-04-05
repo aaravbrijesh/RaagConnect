@@ -24,6 +24,7 @@ import Classes from "./pages/Classes";
 import CreateClass from "./pages/CreateClass";
 import ClassDetail from "./pages/ClassDetail";
 import Tools from "./pages/Tools";
+import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
