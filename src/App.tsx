@@ -50,6 +50,7 @@ const App = () => (
             <Route path="/classes/create" element={<CreateClass />} />
             <Route path="/classes/:id" element={<ClassDetail />} />
             <Route path="/tools" element={<Tools />} />
+            <Route path="/knowledge" element={<Knowledge />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />

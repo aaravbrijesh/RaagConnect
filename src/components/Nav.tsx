@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Calendar, LogOut, Shield, Settings, Menu, X, GraduationCap, Wrench, Home } from "lucide-react";
+import { Calendar, LogOut, Shield, Settings, Menu, X, GraduationCap, Wrench, Home, BookOpen } from "lucide-react";
 import logo from "@/assets/MusicConnectsLogo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
