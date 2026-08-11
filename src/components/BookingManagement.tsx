@@ -85,15 +85,7 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
       // Send email notification using full data
       try {
         await supabase.functions.invoke('send-booking-email', {
-          body: {
-            to: bookingData.attendee_email,
-            attendeeName: bookingData.attendee_name,
-            eventTitle: eventTitle || 'Event',
-            eventDate: eventDate ? new Date(eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : 'TBA',
-            eventTime: eventTime || 'TBA',
-            eventLocation: eventLocation || 'TBA',
-            status
-          }
+          body: { bookingId }
         });
         console.log('Email notification sent');
       } catch (emailError) {
