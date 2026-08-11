@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { idColumn } from '@/lib/slug';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Clock, Ticket, Edit, ArrowLeft, Loader2, Trash2, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ export default function EventDetail() {
     const { data, error } = await supabase
       .from('events')
       .select('*, artists(*), event_artists(artist_id, artists(*))')
-      .eq('id', id)
+      .eq(idColumn(id), id!)
       .single();
 
     if (error) {

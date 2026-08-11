@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { idColumn } from '@/lib/slug';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -42,6 +43,7 @@ function formatTime12h(time24: string) {
 
 export default function ClassDetail() {
   const { id } = useParams<{ id: string }>();
+  const [classId, setClassId] = useState<string>('');
   const { user } = useAuth();
   const { isAdmin } = useUserRoles(user?.id);
   const navigate = useNavigate();
@@ -65,12 +67,18 @@ export default function ClassDetail() {
 
   const fetchClass = async () => {
     try {
-      const [{ data: classData, error }, { data: availData }, { data: bookingsData }] = await Promise.all([
-        supabase.from('classes').select('id, user_id, title, description, genre, skill_level, class_type, class_mode, location_name, location_lat, location_lng, price, max_capacity, contact_info, image_url, recurring_schedule, schedule_details, group_schedule_day, group_schedule_time, group_schedule_end_time, created_at, updated_at').eq('id', id!).single(),
-        supabase.from('class_availability').select('*').eq('class_id', id!).order('day_of_week'),
-        supabase.from('class_bookings').select('*').eq('class_id', id!).gte('booking_date', new Date().toISOString().split('T')[0]),
-      ]);
+      const { data: classData, error } = await supabase
+        .from('classes')
+        .select('id, slug, user_id, title, description, genre, skill_level, class_type, class_mode, location_name, location_lat, location_lng, price, max_capacity, contact_info, image_url, recurring_schedule, schedule_details, group_schedule_day, group_schedule_time, group_schedule_end_time, created_at, updated_at')
+        .eq(idColumn(id), id!)
+        .single();
       if (error) throw error;
+      setClassId(classData.id);
+
+      const [{ data: availData }, { data: bookingsData }] = await Promise.all([
+        supabase.from('class_availability').select('*').eq('class_id', classData.id).order('day_of_week'),
+        supabase.from('class_bookings').select('*').eq('class_id', classData.id).gte('booking_date', new Date().toISOString().split('T')[0]),
+      ]);
       setCls(classData);
       setAvailability(availData || []);
       setExistingBookings(bookingsData || []);
@@ -105,7 +113,7 @@ export default function ClassDetail() {
 
       // Create the primary booking
       bookings.push({
-        class_id: id!,
+        class_id: classId,
         availability_id: selectedSlot.availability_id === 'ical' ? null : selectedSlot.availability_id,
         user_id: user.id,
         student_name: bookingName.trim(),
@@ -122,7 +130,7 @@ export default function ClassDetail() {
         for (let w = 1; w <= 3; w++) {
           const recurDate = addDays(selectedSlot.date, w * 7);
           bookings.push({
-            class_id: id!,
+            class_id: classId,
             availability_id: selectedSlot.availability_id === 'ical' ? null : selectedSlot.availability_id,
             user_id: user.id,
             student_name: bookingName.trim(),
@@ -191,10 +199,10 @@ export default function ClassDetail() {
 
   const handleDelete = async () => {
     try {
-      await supabase.from('class_availability').delete().eq('class_id', id!);
-      await supabase.from('class_bookings').delete().eq('class_id', id!);
-      await supabase.from('class_announcements').delete().eq('class_id', id!);
-      const { error } = await supabase.from('classes').delete().eq('id', id!);
+      await supabase.from('class_availability').delete().eq('class_id', classId);
+      await supabase.from('class_bookings').delete().eq('class_id', classId);
+      await supabase.from('class_announcements').delete().eq('class_id', classId);
+      const { error } = await supabase.from('classes').delete().eq('id', classId);
       if (error) throw error;
       toast.success('Class deleted');
       navigate('/classes');
@@ -213,7 +221,7 @@ export default function ClassDetail() {
           </Button>
           {canManage && (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/classes/create?edit=${id}`)}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/classes/create?edit=${classId}`)}>
                 <Pencil className="h-3.5 w-3.5" /> Edit Class
               </Button>
               {isAdmin && (
@@ -365,7 +373,7 @@ export default function ClassDetail() {
                   </div>
                 </CardContent>
               </Card>
-              <ClassAnnouncements classId={id!} isOwner={isOwner} />
+              <ClassAnnouncements classId={classId} isOwner={isOwner} />
             </div>
           </div>
         ) : (
@@ -377,7 +385,7 @@ export default function ClassDetail() {
                   {availability.length > 0 || cls.class_mode === '1-on-1' ? (
                     <>
                       <ClassCalendarView
-                        classId={id!}
+                        classId={classId}
                         availability={availability}
                         existingBookings={existingBookings}
                         hasIcal={true}
@@ -490,7 +498,7 @@ export default function ClassDetail() {
                 </CardContent>
               </Card>
 
-              <ClassAnnouncements classId={id!} isOwner={isOwner} />
+              <ClassAnnouncements classId={classId} isOwner={isOwner} />
             </div>
           </div>
         )}

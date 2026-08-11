@@ -23,7 +23,7 @@ export default function CreateKnowledgePost({ onPostCreated }: Props) {
   const [content, setContent] = useState("");
   const [instrument, setInstrument] = useState("");
   const [category, setCategory] = useState("");
-  const [isPublic, setIsPublic] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import Nav from '@/components/Nav';
+import { recordPath } from '@/lib/slug';
 import { useNavigate } from 'react-router-dom';
 import { fetchAllEventsWithRelations } from '@/lib/events';
 
@@ -201,7 +202,7 @@ export default function Events() {
               <Card 
                 key={event.id}
                 className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
-                onClick={() => navigate(`/events/${event.id}`)}
+                onClick={() => navigate(`/events/${recordPath(event)}`)}
               >
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative w-full sm:w-48 h-36 overflow-hidden bg-muted shrink-0">
@@ -267,7 +268,7 @@ export default function Events() {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/events/${event.id}`);
+                        navigate(`/events/${recordPath(event)}`);
                       }}
                     >
                       View Details
@@ -406,7 +407,7 @@ export default function Events() {
                 >
                   <Card
                     className="overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer group"
-                    onClick={() => navigate(`/artists/${artist.id}`)}
+                    onClick={() => navigate(`/artists/${recordPath(artist)}`)}
                   >
                     <div className="relative h-48 overflow-hidden">
                       {artist.image_url ? (
@@ -431,7 +432,7 @@ export default function Events() {
                           className="absolute top-4 left-4 gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/artists/${artist.id}`);
+                            navigate(`/artists/${recordPath(artist)}`);
                           }}
                         >
                           <Edit className="h-3 w-3" />
