@@ -218,6 +218,7 @@ export default function EventFilters({
         </Button>
       )}
     </div>
+    </div>
   );
 }
 
