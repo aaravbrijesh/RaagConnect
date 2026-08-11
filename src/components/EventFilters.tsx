@@ -233,30 +233,24 @@ export function filterAndSortEvents(
   
   let filtered = [...events];
 
-  if (dateFilter !== 'all') {
-    filtered = filtered.filter(event => {
-      const eventDate = new Date(event.date);
-      eventDate.setHours(0, 0, 0, 0);
-      
-      switch (dateFilter) {
-        case 'upcoming':
-          return eventDate >= now;
-        case 'past':
-          return eventDate < now;
-        case 'this-week': {
-          const weekEnd = new Date(now);
-          weekEnd.setDate(weekEnd.getDate() + 7);
-          return eventDate >= now && eventDate <= weekEnd;
-        }
-        case 'this-month': {
-          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          return eventDate >= now && eventDate <= monthEnd;
-        }
-        default:
-          return true;
+  filtered = filtered.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    
+    switch (dateFilter) {
+      case 'upcoming':
+        return eventDate >= now;
+      case 'past':
+        return eventDate < now;
+      case 'this-week': {
+        const weekEnd = new Date(now);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        return eventDate >= now && eventDate <= weekEnd;
       }
-    });
-  }
+      default:
+        return true;
+    }
+  });
 
   if (locationFilter) {
     const lowerFilter = locationFilter.toLowerCase();
