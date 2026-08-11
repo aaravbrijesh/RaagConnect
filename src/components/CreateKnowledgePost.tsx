@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ImagePlus, Music, X, Loader2 } from "lucide-react";
+import { ImagePlus, Music, X, Loader2, Globe, Lock } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
 import { INSTRUMENTS } from "@/lib/knowledgeCategories";
@@ -23,6 +23,7 @@ export default function CreateKnowledgePost({ onPostCreated }: Props) {
   const [content, setContent] = useState("");
   const [instrument, setInstrument] = useState("");
   const [category, setCategory] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -68,17 +69,19 @@ export default function CreateKnowledgePost({ onPostCreated }: Props) {
         title,
         content,
         category,
+        is_public: isPublic,
         image_url,
         audio_url,
       });
 
       if (error) throw error;
 
-      toast({ title: "Post shared!", description: "Your knowledge has been shared with the community." });
+      toast({ title: isPublic ? "Post shared!" : "Private note saved", description: isPublic ? "Your knowledge has been shared with the community." : "Only you can see this post." });
       setTitle("");
       setContent("");
       setInstrument("");
       setCategory("");
+      setIsPublic(true);
       setImageFile(null);
       setAudioFile(null);
       setImagePreview(null);
@@ -144,6 +147,19 @@ export default function CreateKnowledgePost({ onPostCreated }: Props) {
               </SelectContent>
             </Select>
           </div>
+          <Select value={isPublic ? "public" : "private"} onValueChange={(v) => setIsPublic(v === "public")}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="public">
+                <span className="flex items-center gap-2"><Globe className="h-4 w-4" /> Share with the world</span>
+              </SelectItem>
+              <SelectItem value="private">
+                <span className="flex items-center gap-2"><Lock className="h-4 w-4" /> Keep private (only me)</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <Textarea
             placeholder="Share sargam notation, compositions, historical context, or anything about Indian classical music..."
             value={content}

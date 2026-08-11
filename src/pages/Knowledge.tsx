@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookOpen, Music, Clock } from "lucide-react";
+import { BookOpen, Music, Clock, Lock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 import { INSTRUMENTS, formLabel, instrumentForForm } from "@/lib/knowledgeCategories";
@@ -21,6 +21,7 @@ interface KnowledgePost {
   category: string;
   image_url: string | null;
   audio_url: string | null;
+  is_public?: boolean;
   created_at: string;
   author_name?: string;
 }
@@ -194,6 +195,11 @@ export default function Knowledge() {
                         <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                           {formLabel(post.category)}
                         </Badge>
+                        {post.is_public === false && (
+                          <Badge variant="outline" className="gap-1">
+                            <Lock className="h-3 w-3" /> Private
+                          </Badge>
+                        )}
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Avatar className="h-5 w-5">
                             <AvatarFallback className="text-[10px]">
