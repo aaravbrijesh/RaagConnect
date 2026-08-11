@@ -220,7 +220,7 @@
             },
             "category": {
               "type": "string",
-              "description": "Filter by category."
+              "description": "Filter by category (e.g. dhrupad-dhamaar, chota-bada-khayal, kayada-rela, tabla-gat-tukda-paran, jhod-jhala, sitar-sarod-gat, history-theory, other)."
             },
             "limit": {
               "type": "integer",
