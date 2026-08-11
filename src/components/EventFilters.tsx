@@ -115,26 +115,29 @@ export default function EventFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Filters Label */}
-      <span className="text-sm text-muted-foreground mr-1">Filter:</span>
-      
-      {/* Date Filter */}
-      <Select value={dateFilter} onValueChange={(v) => onDateFilterChange(v as DateFilter)}>
-        <SelectTrigger className="h-9 w-auto min-w-[130px] text-sm">
-          <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="bg-popover border shadow-md">
-          <SelectItem value="all">All Dates</SelectItem>
-          <SelectItem value="upcoming">Upcoming</SelectItem>
-          <SelectItem value="past">Past</SelectItem>
-          <SelectItem value="this-week">This Week</SelectItem>
-          <SelectItem value="this-month">This Month</SelectItem>
-        </SelectContent>
-      </Select>
+    <div className="flex flex-col gap-4">
+      {/* Big date filter headings */}
+      <div className="flex flex-wrap items-end gap-3 md:gap-6 border-b border-border pb-3">
+        {(['this-week', 'upcoming', 'past'] as DateFilter[]).map((filter) => (
+          <button
+            key={filter}
+            onClick={() => onDateFilterChange(filter)}
+            className={`text-xl md:text-3xl font-bold transition-colors pb-1 border-b-4 ${
+              dateFilter === filter
+                ? 'text-primary border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            {DATE_FILTER_LABELS[filter]}
+          </button>
+        ))}
+      </div>
 
-      {/* Location Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Filters Label */}
+        <span className="text-sm text-muted-foreground mr-1">Filter:</span>
+        
+        {/* Location Filter */}
       <Popover open={isLocationOpen} onOpenChange={setIsLocationOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-9 gap-1.5 text-sm font-normal">
