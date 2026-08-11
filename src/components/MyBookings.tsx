@@ -147,7 +147,7 @@ export default function MyBookings({ userId }: MyBookingsProps) {
             {booking.events && (
               <ShareEvent
                 title={booking.events.title}
-                url={`${window.location.origin}/events/${booking.events.id}`}
+                url={`${window.location.origin}/events/${booking.events.slug || booking.events.id}`}
                 date={booking.events.date ? formatEventDate(booking.events.date) : undefined}
                 variant="ghost"
                 size="sm"
@@ -157,7 +157,7 @@ export default function MyBookings({ userId }: MyBookingsProps) {
               variant="ghost"
               size="sm"
               className="gap-1"
-              onClick={() => navigate(`/events/${booking.events?.id}`)}
+              onClick={() => navigate(`/events/${booking.events?.slug || booking.events?.id}`)}
             >
               <ExternalLink className="h-4 w-4" />
               View Event
