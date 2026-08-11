@@ -8,7 +8,7 @@ export default defineTool({
   description: "Search RaagConnect knowledge posts about Hindustani classical music by title, content, or category.",
   inputSchema: {
     query: z.string().optional().describe("Text to search for in post titles and content."),
-    category: z.string().optional().describe("Filter by category (e.g. dhrupad-dhamaar, chota-bada-khayal, kayada-rela, tabla-gat-tukda-paran, jhod-jhala, sitar-sarod-gat, history-theory, other)."),
+    category: z.string().optional().describe("Filter by category slug, formatted as instrument-form (e.g. vocal-chota-bada-khayal, tabla-kayada-rela, sitar-alap-jhod-jhala, history-theory, other)."),
     limit: z.number().int().optional().describe("Maximum number of posts to return (default 10, max 50)."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
