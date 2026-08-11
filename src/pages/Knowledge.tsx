@@ -42,6 +42,9 @@ export default function Knowledge() {
 
       if (filterCategory !== "all") {
         query = query.eq("category", filterCategory);
+      } else if (filterInstrument !== "all") {
+        const values = INSTRUMENTS.find((i) => i.value === filterInstrument)?.forms.map((f) => f.value) || [];
+        query = query.in("category", values);
       }
 
       const { data, error } = await query;
