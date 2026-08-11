@@ -183,7 +183,7 @@ export default function CreateClass() {
         image_url: imageUrl || null,
         recurring_schedule: recurringSchedule.trim() || null,
         schedule_details: scheduleDetails.trim() || null,
-        ical_url: icalUrl.trim() || null,
+        group_schedule_day: classMode === 'group' && groupDay ? parseInt(groupDay) : null,
         group_schedule_day: classMode === 'group' && groupDay ? parseInt(groupDay) : null,
         group_schedule_time: classMode === 'group' && groupTime ? groupTime : null,
         group_schedule_end_time: classMode === 'group' && groupEndTime ? groupEndTime : null,
