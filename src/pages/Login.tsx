@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -20,13 +20,16 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   useEffect(() => {
     // Only redirect if user has an actual authenticated session (not guest)
     if (user && session) {
-      navigate("/");
+      navigate(nextPath);
     }
-  }, [user, session, navigate]);
+  }, [user, session, navigate, nextPath]);
 
   useEffect(() => {
     if (authMessage) {
@@ -57,7 +60,7 @@ export default function Login() {
 
   const handleGoogle = async () => {
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(nextPath);
     } catch (err) {
       // Error handled by context
     }
