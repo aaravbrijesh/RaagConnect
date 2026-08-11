@@ -116,24 +116,29 @@ export default function EventFilters({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Date filter tabs */}
-      <div className="flex flex-wrap gap-2">
-        {(['this-week', 'upcoming', 'past'] as DateFilter[]).map((filter) => {
-          const isActive = dateFilter === filter;
-          return (
-            <button
-              key={filter}
-              onClick={() => onDateFilterChange(filter)}
-              className={`px-5 py-2.5 rounded-full text-base md:text-lg font-semibold transition-all cursor-pointer border ${
-                isActive
-                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                  : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              {DATE_FILTER_LABELS[filter]}
-            </button>
-          );
-        })}
+      {/* Date range heading and selector */}
+      <div className="space-y-3">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+          Showing {DATE_FILTER_LABELS[dateFilter]}
+        </h2>
+        <div className="flex flex-wrap items-center gap-2" aria-label="Choose which events to show">
+          <span className="text-sm font-medium text-muted-foreground mr-1">Show:</span>
+          {(['this-week', 'upcoming', 'past'] as DateFilter[]).map((filter) => {
+            const isActive = dateFilter === filter;
+            return (
+              <Button
+                key={filter}
+                type="button"
+                variant={isActive ? 'default' : 'outline'}
+                onClick={() => onDateFilterChange(filter)}
+                aria-pressed={isActive}
+                className="h-10 px-4 text-sm md:text-base font-semibold"
+              >
+                {DATE_FILTER_LABELS[filter]}
+              </Button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
