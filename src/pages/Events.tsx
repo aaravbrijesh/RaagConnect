@@ -53,7 +53,7 @@ export default function Events() {
       if (!hasSetInitialDateFilter.current) {
         const today = new Date().toISOString().split('T')[0];
         const hasUpcoming = (data || []).some((e: any) => typeof e?.date === 'string' && e.date >= today);
-        if (hasUpcoming) setDateFilter('upcoming');
+        if (!hasUpcoming) setDateFilter('past');
         hasSetInitialDateFilter.current = true;
       }
     }
