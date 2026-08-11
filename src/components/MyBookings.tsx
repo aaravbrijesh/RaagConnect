@@ -27,7 +27,7 @@ export default function MyBookings({ userId }: MyBookingsProps) {
       .from('bookings')
       .select(`
         *,
-        events(id, title, date, time, location_name, price, image_url, confirmation_type)
+        events(id, slug, title, date, time, location_name, price, image_url, confirmation_type)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
