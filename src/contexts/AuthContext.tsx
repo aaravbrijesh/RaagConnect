@@ -24,7 +24,7 @@ interface AuthContextType {
   authMessage: string;
   needsRoleSelection: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (redirectPath?: string) => Promise<void>;
   registerUser: (email: string, password: string, role?: string) => Promise<void>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
@@ -157,14 +157,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (redirectPath?: string) => {
     setAuthLoading(true);
     setAuthMessage('');
     try {
+      const safePath = redirectPath && redirectPath.startsWith('/') && !redirectPath.startsWith('//')
+        ? redirectPath
+        : '/';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}${safePath}`
         }
       });
       if (error) throw error;
