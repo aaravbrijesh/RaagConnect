@@ -26,7 +26,7 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [artistSearchTerm, setArtistSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('upcoming');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [locationFilter, setLocationFilter] = useState('');
   const hasSetInitialDateFilter = useRef(false);
