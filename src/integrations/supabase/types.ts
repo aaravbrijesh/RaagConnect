@@ -25,6 +25,7 @@ export type Database = {
           location_lng: number | null
           location_name: string | null
           name: string
+          slug: string | null
           updated_at: string
           user_id: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           location_lng?: number | null
           location_name?: string | null
           name: string
+          slug?: string | null
           updated_at?: string
           user_id: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           location_lng?: number | null
           location_name?: string | null
           name?: string
+          slug?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -306,6 +309,7 @@ export type Database = {
           recurring_schedule: string | null
           schedule_details: string | null
           skill_level: string
+          slug: string | null
           title: string
           updated_at: string
           user_id: string
@@ -331,6 +335,7 @@ export type Database = {
           recurring_schedule?: string | null
           schedule_details?: string | null
           skill_level?: string
+          slug?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -356,6 +361,7 @@ export type Database = {
           recurring_schedule?: string | null
           schedule_details?: string | null
           skill_level?: string
+          slug?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -497,6 +503,7 @@ export type Database = {
           payment_link: string | null
           price: number | null
           price_tiers: Json | null
+          slug: string | null
           stripe_price_id: string | null
           stripe_product_id: string | null
           ticket_capacity: number | null
@@ -521,6 +528,7 @@ export type Database = {
           payment_link?: string | null
           price?: number | null
           price_tiers?: Json | null
+          slug?: string | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
           ticket_capacity?: number | null
@@ -545,6 +553,7 @@ export type Database = {
           payment_link?: string | null
           price?: number | null
           price_tiers?: Json | null
+          slug?: string | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
           ticket_capacity?: number | null
@@ -744,6 +753,11 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      slugify: { Args: { _txt: string }; Returns: string }
+      unique_slug: {
+        Args: { _base: string; _id: string; _table: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "viewer" | "artist" | "organizer" | "admin" | "teacher"
