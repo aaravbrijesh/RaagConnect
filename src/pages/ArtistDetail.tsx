@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { idColumn, recordPath } from '@/lib/slug';
 import { motion } from 'framer-motion';
 import { Music, MapPin, Calendar, ArrowLeft, Edit, Upload, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +62,7 @@ export default function ArtistDetail() {
       const { data: artistData, error: artistError } = await supabase
         .from('artists')
         .select('*')
-        .eq('id', id)
+        .eq(idColumn(id), id!)
         .single();
 
       if (artistError) throw artistError;
@@ -80,8 +81,8 @@ export default function ArtistDetail() {
       // Fetch artist's events (supports legacy single-artist + new multi-artist links)
       const [{ data: legacyEvents, error: legacyEventsError }, { data: linkedRows, error: linkedEventsError }] =
         await Promise.all([
-          supabase.from('events').select('*').eq('artist_id', id),
-          supabase.from('event_artists').select('event:events(*)').eq('artist_id', id),
+          supabase.from('events').select('*').eq('artist_id', artistData.id),
+          supabase.from('event_artists').select('event:events(*)').eq('artist_id', artistData.id),
         ]);
 
       if (legacyEventsError) throw legacyEventsError;
@@ -190,7 +191,7 @@ export default function ArtistDetail() {
           bio: formData.bio || null,
           image_url: imageUrl
         })
-        .eq('id', id);
+        .eq('id', artist.id);
 
       if (error) throw error;
 
@@ -366,7 +367,7 @@ export default function ArtistDetail() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  onClick={() => navigate(`/events/${event.id}`)}
+                  onClick={() => navigate(`/events/${recordPath(event)}`)}
                   className="cursor-pointer"
                 >
                   <Card className="hover:shadow-glow transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50">
@@ -423,7 +424,7 @@ export default function ArtistDetail() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  onClick={() => navigate(`/events/${event.id}`)}
+                  onClick={() => navigate(`/events/${recordPath(event)}`)}
                   className="cursor-pointer"
                 >
                   <Card className="hover:shadow-md transition-all duration-300 bg-muted/30 border-border/30 opacity-75">

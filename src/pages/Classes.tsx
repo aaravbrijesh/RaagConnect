@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { recordPath } from '@/lib/slug';
 import { useNavigate } from 'react-router-dom';
 import Nav from '@/components/Nav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -175,7 +176,7 @@ export default function Classes() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
                 className="cursor-pointer"
-                onClick={() => navigate(`/classes/${cls.id}`)}
+                onClick={() => navigate(`/classes/${recordPath(cls)}`)}
               >
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                   {cls.image_url && (
