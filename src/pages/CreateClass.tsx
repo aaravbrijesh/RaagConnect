@@ -96,7 +96,12 @@ export default function CreateClass() {
         setRecurringSchedule(cls.recurring_schedule || '');
         setScheduleDetails(cls.schedule_details || '');
         setImageUrl(cls.image_url || '');
-        setIcalUrl(cls.ical_url || '');
+        const { data: privateSettings } = await supabase
+          .from('class_private_settings')
+          .select('ical_url')
+          .eq('class_id', editId)
+          .maybeSingle();
+        setIcalUrl(privateSettings?.ical_url || '');
         setGroupDay((cls as any).group_schedule_day?.toString() || '');
         setGroupTime((cls as any).group_schedule_time?.slice(0, 5) || '');
         setGroupEndTime((cls as any).group_schedule_end_time?.slice(0, 5) || '');
@@ -178,7 +183,6 @@ export default function CreateClass() {
         image_url: imageUrl || null,
         recurring_schedule: recurringSchedule.trim() || null,
         schedule_details: scheduleDetails.trim() || null,
-        ical_url: icalUrl.trim() || null,
         group_schedule_day: classMode === 'group' && groupDay ? parseInt(groupDay) : null,
         group_schedule_time: classMode === 'group' && groupTime ? groupTime : null,
         group_schedule_end_time: classMode === 'group' && groupEndTime ? groupEndTime : null,
@@ -197,6 +201,17 @@ export default function CreateClass() {
         const { data: classData, error } = await supabase.from('classes').insert(classPayload).select('id').single();
         if (error) throw error;
         classId = classData.id;
+      }
+
+      // Save the private calendar link separately (owner/admin only)
+      const trimmedIcal = icalUrl.trim();
+      if (trimmedIcal) {
+        await supabase.from('class_private_settings').upsert(
+          { class_id: classId, user_id: effectiveUserId, ical_url: trimmedIcal },
+          { onConflict: 'class_id' }
+        );
+      } else {
+        await supabase.from('class_private_settings').delete().eq('class_id', classId);
       }
 
       // Save availability slots (for 1-on-1 mode)

@@ -287,6 +287,41 @@ export type Database = {
           },
         ]
       }
+      class_private_settings: {
+        Row: {
+          class_id: string
+          created_at: string
+          ical_url: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          ical_url?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          ical_url?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_private_settings_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: true
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           class_mode: string
@@ -298,7 +333,6 @@ export type Database = {
           group_schedule_day: number | null
           group_schedule_end_time: string | null
           group_schedule_time: string | null
-          ical_url: string | null
           id: string
           image_url: string | null
           location_lat: number | null
@@ -324,7 +358,6 @@ export type Database = {
           group_schedule_day?: number | null
           group_schedule_end_time?: string | null
           group_schedule_time?: string | null
-          ical_url?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
@@ -350,7 +383,6 @@ export type Database = {
           group_schedule_day?: number | null
           group_schedule_end_time?: string | null
           group_schedule_time?: string | null
-          ical_url?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
