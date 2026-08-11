@@ -1,13 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, MapPin, ArrowUpDown, X, Loader2 } from 'lucide-react';
+import { MapPin, ArrowUpDown, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 
-export type DateFilter = 'all' | 'upcoming' | 'past' | 'this-week' | 'this-month';
+export type DateFilter = 'this-week' | 'upcoming' | 'past';
 export type SortOption = 'date-asc' | 'date-desc' | 'price-asc' | 'price-desc' | 'name-asc';
+
+const DATE_FILTER_LABELS: Record<DateFilter, string> = {
+  'this-week': 'Current Events',
+  'upcoming': 'Upcoming Events',
+  'past': 'Past Events',
+};
 
 interface LocationSuggestion {
   display_name: string;
