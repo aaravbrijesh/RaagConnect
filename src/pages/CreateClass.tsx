@@ -96,7 +96,12 @@ export default function CreateClass() {
         setRecurringSchedule(cls.recurring_schedule || '');
         setScheduleDetails(cls.schedule_details || '');
         setImageUrl(cls.image_url || '');
-        setIcalUrl(cls.ical_url || '');
+        const { data: privateSettings } = await supabase
+          .from('class_private_settings')
+          .select('ical_url')
+          .eq('class_id', editId)
+          .maybeSingle();
+        setIcalUrl(privateSettings?.ical_url || '');
         setGroupDay((cls as any).group_schedule_day?.toString() || '');
         setGroupTime((cls as any).group_schedule_time?.slice(0, 5) || '');
         setGroupEndTime((cls as any).group_schedule_end_time?.slice(0, 5) || '');
