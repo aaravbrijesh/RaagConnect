@@ -98,13 +98,11 @@ export default function Events() {
   }, [artists, artistSearchTerm]);
 
   const activeFilterCount = [
-    dateFilter !== 'all' ? 1 : 0,
     locationFilter ? 1 : 0,
     sortBy !== 'date-asc' ? 1 : 0
   ].reduce((a, b) => a + b, 0);
 
   const clearFilters = () => {
-    setDateFilter('all');
     setSortBy('date-asc');
     setLocationFilter('');
   };
