@@ -11,12 +11,14 @@ import { ImagePlus, Music, X, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
 const CATEGORIES = [
-  { value: "raag", label: "Raag" },
-  { value: "composition", label: "Composition / Bandish" },
-  { value: "taal", label: "Taal / Rhythm" },
-  { value: "notation", label: "Notation / Sargam" },
-  { value: "history", label: "History & Theory" },
-  { value: "general", label: "General" },
+  { value: "dhrupad-dhamaar", label: "Dhrupad/Dhamaar" },
+  { value: "chota-bada-khayal", label: "Chota/bada Khayal" },
+  { value: "kayada-rela", label: "Kayada/Rela" },
+  { value: "tabla-gat-tukda-paran", label: "Tabla Gat/Tukda/Paran" },
+  { value: "jhod-jhala", label: "Jhod/Jhala" },
+  { value: "sitar-sarod-gat", label: "Sitar/Sarod Gat" },
+  { value: "history-theory", label: "History/Theory" },
+  { value: "other", label: "Other" },
 ];
 
 interface Props {

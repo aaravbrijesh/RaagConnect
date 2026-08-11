@@ -13,21 +13,25 @@ import { formatDistanceToNow } from "date-fns";
 
 const CATEGORIES = [
   { value: "all", label: "All Categories" },
-  { value: "raag", label: "Raag" },
-  { value: "composition", label: "Composition / Bandish" },
-  { value: "taal", label: "Taal / Rhythm" },
-  { value: "notation", label: "Notation / Sargam" },
-  { value: "history", label: "History & Theory" },
-  { value: "general", label: "General" },
+  { value: "dhrupad-dhamaar", label: "Dhrupad/Dhamaar" },
+  { value: "chota-bada-khayal", label: "Chota/bada Khayal" },
+  { value: "kayada-rela", label: "Kayada/Rela" },
+  { value: "tabla-gat-tukda-paran", label: "Tabla Gat/Tukda/Paran" },
+  { value: "jhod-jhala", label: "Jhod/Jhala" },
+  { value: "sitar-sarod-gat", label: "Sitar/Sarod Gat" },
+  { value: "history-theory", label: "History/Theory" },
+  { value: "other", label: "Other" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  raag: "bg-primary/10 text-primary border-primary/20",
-  composition: "bg-accent/10 text-accent-foreground border-accent/20",
-  taal: "bg-secondary text-secondary-foreground border-secondary",
-  notation: "bg-muted text-muted-foreground border-muted",
-  history: "bg-primary/5 text-primary border-primary/10",
-  general: "bg-secondary text-secondary-foreground border-secondary",
+  "dhrupad-dhamaar": "bg-primary/10 text-primary border-primary/20",
+  "chota-bada-khayal": "bg-accent/10 text-accent-foreground border-accent/20",
+  "kayada-rela": "bg-secondary text-secondary-foreground border-secondary",
+  "tabla-gat-tukda-paran": "bg-muted text-muted-foreground border-muted",
+  "jhod-jhala": "bg-primary/5 text-primary border-primary/10",
+  "sitar-sarod-gat": "bg-secondary text-secondary-foreground border-secondary",
+  "history-theory": "bg-primary/10 text-primary border-primary/20",
+  "other": "bg-muted text-muted-foreground border-muted",
 };
 
 interface KnowledgePost {
