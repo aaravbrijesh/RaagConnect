@@ -11,28 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, Music, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-const CATEGORIES = [
-  { value: "all", label: "All Categories" },
-  { value: "dhrupad-dhamaar", label: "Dhrupad/Dhamaar" },
-  { value: "chota-bada-khayal", label: "Chota/bada Khayal" },
-  { value: "kayada-rela", label: "Kayada/Rela" },
-  { value: "tabla-gat-tukda-paran", label: "Tabla Gat/Tukda/Paran" },
-  { value: "jhod-jhala", label: "Jhod/Jhala" },
-  { value: "sitar-sarod-gat", label: "Sitar/Sarod Gat" },
-  { value: "history-theory", label: "History/Theory" },
-  { value: "other", label: "Other" },
-];
-
-const CATEGORY_COLORS: Record<string, string> = {
-  "dhrupad-dhamaar": "bg-primary/10 text-primary border-primary/20",
-  "chota-bada-khayal": "bg-accent/10 text-accent-foreground border-accent/20",
-  "kayada-rela": "bg-secondary text-secondary-foreground border-secondary",
-  "tabla-gat-tukda-paran": "bg-muted text-muted-foreground border-muted",
-  "jhod-jhala": "bg-primary/5 text-primary border-primary/10",
-  "sitar-sarod-gat": "bg-secondary text-secondary-foreground border-secondary",
-  "history-theory": "bg-primary/10 text-primary border-primary/20",
-  "other": "bg-muted text-muted-foreground border-muted",
-};
+import { INSTRUMENTS, formLabel, instrumentForForm } from "@/lib/knowledgeCategories";
 
 interface KnowledgePost {
   id: string;
@@ -50,6 +29,7 @@ export default function Knowledge() {
   const { session } = useAuth();
   const [posts, setPosts] = useState<KnowledgePost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterInstrument, setFilterInstrument] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
 
   const fetchPosts = async () => {
@@ -62,6 +42,9 @@ export default function Knowledge() {
 
       if (filterCategory !== "all") {
         query = query.eq("category", filterCategory);
+      } else if (filterInstrument !== "all") {
+        const values = INSTRUMENTS.find((i) => i.value === filterInstrument)?.forms.map((f) => f.value) || [];
+        query = query.in("category", values);
       }
 
       const { data, error } = await query;
@@ -111,7 +94,7 @@ export default function Knowledge() {
 
   useEffect(() => {
     fetchPosts();
-  }, [filterCategory]);
+  }, [filterCategory, filterInstrument]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -137,16 +120,38 @@ export default function Knowledge() {
 
         {/* Filter */}
         <div className="mb-6">
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-3">
+            <Select
+              value={filterInstrument}
+              onValueChange={(v) => {
+                setFilterInstrument(v);
+                setFilterCategory("all");
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="All instruments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Instruments</SelectItem>
+                {INSTRUMENTS.map((i) => (
+                  <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {filterInstrument !== "all" && (
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All forms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Forms</SelectItem>
+                  {(INSTRUMENTS.find((i) => i.value === filterInstrument)?.forms || []).map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
 
         {/* Feed */}
@@ -181,8 +186,13 @@ export default function Knowledge() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-lg text-foreground leading-tight">{post.title}</h3>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <Badge variant="outline" className={CATEGORY_COLORS[post.category] || ""}>
-                          {CATEGORIES.find((c) => c.value === post.category)?.label || post.category}
+                        {instrumentForForm(post.category) && (
+                          <Badge variant="outline" className="bg-secondary text-secondary-foreground border-secondary">
+                            {instrumentForForm(post.category)!.label}
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          {formLabel(post.category)}
                         </Badge>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Avatar className="h-5 w-5">

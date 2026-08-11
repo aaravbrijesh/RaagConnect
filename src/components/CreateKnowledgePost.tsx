@@ -10,16 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ImagePlus, Music, X, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
-const CATEGORIES = [
-  { value: "dhrupad-dhamaar", label: "Dhrupad/Dhamaar" },
-  { value: "chota-bada-khayal", label: "Chota/bada Khayal" },
-  { value: "kayada-rela", label: "Kayada/Rela" },
-  { value: "tabla-gat-tukda-paran", label: "Tabla Gat/Tukda/Paran" },
-  { value: "jhod-jhala", label: "Jhod/Jhala" },
-  { value: "sitar-sarod-gat", label: "Sitar/Sarod Gat" },
-  { value: "history-theory", label: "History/Theory" },
-  { value: "other", label: "Other" },
-];
+import { INSTRUMENTS } from "@/lib/knowledgeCategories";
 
 interface Props {
   onPostCreated: () => void;
@@ -30,7 +21,8 @@ export default function CreateKnowledgePost({ onPostCreated }: Props) {
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("general");
+  const [instrument, setInstrument] = useState("");
+  const [category, setCategory] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -85,7 +77,8 @@ export default function CreateKnowledgePost({ onPostCreated }: Props) {
       toast({ title: "Post shared!", description: "Your knowledge has been shared with the community." });
       setTitle("");
       setContent("");
-      setCategory("general");
+      setInstrument("");
+      setCategory("");
       setImageFile(null);
       setAudioFile(null);
       setImagePreview(null);
@@ -123,16 +116,34 @@ export default function CreateKnowledgePost({ onPostCreated }: Props) {
             onChange={(e) => setTitle(e.target.value)}
             required
           />
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              value={instrument}
+              onValueChange={(v) => {
+                setInstrument(v);
+                setCategory("");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Instrument" />
+              </SelectTrigger>
+              <SelectContent>
+                {INSTRUMENTS.map((i) => (
+                  <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={category} onValueChange={setCategory} disabled={!instrument}>
+              <SelectTrigger>
+                <SelectValue placeholder={instrument ? "Form / Type" : "Select instrument first"} />
+              </SelectTrigger>
+              <SelectContent>
+                {(INSTRUMENTS.find((i) => i.value === instrument)?.forms || []).map((f) => (
+                  <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Textarea
             placeholder="Share sargam notation, compositions, historical context, or anything about Indian classical music..."
             value={content}
