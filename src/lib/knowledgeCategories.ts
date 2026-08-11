@@ -36,17 +36,6 @@ export const INSTRUMENTS: KnowledgeInstrument[] = [
     ],
   },
   {
-    value: "pakhawaj",
-    label: "Pakhawaj",
-    forms: [
-      { value: "pakhawaj-paran", label: "Paran" },
-      { value: "pakhawaj-chakradar", label: "Chakradar" },
-      { value: "pakhawaj-stuti-paran", label: "Stuti/Ganesh Paran" },
-      { value: "pakhawaj-theka", label: "Theka (Chautaal/Dhamaar)" },
-      { value: "pakhawaj-other", label: "Other (Pakhawaj)" },
-    ],
-  },
-  {
     value: "sitar",
     label: "Sitar",
     forms: [
