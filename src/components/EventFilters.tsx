@@ -116,21 +116,24 @@ export default function EventFilters({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Big date filter headings */}
-      <div className="flex flex-wrap items-end gap-3 md:gap-6 border-b border-border pb-3">
-        {(['this-week', 'upcoming', 'past'] as DateFilter[]).map((filter) => (
-          <button
-            key={filter}
-            onClick={() => onDateFilterChange(filter)}
-            className={`text-xl md:text-3xl font-bold transition-colors pb-1 border-b-4 ${
-              dateFilter === filter
-                ? 'text-primary border-primary'
-                : 'text-muted-foreground border-transparent hover:text-foreground'
-            }`}
-          >
-            {DATE_FILTER_LABELS[filter]}
-          </button>
-        ))}
+      {/* Date filter tabs */}
+      <div className="flex flex-wrap gap-2">
+        {(['this-week', 'upcoming', 'past'] as DateFilter[]).map((filter) => {
+          const isActive = dateFilter === filter;
+          return (
+            <button
+              key={filter}
+              onClick={() => onDateFilterChange(filter)}
+              className={`px-5 py-2.5 rounded-full text-base md:text-lg font-semibold transition-all cursor-pointer border ${
+                isActive
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              {DATE_FILTER_LABELS[filter]}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
