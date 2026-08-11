@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -7,16 +8,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface BookingEmailRequest {
-  to: string;
-  attendeeName: string;
-  eventTitle: string;
-  eventDate: string;
-  eventTime: string;
-  eventLocation: string;
-  status: "confirmed" | "rejected";
-}
 
 // Escape HTML special characters to prevent XSS in email clients
 const escapeHtml = (str: string): string => {
@@ -33,79 +24,106 @@ const escapeHtml = (str: string): string => {
   });
 };
 
-// Validate email format
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+const json = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body = await req.json();
-    const { to, attendeeName, eventTitle, eventDate, eventTime, eventLocation, status } = body as BookingEmailRequest;
-
-    // Validate required fields
-    if (!to || !attendeeName || !eventTitle || !eventDate || !status) {
-      console.error("Missing required fields");
-      return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    // 1. Authenticate the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "Unauthorized" }, 401);
     }
 
-    // Validate email format
-    if (!isValidEmail(to)) {
-      console.error("Invalid email format:", to);
-      return new Response(
-        JSON.stringify({ error: "Invalid email format" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    const anonClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+    const userId = claimsData.claims.sub as string;
+
+    // 2. Validate input — only a booking id is accepted; all content comes from the database
+    const body = await req.json().catch(() => null);
+    const bookingId = body?.bookingId;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof bookingId !== "string" || !uuidRegex.test(bookingId)) {
+      return json({ error: "A valid bookingId is required" }, 400);
     }
 
-    // Validate input lengths to prevent abuse
-    if (attendeeName.length > 100) {
-      return new Response(
-        JSON.stringify({ error: "Attendee name too long (max 100 characters)" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: booking, error: bookingError } = await admin
+      .from("bookings")
+      .select("id, user_id, event_id, attendee_email, attendee_name, status")
+      .eq("id", bookingId)
+      .maybeSingle();
+
+    if (bookingError) {
+      console.error("Failed to load booking", bookingError);
+      return json({ error: "Failed to load booking" }, 500);
     }
-    if (eventTitle.length > 200) {
-      return new Response(
-        JSON.stringify({ error: "Event title too long (max 200 characters)" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-    if (eventLocation && eventLocation.length > 500) {
-      return new Response(
-        JSON.stringify({ error: "Event location too long (max 500 characters)" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    if (!booking) {
+      return json({ error: "Booking not found" }, 404);
     }
 
-    // Validate status
+    const { data: event, error: eventError } = await admin
+      .from("events")
+      .select("id, user_id, title, date, time, location_name")
+      .eq("id", booking.event_id)
+      .maybeSingle();
+
+    if (eventError || !event) {
+      console.error("Failed to load event", eventError);
+      return json({ error: "Failed to load event" }, 500);
+    }
+
+    // 3. Authorize: attendee, event organizer, or admin only
+    const { data: isAdmin } = await admin.rpc("is_admin", { _user_id: userId });
+    const isAttendee = booking.user_id === userId;
+    const isOrganizer = event.user_id === userId;
+    if (!isAdmin && !isAttendee && !isOrganizer) {
+      return json({ error: "Forbidden" }, 403);
+    }
+
+    // 4. Only notify about the booking's actual, persisted status
+    const status = booking.status;
     if (status !== "confirmed" && status !== "rejected") {
-      return new Response(
-        JSON.stringify({ error: "Invalid status" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return json({ error: "Booking has no notifiable status" }, 400);
     }
 
-    // Escape all user-provided content for safe HTML embedding
-    const safeAttendeeName = escapeHtml(attendeeName);
-    const safeEventTitle = escapeHtml(eventTitle);
-    const safeEventDate = escapeHtml(eventDate);
-    const safeEventTime = escapeHtml(eventTime || '');
-    const safeEventLocation = escapeHtml(eventLocation || 'TBA');
-
-    console.log(`Sending ${status} email to ${to} for event: ${eventTitle}`);
+    const safeAttendeeName = escapeHtml(booking.attendee_name || "there");
+    const safeEventTitle = escapeHtml(event.title || "Event");
+    const safeEventDate = escapeHtml(
+      event.date
+        ? new Date(event.date).toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "TBA"
+    );
+    const safeEventTime = escapeHtml(event.time || "TBA");
+    const safeEventLocation = escapeHtml(event.location_name || "TBA");
 
     const isConfirmed = status === "confirmed";
-    const subject = isConfirmed 
+    const subject = isConfirmed
       ? `🎵 Your booking for "${safeEventTitle}" is confirmed!`
       : `Booking update for "${safeEventTitle}"`;
 
@@ -139,42 +157,25 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       `;
 
+    console.log(`Sending ${status} email for booking ${bookingId}`);
+
     const { data, error: resendError } = await resend.emails.send({
       from: "Raag Connect <noreply@raagconnect.com>",
-      to: [to],
+      to: [booking.attendee_email],
       subject,
       html,
     });
 
     if (resendError) {
       console.error("Resend error:", resendError);
-      return new Response(
-        JSON.stringify({
-          error: resendError.message ?? "Failed to send email",
-          resend: resendError,
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+      return json({ error: "Failed to send email" }, 500);
     }
 
-    console.log("Email sent successfully:", data);
-
-    return new Response(JSON.stringify({ data }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
-  } catch (error: any) {
+    console.log("Email sent successfully");
+    return json({ data }, 200);
+  } catch (error) {
     console.error("Error in send-booking-email function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return json({ error: "Unexpected error" }, 500);
   }
 };
 

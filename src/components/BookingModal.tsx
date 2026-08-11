@@ -190,30 +190,18 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         status: isFreeEvent ? 'confirmed' : 'pending'
       }));
 
-      const { error: bookingError } = await supabase
+      const { data: insertedBookings, error: bookingError } = await supabase
         .from('bookings')
-        .insert(bookingsToInsert);
+        .insert(bookingsToInsert)
+        .select('id');
 
       if (bookingError) throw bookingError;
 
       // Send confirmation email for free events (auto-confirmed)
-      if (isFreeEvent) {
+      if (isFreeEvent && insertedBookings?.[0]?.id) {
         try {
           await supabase.functions.invoke('send-booking-email', {
-            body: {
-              to: userProfile.email,
-              attendeeName: userProfile.full_name,
-              eventTitle: event.title,
-              eventDate: new Date(event.date).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              }),
-              eventTime: event.time,
-              eventLocation: event.location_name || '',
-              status: 'confirmed'
-            }
+            body: { bookingId: insertedBookings[0].id }
           });
         } catch (emailError) {
           console.error('Failed to send confirmation email:', emailError);
