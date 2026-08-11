@@ -66,15 +66,6 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
   const updateBookingStatus = async (bookingId: string, status: 'confirmed' | 'rejected') => {
     setLoading(true);
     try {
-      // Fetch full booking data from bookings table (RLS allows if user owns the event)
-      const { data: bookingData, error: fetchError } = await supabase
-        .from('bookings')
-        .select('attendee_email, attendee_name')
-        .eq('id', bookingId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
       const { error } = await supabase
         .from('bookings')
         .update({ status })
@@ -82,7 +73,7 @@ export default function BookingManagement({ eventId, eventTitle, eventDate, even
 
       if (error) throw error;
 
-      // Send email notification using full data
+      // Send email notification (recipient/content resolved server-side)
       try {
         await supabase.functions.invoke('send-booking-email', {
           body: { bookingId }
