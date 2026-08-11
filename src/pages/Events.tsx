@@ -26,7 +26,7 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [artistSearchTerm, setArtistSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('upcoming');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [locationFilter, setLocationFilter] = useState('');
   const hasSetInitialDateFilter = useRef(false);
@@ -53,7 +53,7 @@ export default function Events() {
       if (!hasSetInitialDateFilter.current) {
         const today = new Date().toISOString().split('T')[0];
         const hasUpcoming = (data || []).some((e: any) => typeof e?.date === 'string' && e.date >= today);
-        if (hasUpcoming) setDateFilter('upcoming');
+        if (!hasUpcoming) setDateFilter('past');
         hasSetInitialDateFilter.current = true;
       }
     }
@@ -98,13 +98,11 @@ export default function Events() {
   }, [artists, artistSearchTerm]);
 
   const activeFilterCount = [
-    dateFilter !== 'all' ? 1 : 0,
     locationFilter ? 1 : 0,
     sortBy !== 'date-asc' ? 1 : 0
   ].reduce((a, b) => a + b, 0);
 
   const clearFilters = () => {
-    setDateFilter('all');
     setSortBy('date-asc');
     setLocationFilter('');
   };

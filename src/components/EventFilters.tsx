@@ -1,13 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, MapPin, ArrowUpDown, X, Loader2 } from 'lucide-react';
+import { MapPin, ArrowUpDown, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 
-export type DateFilter = 'all' | 'upcoming' | 'past' | 'this-week' | 'this-month';
+export type DateFilter = 'this-week' | 'upcoming' | 'past';
 export type SortOption = 'date-asc' | 'date-desc' | 'price-asc' | 'price-desc' | 'name-asc';
+
+const DATE_FILTER_LABELS: Record<DateFilter, string> = {
+  'this-week': 'Current Events',
+  'upcoming': 'Upcoming Events',
+  'past': 'Past Events',
+};
 
 interface LocationSuggestion {
   display_name: string;
@@ -109,26 +115,29 @@ export default function EventFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Filters Label */}
-      <span className="text-sm text-muted-foreground mr-1">Filter:</span>
-      
-      {/* Date Filter */}
-      <Select value={dateFilter} onValueChange={(v) => onDateFilterChange(v as DateFilter)}>
-        <SelectTrigger className="h-9 w-auto min-w-[130px] text-sm">
-          <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="bg-popover border shadow-md">
-          <SelectItem value="all">All Dates</SelectItem>
-          <SelectItem value="upcoming">Upcoming</SelectItem>
-          <SelectItem value="past">Past</SelectItem>
-          <SelectItem value="this-week">This Week</SelectItem>
-          <SelectItem value="this-month">This Month</SelectItem>
-        </SelectContent>
-      </Select>
+    <div className="flex flex-col gap-4">
+      {/* Big date filter headings */}
+      <div className="flex flex-wrap items-end gap-3 md:gap-6 border-b border-border pb-3">
+        {(['this-week', 'upcoming', 'past'] as DateFilter[]).map((filter) => (
+          <button
+            key={filter}
+            onClick={() => onDateFilterChange(filter)}
+            className={`text-xl md:text-3xl font-bold transition-colors pb-1 border-b-4 ${
+              dateFilter === filter
+                ? 'text-primary border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            {DATE_FILTER_LABELS[filter]}
+          </button>
+        ))}
+      </div>
 
-      {/* Location Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Filters Label */}
+        <span className="text-sm text-muted-foreground mr-1">Filter:</span>
+        
+        {/* Location Filter */}
       <Popover open={isLocationOpen} onOpenChange={setIsLocationOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-9 gap-1.5 text-sm font-normal">
@@ -209,6 +218,7 @@ export default function EventFilters({
         </Button>
       )}
     </div>
+    </div>
   );
 }
 
@@ -224,30 +234,24 @@ export function filterAndSortEvents(
   
   let filtered = [...events];
 
-  if (dateFilter !== 'all') {
-    filtered = filtered.filter(event => {
-      const eventDate = new Date(event.date);
-      eventDate.setHours(0, 0, 0, 0);
-      
-      switch (dateFilter) {
-        case 'upcoming':
-          return eventDate >= now;
-        case 'past':
-          return eventDate < now;
-        case 'this-week': {
-          const weekEnd = new Date(now);
-          weekEnd.setDate(weekEnd.getDate() + 7);
-          return eventDate >= now && eventDate <= weekEnd;
-        }
-        case 'this-month': {
-          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          return eventDate >= now && eventDate <= monthEnd;
-        }
-        default:
-          return true;
+  filtered = filtered.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    
+    switch (dateFilter) {
+      case 'upcoming':
+        return eventDate >= now;
+      case 'past':
+        return eventDate < now;
+      case 'this-week': {
+        const weekEnd = new Date(now);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        return eventDate >= now && eventDate <= weekEnd;
       }
-    });
-  }
+      default:
+        return true;
+    }
+  });
 
   if (locationFilter) {
     const lowerFilter = locationFilter.toLowerCase();
