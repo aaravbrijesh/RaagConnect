@@ -25,6 +25,7 @@ import CreateClass from "./pages/CreateClass";
 import ClassDetail from "./pages/ClassDetail";
 import Tools from "./pages/Tools";
 import Knowledge from "./pages/Knowledge";
+import OAuthConsent from "./pages/OAuthConsent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/create-artist-profile" element={<CreateArtistProfile />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

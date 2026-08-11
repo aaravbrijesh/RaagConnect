@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://sjwtmymfdtirwrycneup.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "raagconnect",
+      "version": "0.1.0",
+      "title": "RaagConnect"
+    },
+    "tools": [
+      {
+        "name": "list_events",
+        "title": "List events",
+        "description": "List upcoming or recent RaagConnect concerts and events, optionally filtered by title or location.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Filter by text in the event title."
+            },
+            "upcoming_only": {
+              "type": "boolean",
+              "description": "Only return events on or after today. Defaults to true."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of events to return (default 20, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_event",
+        "title": "Get event details",
+        "description": "Get full details for one RaagConnect event by its id, including performing artist and schedule.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "description": "The event id (uuid)."
+            }
+          },
+          "required": [
+            "event_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_event",
+        "title": "Create event",
+        "description": "Create a new concert or event on RaagConnect owned by the signed-in user.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Event title."
+            },
+            "date": {
+              "type": "string",
+              "description": "Event date in YYYY-MM-DD format."
+            },
+            "time": {
+              "type": "string",
+              "description": "Event start time in HH:MM 24-hour format."
+            },
+            "location_name": {
+              "type": "string",
+              "description": "Venue or location name."
+            },
+            "price": {
+              "type": "number",
+              "description": "Ticket price."
+            },
+            "notes": {
+              "type": "string",
+              "description": "Additional details about the event."
+            },
+            "artist_id": {
+              "type": "string",
+              "description": "Id of the performing artist profile."
+            }
+          },
+          "required": [
+            "title",
+            "date",
+            "time"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_artists",
+        "title": "List artists",
+        "description": "List RaagConnect artist profiles, optionally filtered by name or genre.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Filter by text in the artist name."
+            },
+            "genre": {
+              "type": "string",
+              "description": "Filter by genre."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of artists to return (default 20, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_classes",
+        "title": "List classes",
+        "description": "List RaagConnect music classes, optionally filtered by title, genre, or skill level.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Filter by text in the class title."
+            },
+            "genre": {
+              "type": "string",
+              "description": "Filter by genre."
+            },
+            "skill_level": {
+              "type": "string",
+              "description": "Filter by skill level, e.g. beginner or advanced."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of classes to return (default 20, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "my_bookings",
+        "title": "My bookings",
+        "description": "List the signed-in user's event and class bookings on RaagConnect.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_knowledge",
+        "title": "Search knowledge posts",
+        "description": "Search RaagConnect knowledge posts about Hindustani classical music by title, content, or category.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Text to search for in post titles and content."
+            },
+            "category": {
+              "type": "string",
+              "description": "Filter by category."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximum number of posts to return (default 10, max 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
