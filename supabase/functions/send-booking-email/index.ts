@@ -94,7 +94,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // 3. Authorize: attendee, event organizer, or admin only
-    const { data: isAdmin } = await admin.rpc("is_admin", { _user_id: userId });
+    const { data: adminRole } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    const isAdmin = !!adminRole;
     const isAttendee = booking.user_id === userId;
     const isOrganizer = event.user_id === userId;
     if (!isAdmin && !isAttendee && !isOrganizer) {
