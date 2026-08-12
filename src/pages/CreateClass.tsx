@@ -126,7 +126,9 @@ export default function CreateClass() {
     loadClass();
   }, [editId, user]);
 
-  if (!user || !canCreate) {
+  // When editing, ownership is verified in loadClass (and enforced by database rules),
+  // so class creators can edit their own class regardless of their role.
+  if (!user || (!canCreate && !editId)) {
     return (
       <div className="min-h-screen">
         <Nav />
