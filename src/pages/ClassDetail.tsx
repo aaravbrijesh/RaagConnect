@@ -202,6 +202,7 @@ export default function ClassDetail() {
       await supabase.from('class_availability').delete().eq('class_id', classId);
       await supabase.from('class_bookings').delete().eq('class_id', classId);
       await supabase.from('class_announcements').delete().eq('class_id', classId);
+      await supabase.from('class_private_settings').delete().eq('class_id', classId);
       const { error } = await supabase.from('classes').delete().eq('id', classId);
       if (error) throw error;
       toast.success('Class deleted');
@@ -224,7 +225,7 @@ export default function ClassDetail() {
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/classes/create?edit=${classId}`)}>
                 <Pencil className="h-3.5 w-3.5" /> Edit Class
               </Button>
-              {isAdmin && (
+              {canManage && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" className="gap-1.5">
