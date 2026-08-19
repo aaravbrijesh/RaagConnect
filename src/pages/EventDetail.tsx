@@ -15,6 +15,7 @@ import EventDiscussion from '@/components/EventDiscussion';
 import BookingModal from '@/components/BookingModal';
 import BookingManagement from '@/components/BookingManagement';
 import EventSchedule from '@/components/EventSchedule';
+import EventVolunteers from '@/components/EventVolunteers';
 import ShareEvent from '@/components/ShareEvent';
 import TransferOwnership from '@/components/TransferOwnership';
 import {
@@ -244,7 +245,13 @@ export default function EventDetail() {
 
               {/* Event Schedule */}
               <EventSchedule eventId={event.id} canEdit={isOwnerOrAdmin || false} />
+
+              {/* Volunteer & bring-a-dish sign-up sheet */}
+              <div className="mt-8">
+                <EventVolunteers eventId={event.id} canManage={!!isOwnerOrAdmin} />
+              </div>
             </div>
+
 
             {/* Booking Card */}
             <div className="bg-card border rounded-xl p-6 space-y-4 h-fit">
