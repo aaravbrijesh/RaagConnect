@@ -142,22 +142,7 @@ export default function Events() {
 
             <Button 
               className="gap-2"
-              onClick={() => {
-                if (!user || !session) {
-                  toast.error('Please sign in to create an event', {
-                    action: {
-                      label: 'Sign In',
-                      onClick: () => navigate('/login')
-                    }
-                  });
-                  return;
-                }
-                if (!canCreateEvents) {
-                  toast.error('You need artist or organizer role to create events');
-                  return;
-                }
-                navigate('/events/create');
-              }}
+              onClick={() => navigate('/events/create')}
             >
               <Plus className="h-4 w-4" />
               Create Event
