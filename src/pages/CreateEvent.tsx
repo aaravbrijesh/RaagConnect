@@ -59,6 +59,9 @@ export default function CreateEvent() {
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
   const [analyzingFlyer, setAnalyzingFlyer] = useState(false);
   const [aiExtracted, setAiExtracted] = useState(false);
+  const [guestInfo, setGuestInfo] = useState({ guestName: '', guestEmail: '' });
+  const [guestSuccess, setGuestSuccess] = useState<{ id: string } | null>(null);
+
   
   const [formData, setFormData] = useState({
     title: '',
