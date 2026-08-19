@@ -462,6 +462,11 @@ export default function CreateEvent() {
         }
       }
 
+      if (!asOwner && !editingEvent) {
+        setGuestSuccess({ id: eventId });
+        return;
+      }
+
       navigate('/events');
     } catch (error: any) {
       toast.error(error.message || `Failed to ${editingEvent ? 'update' : 'create'} event`);
