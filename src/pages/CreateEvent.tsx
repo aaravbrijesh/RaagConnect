@@ -306,8 +306,13 @@ export default function CreateEvent() {
     setSelectedArtists(prev => prev.filter(a => a.id !== artistId));
   };
 
+  const asOwner = !!(user && session && canCreateEvents);
+  const uploadPrefix = asOwner && user ? user.id : 'guest';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+
     
     if (!asOwner) {
       if (!guestInfo.guestName.trim() || !guestInfo.guestEmail.trim()) {
