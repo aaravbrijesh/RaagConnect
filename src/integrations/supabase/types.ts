@@ -519,6 +519,98 @@ export type Database = {
           },
         ]
       }
+      event_volunteer_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_id: string
+          id: string
+          kind: string
+          slots_needed: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_id: string
+          id?: string
+          kind?: string
+          slots_needed?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          id?: string
+          kind?: string
+          slots_needed?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_volunteer_roles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_volunteer_signups: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          note: string | null
+          quantity: number
+          role_id: string
+          updated_at: string
+          user_id: string | null
+          volunteer_name: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          note?: string | null
+          quantity?: number
+          role_id: string
+          updated_at?: string
+          user_id?: string | null
+          volunteer_name: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          note?: string | null
+          quantity?: number
+          role_id?: string
+          updated_at?: string
+          user_id?: string | null
+          volunteer_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_volunteer_signups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_volunteer_signups_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "event_volunteer_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           artist_id: string | null
@@ -526,6 +618,8 @@ export type Database = {
           created_at: string
           date: string
           flyer_url: string | null
+          guest_email: string | null
+          guest_name: string | null
           id: string
           image_url: string | null
           location_lat: number | null
@@ -543,7 +637,7 @@ export type Database = {
           title: string
           updated_at: string
           use_stripe_checkout: boolean | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           artist_id?: string | null
@@ -551,6 +645,8 @@ export type Database = {
           created_at?: string
           date: string
           flyer_url?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
@@ -568,7 +664,7 @@ export type Database = {
           title: string
           updated_at?: string
           use_stripe_checkout?: boolean | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           artist_id?: string | null
@@ -576,6 +672,8 @@ export type Database = {
           created_at?: string
           date?: string
           flyer_url?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
@@ -593,7 +691,7 @@ export type Database = {
           title?: string
           updated_at?: string
           use_stripe_checkout?: boolean | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
