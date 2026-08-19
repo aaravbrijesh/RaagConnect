@@ -94,26 +94,25 @@ export default function CreateEvent() {
   }, []);
 
   useEffect(() => {
-    if (!user || !session) {
-      toast.error('Please sign in to create an event');
-      navigate('/login');
-      return;
+    if (user?.email) {
+      setGuestInfo((prev) => ({
+        guestName: prev.guestName || (user.user_metadata?.full_name as string) || '',
+        guestEmail: prev.guestEmail || user.email || '',
+      }));
     }
-    
-    if (rolesLoading) {
-      return;
-    }
-    
-    if (!canCreateEvents) {
-      toast.error('You need artist or organizer role to create events');
-      navigate('/');
-      return;
-    }
+  }, [user]);
 
+  useEffect(() => {
     if (editId) {
+      if (!user || !session) {
+        toast.error('Please sign in to edit an event');
+        navigate('/login');
+        return;
+      }
       fetchEventForEdit(editId);
     }
-  }, [user, session, canCreateEvents, rolesLoading, editId]);
+  }, [user, session, editId]);
+
 
   const fetchArtistsByIds = async (artistIds: string[]) => {
     const { data, error } = await supabase
