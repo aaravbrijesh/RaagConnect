@@ -354,7 +354,7 @@ export default function CreateEvent() {
 
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+        const fileName = `${uploadPrefix}/${Math.random()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('event-images')
@@ -371,7 +371,7 @@ export default function CreateEvent() {
 
       if (flyerFile) {
         const fileExt = flyerFile.name.split('.').pop();
-        const fileName = `${user.id}/flyer-${Math.random()}.${fileExt}`;
+        const fileName = `${uploadPrefix}/flyer-${Math.random()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('event-images')
@@ -434,7 +434,9 @@ export default function CreateEvent() {
           .from('events')
           .insert({
             ...eventData,
-            user_id: user.id
+            user_id: asOwner && user ? user.id : null,
+            guest_name: asOwner ? null : guestInfo.guestName.trim(),
+            guest_email: asOwner ? null : guestInfo.guestEmail.trim()
           })
           .select('id')
           .single();
