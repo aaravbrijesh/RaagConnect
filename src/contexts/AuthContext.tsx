@@ -79,8 +79,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUserRole(role);
 
+        // Claim any events created as a guest with this email address
+        if (session.user.email) {
+          supabase
+            .from('events')
+            .update({ user_id: session.user.id })
+            .is('user_id', null)
+            .eq('guest_email', session.user.email)
+            .then(({ error }) => {
+              if (error) console.error('Error claiming guest events:', error);
+            });
+        }
+
         const provider = session.user.app_metadata?.provider;
         setNeedsRoleSelection(!role && (provider === 'google' || provider === 'oauth'));
+
       } else {
         setIsSignedIn(false);
         setUserRole(null);
