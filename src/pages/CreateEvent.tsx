@@ -309,10 +309,13 @@ export default function CreateEvent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !session) {
-      toast.error('Please sign in to create an event');
-      return;
+    if (!asOwner) {
+      if (!guestInfo.guestName.trim() || !guestInfo.guestEmail.trim()) {
+        toast.error('Please add your name and email so we can reach you about this event');
+        return;
+      }
     }
+
 
     // Validate form data with zod schema
     const validationResult = eventSchema.safeParse({
