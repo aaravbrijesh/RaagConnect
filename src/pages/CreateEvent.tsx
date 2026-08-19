@@ -475,7 +475,35 @@ export default function CreateEvent() {
     }
   };
 
+  if (guestSuccess) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Nav />
+        <div className="container mx-auto px-4 py-12 max-w-xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Your event is live!</CardTitle>
+              <CardDescription>
+                Thanks — "{formData.title}" has been published. Create a free account with{' '}
+                <strong>{guestInfo.guestEmail}</strong> to manage bookings, edit details and see who's attending.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row gap-3">
+              <Button className="flex-1" onClick={() => navigate('/register')}>
+                Create an account
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => navigate('/events')}>
+                Maybe later
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
+
     <div className="min-h-screen bg-background">
       <Nav />
       
@@ -523,8 +551,74 @@ export default function CreateEvent() {
                   </AlertDescription>
                 </Alert>
               )}
-              
+
+              {/* AI Flyer Scan — front and center */}
+              <div className="mb-6 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-primary">Start with your poster — let AI fill the form</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upload the event flyer and we'll read the title, date, time, venue and price for you. You can edit anything afterwards.
+                </p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <Input
+                    id="flyer"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFlyerChange}
+                    disabled={analyzingFlyer}
+                    className="cursor-pointer flex-1 bg-background"
+                  />
+                  {(flyerFile || (editingEvent?.flyer_url && !flyerFile)) && (
+                    <img
+                      src={flyerFile ? URL.createObjectURL(flyerFile) : editingEvent?.flyer_url}
+                      alt="Flyer preview"
+                      className="h-14 w-14 object-cover rounded-md border shrink-0"
+                    />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Prefer typing? Just skip this and fill in the details below.
+                </p>
+              </div>
+
+              {!asOwner && !editingEvent && (
+                <div className="mb-6 rounded-xl border bg-muted/40 p-5 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Your contact info</h3>
+                    <p className="text-sm text-muted-foreground">
+                      No account needed to post an event. Add your details so we can reach you — sign up later to manage bookings.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="guestName">Your Name *</Label>
+                      <Input
+                        id="guestName"
+                        value={guestInfo.guestName}
+                        onChange={(e) => setGuestInfo({ ...guestInfo, guestName: e.target.value })}
+                        placeholder="Full name"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="guestEmail">Your Email *</Label>
+                      <Input
+                        id="guestEmail"
+                        type="email"
+                        value={guestInfo.guestEmail}
+                        onChange={(e) => setGuestInfo({ ...guestInfo, guestEmail: e.target.value })}
+                        placeholder="you@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
+
                 {/* Basic Info */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Event Details</h3>
@@ -812,27 +906,8 @@ export default function CreateEvent() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="flyer">Event Flyer</Label>
-                      <div className="flex items-center gap-3">
-                        <Input
-                          id="flyer"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFlyerChange}
-                          className="cursor-pointer flex-1"
-                        />
-                        {(flyerFile || (editingEvent?.flyer_url && !flyerFile)) && (
-                          <div className="shrink-0">
-                            <img
-                              src={flyerFile ? URL.createObjectURL(flyerFile) : editingEvent?.flyer_url}
-                              alt="Flyer preview"
-                              className="h-12 w-12 object-cover rounded-md border"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <div />
+
                   </div>
                 </div>
 
