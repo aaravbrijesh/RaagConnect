@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useOrganizerPayments } from '@/hooks/useOrganizerPayments';
 
 interface PriceTier {
   id: string;
@@ -65,6 +66,32 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   
   // Check if event is in the past
   const isPastEvent = new Date(`${event.date}T${event.time}`) < new Date();
+
+  // Card checkout is available when the organizer has finished Stripe setup
+  const { chargesEnabled } = useOrganizerPayments(event.user_id);
+  const useCardCheckout = !isFreeEvent && chargesEnabled;
+
+  const handleCardCheckout = async () => {
+    if (!user || !session) {
+      toast.error('Please sign in to buy tickets', {
+        action: { label: 'Sign In', onClick: () => navigate('/login') },
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { kind: 'event', id: event.id, quantity: ticketCount, origin: window.location.origin },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(typeof data.error === 'string' ? data.error : 'Checkout unavailable');
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast.error(err.message || 'Could not start checkout');
+      setLoading(false);
+    }
+  };
+
 
   // Fetch user profile and total bookings
   useEffect(() => {
