@@ -4,6 +4,7 @@ import { idColumn } from '@/lib/slug';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useOrganizerPayments } from '@/hooks/useOrganizerPayments';
 import Nav from '@/components/Nav';
 import AddToCalendar from '@/components/AddToCalendar';
 import ClassCalendarView, { TimeSlot } from '@/components/ClassCalendarView';
@@ -58,6 +59,7 @@ export default function ClassDetail() {
   const [bookingNotes, setBookingNotes] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [booking, setBooking] = useState(false);
+  const { chargesEnabled: teacherAcceptsCards } = useOrganizerPayments(cls?.user_id);
   const [booked, setBooked] = useState(false);
   const [bookedEvent, setBookedEvent] = useState<{ title: string; startDate: Date; endDate: Date; location?: string } | null>(null);
 
