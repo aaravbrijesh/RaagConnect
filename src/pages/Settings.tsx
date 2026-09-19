@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, Sun, Trash2, GraduationCap } from 'lucide-react';
 import Nav from '@/components/Nav';
 import MyBookings from '@/components/MyBookings';
+import PaymentSettings from '@/components/PaymentSettings';
 import { useSettings } from '@/hooks/useSettings';
 import { useUserRoles, type UserRole } from '@/hooks/useUserRoles';
 
@@ -414,6 +415,10 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Payments (organizers & teachers) */}
+          {roles.some((r) => ['organizer', 'teacher', 'admin'].includes(r)) && <PaymentSettings />}
+
 
           {/* Appearance Settings */}
           <Card>
