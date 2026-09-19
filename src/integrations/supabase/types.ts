@@ -328,6 +328,7 @@ export type Database = {
           class_type: string
           contact_info: string | null
           created_at: string
+          currency: string
           description: string | null
           genre: string
           group_schedule_day: number | null
@@ -340,6 +341,7 @@ export type Database = {
           location_name: string | null
           max_capacity: number | null
           price: number | null
+          price_cents: number | null
           recurring_schedule: string | null
           schedule_details: string | null
           skill_level: string
@@ -353,6 +355,7 @@ export type Database = {
           class_type?: string
           contact_info?: string | null
           created_at?: string
+          currency?: string
           description?: string | null
           genre: string
           group_schedule_day?: number | null
@@ -365,6 +368,7 @@ export type Database = {
           location_name?: string | null
           max_capacity?: number | null
           price?: number | null
+          price_cents?: number | null
           recurring_schedule?: string | null
           schedule_details?: string | null
           skill_level?: string
@@ -378,6 +382,7 @@ export type Database = {
           class_type?: string
           contact_info?: string | null
           created_at?: string
+          currency?: string
           description?: string | null
           genre?: string
           group_schedule_day?: number | null
@@ -390,6 +395,7 @@ export type Database = {
           location_name?: string | null
           max_capacity?: number | null
           price?: number | null
+          price_cents?: number | null
           recurring_schedule?: string | null
           schedule_details?: string | null
           skill_level?: string
@@ -616,6 +622,7 @@ export type Database = {
           artist_id: string | null
           confirmation_type: string | null
           created_at: string
+          currency: string
           date: string
           flyer_url: string | null
           guest_email: string | null
@@ -628,6 +635,7 @@ export type Database = {
           notes: string | null
           payment_link: string | null
           price: number | null
+          price_cents: number | null
           price_tiers: Json | null
           slug: string | null
           stripe_price_id: string | null
@@ -643,6 +651,7 @@ export type Database = {
           artist_id?: string | null
           confirmation_type?: string | null
           created_at?: string
+          currency?: string
           date: string
           flyer_url?: string | null
           guest_email?: string | null
@@ -655,6 +664,7 @@ export type Database = {
           notes?: string | null
           payment_link?: string | null
           price?: number | null
+          price_cents?: number | null
           price_tiers?: Json | null
           slug?: string | null
           stripe_price_id?: string | null
@@ -670,6 +680,7 @@ export type Database = {
           artist_id?: string | null
           confirmation_type?: string | null
           created_at?: string
+          currency?: string
           date?: string
           flyer_url?: string | null
           guest_email?: string | null
@@ -682,6 +693,7 @@ export type Database = {
           notes?: string | null
           payment_link?: string | null
           price?: number | null
+          price_cents?: number | null
           price_tiers?: Json | null
           slug?: string | null
           stripe_price_id?: string | null
@@ -742,6 +754,150 @@ export type Database = {
         }
         Relationships: []
       }
+      organizer_payment_accounts: {
+        Row: {
+          charges_enabled: boolean
+          created_at: string
+          id: string
+          onboarding_complete: boolean
+          payouts_enabled: boolean
+          requirements_due: boolean
+          stripe_account_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          charges_enabled?: boolean
+          created_at?: string
+          id?: string
+          onboarding_complete?: boolean
+          payouts_enabled?: boolean
+          requirements_due?: boolean
+          stripe_account_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          charges_enabled?: boolean
+          created_at?: string
+          id?: string
+          onboarding_complete?: boolean
+          payouts_enabled?: boolean
+          requirements_due?: boolean
+          stripe_account_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          buyer_email: string | null
+          buyer_name: string | null
+          class_id: string | null
+          created_at: string
+          currency: string
+          event_id: string | null
+          fulfilled_at: string | null
+          gross_amount: number
+          id: string
+          organizer_id: string
+          payment_status: string
+          platform_fee: number
+          platform_fee_percent: number
+          quantity: number
+          refund_status: string
+          refunded_amount: number
+          stripe_checkout_session_id: string | null
+          stripe_connected_account_id: string
+          stripe_payment_intent_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          buyer_email?: string | null
+          buyer_name?: string | null
+          class_id?: string | null
+          created_at?: string
+          currency?: string
+          event_id?: string | null
+          fulfilled_at?: string | null
+          gross_amount: number
+          id?: string
+          organizer_id: string
+          payment_status?: string
+          platform_fee: number
+          platform_fee_percent: number
+          quantity?: number
+          refund_status?: string
+          refunded_amount?: number
+          stripe_checkout_session_id?: string | null
+          stripe_connected_account_id: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          buyer_email?: string | null
+          buyer_name?: string | null
+          class_id?: string | null
+          created_at?: string
+          currency?: string
+          event_id?: string | null
+          fulfilled_at?: string | null
+          gross_amount?: number
+          id?: string
+          organizer_id?: string
+          payment_status?: string
+          platform_fee?: number
+          platform_fee_percent?: number
+          quantity?: number
+          refund_status?: string
+          refunded_amount?: number
+          stripe_checkout_session_id?: string | null
+          stripe_connected_account_id?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_settings: {
+        Row: {
+          default_currency: string
+          id: boolean
+          platform_fee_percent: number
+          updated_at: string
+        }
+        Insert: {
+          default_currency?: string
+          id?: boolean
+          platform_fee_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          default_currency?: string
+          id?: boolean
+          platform_fee_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -793,6 +949,24 @@ export type Database = {
           title?: string | null
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      stripe_webhook_events: {
+        Row: {
+          id: string
+          processed_at: string
+          type: string
+        }
+        Insert: {
+          id: string
+          processed_at?: string
+          type: string
+        }
+        Update: {
+          id?: string
+          processed_at?: string
+          type?: string
         }
         Relationships: []
       }
@@ -871,6 +1045,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizer_payment_status: {
+        Row: {
+          charges_enabled: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          charges_enabled?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          charges_enabled?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
