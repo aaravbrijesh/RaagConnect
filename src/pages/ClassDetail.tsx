@@ -146,8 +146,27 @@ export default function ClassDetail() {
         }
       }
 
-      const { error } = await supabase.from('class_bookings').insert(bookings);
+      const { data: inserted, error } = await supabase.from('class_bookings').insert(bookings).select('id');
       if (error) throw error;
+
+      // Paid class with card payments enabled: send the student to Stripe Checkout.
+      const priceCents = cls.price_cents ?? (cls.price != null ? Math.round(Number(cls.price) * 100) : 0);
+      if (teacherAcceptsCards && priceCents > 0) {
+        const { data: checkout, error: checkoutError } = await supabase.functions.invoke('create-checkout-session', {
+          body: {
+            kind: 'class',
+            id: classId,
+            quantity: bookings.length,
+            class_booking_ids: (inserted || []).map((b: { id: string }) => b.id),
+            origin: window.location.origin,
+          },
+        });
+        if (checkoutError) throw checkoutError;
+        if (checkout?.error) throw new Error(typeof checkout.error === 'string' ? checkout.error : 'Checkout unavailable');
+        window.location.href = checkout.url;
+        return;
+      }
+
 
       const [sH, sM] = selectedSlot.start_time.split(':').map(Number);
       const [eH, eM] = selectedSlot.end_time.split(':').map(Number);
