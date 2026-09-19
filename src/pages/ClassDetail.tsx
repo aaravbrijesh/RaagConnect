@@ -483,9 +483,21 @@ export default function ClassDetail() {
                             </label>
                           </div>
                         </div>
+                        {teacherAcceptsCards && Number(cls.price) > 0 && (
+                          <div className="rounded-lg bg-muted/50 p-3 text-sm flex items-center justify-between">
+                            <span>
+                              {isRecurring ? '4 sessions' : '1 session'} × ${Number(cls.price).toFixed(2)}
+                            </span>
+                            <span className="font-semibold">
+                              Total ${(Number(cls.price) * (isRecurring ? 4 : 1)).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                         <Button className="w-full" onClick={handleBook} disabled={booking}>
                           {booking ? (
-                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking…</>
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {teacherAcceptsCards && Number(cls.price) > 0 ? 'Redirecting to secure checkout…' : 'Booking…'}</>
+                          ) : teacherAcceptsCards && Number(cls.price) > 0 ? (
+                            `Register & Pay · $${(Number(cls.price) * (isRecurring ? 4 : 1)).toFixed(2)}`
                           ) : isRecurring ? (
                             'Book 4 Sessions'
                           ) : (
