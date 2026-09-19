@@ -26,6 +26,8 @@ import ClassDetail from "./pages/ClassDetail";
 import Tools from "./pages/Tools";
 import Knowledge from "./pages/Knowledge";
 import OAuthConsent from "./pages/OAuthConsent";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancelled from "./pages/PaymentCancelled";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,8 @@ const App = () => (
             <Route path="/tools" element={<Tools />} />
             <Route path="/knowledge" element={<Knowledge />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-cancelled" element={<PaymentCancelled />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

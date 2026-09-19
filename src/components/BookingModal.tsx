@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useOrganizerPayments } from '@/hooks/useOrganizerPayments';
 
 interface PriceTier {
   id: string;
@@ -65,6 +66,32 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
   
   // Check if event is in the past
   const isPastEvent = new Date(`${event.date}T${event.time}`) < new Date();
+
+  // Card checkout is available when the organizer has finished Stripe setup
+  const { chargesEnabled } = useOrganizerPayments(event.user_id);
+  const useCardCheckout = !isFreeEvent && chargesEnabled;
+
+  const handleCardCheckout = async () => {
+    if (!user || !session) {
+      toast.error('Please sign in to buy tickets', {
+        action: { label: 'Sign In', onClick: () => navigate('/login') },
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { kind: 'event', id: event.id, quantity: ticketCount, origin: window.location.origin },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(typeof data.error === 'string' ? data.error : 'Checkout unavailable');
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast.error(err.message || 'Could not start checkout');
+      setLoading(false);
+    }
+  };
+
 
   // Fetch user profile and total bookings
   useEffect(() => {
@@ -389,8 +416,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </div>
           )}
 
-          {/* Payment info for paid events */}
-          {!isSoldOut && !isFreeEvent && hasPaymentInfo && (
+          {/* Payment info for paid events (manual payment only) */}
+          {!isSoldOut && !isFreeEvent && !useCardCheckout && hasPaymentInfo && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -426,8 +453,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </Alert>
           )}
 
-          {/* Proof of payment for paid events */}
-          {!isSoldOut && !isFreeEvent && (
+          {/* Proof of payment for paid events (manual payment only) */}
+          {!isSoldOut && !isFreeEvent && !useCardCheckout && (
             <div className="space-y-2">
               <Label htmlFor="proof">Proof of Payment *</Label>
               <div className="flex items-center gap-3">
@@ -461,21 +488,42 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </div>
           )}
 
-          <Button 
-            onClick={handleBooking} 
-            disabled={loading || isPastEvent || isSoldOut || (!isFreeEvent && !proofFile) || !userProfile}
-            className="w-full"
-          >
-            {isSoldOut 
-              ? 'Sold Out'
-              : isPastEvent 
-                ? 'Event Has Passed' 
-                : loading 
-                  ? 'Processing...' 
-                  : isFreeEvent 
-                    ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}` 
-                    : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
-          </Button>
+          {useCardCheckout ? (
+            <div className="space-y-2">
+              <Button
+                onClick={handleCardCheckout}
+                disabled={loading || isPastEvent || isSoldOut}
+                className="w-full"
+              >
+                {isSoldOut
+                  ? 'Sold Out'
+                  : isPastEvent
+                    ? 'Event Has Passed'
+                    : loading
+                      ? 'Redirecting to secure checkout...'
+                      : `Buy Tickets · $${totalAmount.toFixed(2)}`}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                You'll pay securely on Stripe. Your tickets are confirmed once payment succeeds.
+              </p>
+            </div>
+          ) : (
+            <Button
+              onClick={handleBooking}
+              disabled={loading || isPastEvent || isSoldOut || (!isFreeEvent && !proofFile) || !userProfile}
+              className="w-full"
+            >
+              {isSoldOut
+                ? 'Sold Out'
+                : isPastEvent
+                  ? 'Event Has Passed'
+                  : loading
+                    ? 'Processing...'
+                    : isFreeEvent
+                      ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}`
+                      : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

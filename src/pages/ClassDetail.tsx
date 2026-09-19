@@ -4,6 +4,7 @@ import { idColumn } from '@/lib/slug';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useOrganizerPayments } from '@/hooks/useOrganizerPayments';
 import Nav from '@/components/Nav';
 import AddToCalendar from '@/components/AddToCalendar';
 import ClassCalendarView, { TimeSlot } from '@/components/ClassCalendarView';
@@ -58,6 +59,7 @@ export default function ClassDetail() {
   const [bookingNotes, setBookingNotes] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [booking, setBooking] = useState(false);
+  const { chargesEnabled: teacherAcceptsCards } = useOrganizerPayments(cls?.user_id);
   const [booked, setBooked] = useState(false);
   const [bookedEvent, setBookedEvent] = useState<{ title: string; startDate: Date; endDate: Date; location?: string } | null>(null);
 
@@ -144,8 +146,27 @@ export default function ClassDetail() {
         }
       }
 
-      const { error } = await supabase.from('class_bookings').insert(bookings);
+      const { data: inserted, error } = await supabase.from('class_bookings').insert(bookings).select('id');
       if (error) throw error;
+
+      // Paid class with card payments enabled: send the student to Stripe Checkout.
+      const priceCents = cls.price_cents ?? (cls.price != null ? Math.round(Number(cls.price) * 100) : 0);
+      if (teacherAcceptsCards && priceCents > 0) {
+        const { data: checkout, error: checkoutError } = await supabase.functions.invoke('create-checkout-session', {
+          body: {
+            kind: 'class',
+            id: classId,
+            quantity: bookings.length,
+            class_booking_ids: (inserted || []).map((b: { id: string }) => b.id),
+            origin: window.location.origin,
+          },
+        });
+        if (checkoutError) throw checkoutError;
+        if (checkout?.error) throw new Error(typeof checkout.error === 'string' ? checkout.error : 'Checkout unavailable');
+        window.location.href = checkout.url;
+        return;
+      }
+
 
       const [sH, sM] = selectedSlot.start_time.split(':').map(Number);
       const [eH, eM] = selectedSlot.end_time.split(':').map(Number);
@@ -462,9 +483,21 @@ export default function ClassDetail() {
                             </label>
                           </div>
                         </div>
+                        {teacherAcceptsCards && Number(cls.price) > 0 && (
+                          <div className="rounded-lg bg-muted/50 p-3 text-sm flex items-center justify-between">
+                            <span>
+                              {isRecurring ? '4 sessions' : '1 session'} × ${Number(cls.price).toFixed(2)}
+                            </span>
+                            <span className="font-semibold">
+                              Total ${(Number(cls.price) * (isRecurring ? 4 : 1)).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                         <Button className="w-full" onClick={handleBook} disabled={booking}>
                           {booking ? (
-                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Booking…</>
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {teacherAcceptsCards && Number(cls.price) > 0 ? 'Redirecting to secure checkout…' : 'Booking…'}</>
+                          ) : teacherAcceptsCards && Number(cls.price) > 0 ? (
+                            `Register & Pay · $${(Number(cls.price) * (isRecurring ? 4 : 1)).toFixed(2)}`
                           ) : isRecurring ? (
                             'Book 4 Sessions'
                           ) : (
