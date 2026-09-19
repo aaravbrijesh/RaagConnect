@@ -790,6 +790,24 @@ export type Database = {
         }
         Relationships: []
       }
+      organizer_payments_public: {
+        Row: {
+          charges_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          charges_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          charges_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           buyer_email: string | null
@@ -1045,21 +1063,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      organizer_payment_status: {
-        Row: {
-          charges_enabled: boolean | null
-          user_id: string | null
-        }
-        Insert: {
-          charges_enabled?: boolean | null
-          user_id?: string | null
-        }
-        Update: {
-          charges_enabled?: boolean | null
-          user_id?: string | null
-        }
-        Relationships: []
       }
     }
     Functions: {
