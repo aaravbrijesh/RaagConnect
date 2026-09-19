@@ -416,8 +416,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </div>
           )}
 
-          {/* Payment info for paid events */}
-          {!isSoldOut && !isFreeEvent && hasPaymentInfo && (
+          {/* Payment info for paid events (manual payment only) */}
+          {!isSoldOut && !isFreeEvent && !useCardCheckout && hasPaymentInfo && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -453,8 +453,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </Alert>
           )}
 
-          {/* Proof of payment for paid events */}
-          {!isSoldOut && !isFreeEvent && (
+          {/* Proof of payment for paid events (manual payment only) */}
+          {!isSoldOut && !isFreeEvent && !useCardCheckout && (
             <div className="space-y-2">
               <Label htmlFor="proof">Proof of Payment *</Label>
               <div className="flex items-center gap-3">
@@ -488,21 +488,42 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </div>
           )}
 
-          <Button 
-            onClick={handleBooking} 
-            disabled={loading || isPastEvent || isSoldOut || (!isFreeEvent && !proofFile) || !userProfile}
-            className="w-full"
-          >
-            {isSoldOut 
-              ? 'Sold Out'
-              : isPastEvent 
-                ? 'Event Has Passed' 
-                : loading 
-                  ? 'Processing...' 
-                  : isFreeEvent 
-                    ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}` 
-                    : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
-          </Button>
+          {useCardCheckout ? (
+            <div className="space-y-2">
+              <Button
+                onClick={handleCardCheckout}
+                disabled={loading || isPastEvent || isSoldOut}
+                className="w-full"
+              >
+                {isSoldOut
+                  ? 'Sold Out'
+                  : isPastEvent
+                    ? 'Event Has Passed'
+                    : loading
+                      ? 'Redirecting to secure checkout...'
+                      : `Buy Tickets · $${totalAmount.toFixed(2)}`}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                You'll pay securely on Stripe. Your tickets are confirmed once payment succeeds.
+              </p>
+            </div>
+          ) : (
+            <Button
+              onClick={handleBooking}
+              disabled={loading || isPastEvent || isSoldOut || (!isFreeEvent && !proofFile) || !userProfile}
+              className="w-full"
+            >
+              {isSoldOut
+                ? 'Sold Out'
+                : isPastEvent
+                  ? 'Event Has Passed'
+                  : loading
+                    ? 'Processing...'
+                    : isFreeEvent
+                      ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}`
+                      : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
