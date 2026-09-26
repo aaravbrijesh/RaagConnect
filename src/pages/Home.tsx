@@ -36,8 +36,9 @@ const defaultContent: AboutContent = {
 };
 
 export default function Home() {
-  const { needsRoleSelection } = useAuth();
+  const { needsRoleSelection, user } = useAuth();
   const navigate = useNavigate();
+  const { isOrganizer, isTeacher, isArtist, loading: rolesLoading } = useUserRoles(user?.id);
   const [content, setContent] = useState<AboutContent>(defaultContent);
   const [title, setTitle] = useState("Raag Connect");
   const [stats, setStats] = useState({ events: 0, artists: 0, classes: 0 });
