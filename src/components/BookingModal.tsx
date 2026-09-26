@@ -416,41 +416,57 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </div>
           )}
 
-          {/* Payment info for paid events (manual payment only) */}
-          {!isSoldOut && !isFreeEvent && !useCardCheckout && hasPaymentInfo && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <p className="font-medium mb-2">Send ${totalAmount.toFixed(2)} to:</p>
-                <div className="space-y-1 text-sm">
-                  {paymentInfo.venmo && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">Venmo</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.venmo}</span>
+          {/* How would you like to pay? */}
+          {!isSoldOut && !isFreeEvent && paymentOptions.length > 0 && (
+            <div className="space-y-3">
+              <Label>How would you like to pay?</Label>
+              <RadioGroup
+                value={selectedMethod ?? undefined}
+                onValueChange={(value) => setSelectedMethod(value as PaymentMethodChoice)}
+                className="space-y-2"
+              >
+                {paymentOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    htmlFor={`pay-${option.value}`}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                      selectedMethod === option.value ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <RadioGroupItem value={option.value} id={`pay-${option.value}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{option.label}</p>
+                      <p className="text-xs text-muted-foreground">{option.hint}</p>
                     </div>
-                  )}
-                  {paymentInfo.cashapp && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">Cash App</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.cashapp}</span>
-                    </div>
-                  )}
-                  {paymentInfo.zelle && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">Zelle</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.zelle}</span>
-                    </div>
-                  )}
-                  {paymentInfo.paypal && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">PayPal</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.paypal}</span>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs mt-2">After sending payment, upload your proof below.</p>
-              </AlertDescription>
-            </Alert>
+                  </label>
+                ))}
+              </RadioGroup>
+
+              {selectedMethod && selectedMethod !== 'card' && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {selectedMethod === 'cash' ? (
+                      <p className="text-sm">
+                        Reserve your spot now and bring <span className="font-semibold">${totalAmount.toFixed(2)}</span>{' '}
+                        in cash to the venue. The organizer confirms you on arrival.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mb-2 font-medium">Send ${totalAmount.toFixed(2)} to:</p>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Badge variant="outline" className="w-20">
+                            {METHOD_LABELS[selectedMethod]}
+                          </Badge>
+                          <span className="font-mono font-semibold">{handles[selectedMethod]}</span>
+                        </div>
+                        <p className="mt-2 text-xs">After sending payment, upload your proof below.</p>
+                      </>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
           )}
 
           {/* Proof of payment — only when paying the organizer directly */}
