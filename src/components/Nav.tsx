@@ -114,6 +114,12 @@ export default function Nav() {
                   Admin
                 </NavLink>
               )}
+              {session && user && (
+                <NavLink to="/settings" className={navLinkClass}>
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </NavLink>
+              )}
             </div>
           </div>
 

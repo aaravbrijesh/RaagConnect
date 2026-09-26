@@ -14,6 +14,7 @@ import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, 
 import Nav from '@/components/Nav';
 import MyBookings from '@/components/MyBookings';
 import PaymentSettings from '@/components/PaymentSettings';
+import PaymentMethodsEditor from '@/components/PaymentMethodsEditor';
 import { useSettings } from '@/hooks/useSettings';
 import { useUserRoles, type UserRole } from '@/hooks/useUserRoles';
 
@@ -21,7 +22,7 @@ const ROLE_PRIORITY: UserRole[] = ['admin', 'organizer', 'artist', 'teacher', 'v
 const SELF_SERVICE_ROLES: Exclude<UserRole, 'admin'>[] = ['viewer', 'artist', 'organizer', 'teacher'];
 
 export default function Settings() {
-  const { user, session } = useAuth();
+  const { user, session, authLoading } = useAuth();
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
   const { roles, loading: rolesLoading, refetch: refetchRoles } = useUserRoles(user?.id);
@@ -37,6 +38,7 @@ export default function Settings() {
   const [updatingRole, setUpdatingRole] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate('/login');
       return;
@@ -80,7 +82,7 @@ export default function Settings() {
     };
 
     loadProfile();
-  }, [user, navigate]);
+  }, [user, navigate, authLoading]);
 
   useEffect(() => {
     if (rolesLoading) return;
@@ -416,8 +418,13 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Payments (organizers & teachers) */}
-          {roles.some((r) => ['organizer', 'teacher', 'admin'].includes(r)) && <PaymentSettings />}
+          {/* Payments (organizers, artists & teachers) */}
+          {roles.some((r) => ['organizer', 'teacher', 'artist', 'admin'].includes(r)) && (
+            <>
+              <PaymentMethodsEditor />
+              <PaymentSettings />
+            </>
+          )}
 
 
           {/* Appearance Settings */}
@@ -531,8 +538,8 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* My Bookings */}
-          {user && <MyBookings userId={user.id} />}
+          {/* My Bookings — attendees only; hosts manage bookings from their events */}
+          {user && !roles.some((r) => ['organizer', 'teacher'].includes(r)) && <MyBookings userId={user.id} />}
         </div>
       </div>
     </>

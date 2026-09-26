@@ -790,6 +790,45 @@ export type Database = {
         }
         Relationships: []
       }
+      organizer_payment_methods: {
+        Row: {
+          accept_card: boolean
+          accept_cash: boolean
+          cashapp: string | null
+          created_at: string
+          id: string
+          paypal: string | null
+          updated_at: string
+          user_id: string
+          venmo: string | null
+          zelle: string | null
+        }
+        Insert: {
+          accept_card?: boolean
+          accept_cash?: boolean
+          cashapp?: string | null
+          created_at?: string
+          id?: string
+          paypal?: string | null
+          updated_at?: string
+          user_id: string
+          venmo?: string | null
+          zelle?: string | null
+        }
+        Update: {
+          accept_card?: boolean
+          accept_cash?: boolean
+          cashapp?: string | null
+          created_at?: string
+          id?: string
+          paypal?: string | null
+          updated_at?: string
+          user_id?: string
+          venmo?: string | null
+          zelle?: string | null
+        }
+        Relationships: []
+      }
       organizer_payments_public: {
         Row: {
           charges_enabled: boolean

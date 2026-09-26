@@ -6,6 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
 import { useNavigate } from 'react-router-dom';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import OrganizerDashboard from '@/components/OrganizerDashboard';
+import TeacherDashboard from '@/components/TeacherDashboard';
+import ArtistDashboard from '@/components/ArtistDashboard';
 
 interface AboutContent {
   heroDescription: string;
@@ -32,8 +36,9 @@ const defaultContent: AboutContent = {
 };
 
 export default function Home() {
-  const { needsRoleSelection } = useAuth();
+  const { needsRoleSelection, user } = useAuth();
   const navigate = useNavigate();
+  const { isOrganizer, isTeacher, isArtist, loading: rolesLoading } = useUserRoles(user?.id);
   const [content, setContent] = useState<AboutContent>(defaultContent);
   const [title, setTitle] = useState("Raag Connect");
   const [stats, setStats] = useState({ events: 0, artists: 0, classes: 0 });
@@ -88,9 +93,20 @@ export default function Home() {
     { label: 'Classes', value: stats.classes, icon: GraduationCap },
   ];
 
+  // Signed-in hosts get a workspace instead of the public landing page
+  if (user && !rolesLoading && (isOrganizer || isTeacher || isArtist)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Nav />
+        {isOrganizer ? <OrganizerDashboard /> : isTeacher ? <TeacherDashboard /> : <ArtistDashboard />}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Nav />
+
 
       {/* Hero */}
       <section className="container mx-auto px-4 pt-16 pb-12 text-center max-w-3xl">

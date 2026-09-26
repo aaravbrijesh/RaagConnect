@@ -12,6 +12,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useOrganizerPayments } from '@/hooks/useOrganizerPayments';
+import { useOrganizerPaymentMethods } from '@/hooks/useOrganizerPaymentMethods';
+
+type PaymentMethodChoice = 'card' | 'venmo' | 'cashapp' | 'zelle' | 'paypal' | 'cash' | 'direct';
+
+const METHOD_LABELS: Record<string, string> = {
+  venmo: 'Venmo',
+  cashapp: 'Cash App',
+  zelle: 'Zelle',
+  paypal: 'PayPal',
+  cash: 'Cash',
+  direct: 'Direct',
+};
 
 interface PriceTier {
   id: string;
@@ -69,7 +81,58 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
   // Card checkout is available when the organizer has finished Stripe setup
   const { chargesEnabled } = useOrganizerPayments(event.user_id);
-  const useCardCheckout = !isFreeEvent && chargesEnabled;
+  const { methods: organizerMethods } = useOrganizerPaymentMethods(event.user_id);
+
+  const handles: Record<string, string> = {
+    venmo: paymentInfo.venmo || organizerMethods?.venmo || '',
+    cashapp: paymentInfo.cashapp || organizerMethods?.cashapp || '',
+    zelle: paymentInfo.zelle || organizerMethods?.zelle || '',
+    paypal: paymentInfo.paypal || organizerMethods?.paypal || '',
+  };
+
+  const paymentOptions: { value: PaymentMethodChoice; label: string; hint: string }[] = [];
+  if (!isFreeEvent) {
+    if (chargesEnabled && organizerMethods?.accept_card !== false) {
+      paymentOptions.push({
+        value: 'card',
+        label: 'Card, Apple Pay or Google Pay',
+        hint: 'Pay securely online — confirmed instantly',
+      });
+    }
+    (['venmo', 'cashapp', 'zelle', 'paypal'] as const).forEach((key) => {
+      if (handles[key]) {
+        paymentOptions.push({
+          value: key,
+          label: METHOD_LABELS[key],
+          hint: 'Send payment directly, then upload proof',
+        });
+      }
+    });
+    if (organizerMethods?.accept_cash) {
+      paymentOptions.push({ value: 'cash', label: 'Cash at the door', hint: 'Reserve now, pay in person' });
+    }
+    if (paymentOptions.length === 0) {
+      paymentOptions.push({
+        value: 'direct',
+        label: 'Pay the organizer directly',
+        hint: 'Upload proof of your payment',
+      });
+    }
+  }
+
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodChoice | null>(null);
+  const firstOption = paymentOptions[0]?.value;
+  useEffect(() => {
+    if (isFreeEvent) {
+      setSelectedMethod(null);
+      return;
+    }
+    setSelectedMethod((prev) => (prev && paymentOptions.some((o) => o.value === prev) ? prev : firstOption ?? null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstOption, isFreeEvent, paymentOptions.length]);
+
+  const useCardCheckout = selectedMethod === 'card';
+  const needsProof = !isFreeEvent && !!selectedMethod && selectedMethod !== 'card' && selectedMethod !== 'cash';
 
   const handleCardCheckout = async () => {
     if (!user || !session) {
@@ -180,8 +243,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       return;
     }
 
-    // For paid events, require proof of payment
-    if (!isFreeEvent && !proofFile) {
+    // Only direct transfers need proof of payment
+    if (needsProof && !proofFile) {
       toast.error('Please upload proof of payment');
       return;
     }
@@ -192,7 +255,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       let proofPath: string | null = null;
 
       // Upload proof of payment for paid events
-      if (!isFreeEvent && proofFile) {
+      if (proofFile) {
         const fileExt = proofFile.name.split('.').pop();
         const fileName = `${user.id}/${event.id}/${Date.now()}.${fileExt}`;
         
@@ -212,7 +275,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         attendee_name: userProfile.full_name,
         attendee_email: userProfile.email,
         amount: activePrice,
-        payment_method: isFreeEvent ? 'free' : 'direct',
+        payment_method: isFreeEvent ? 'free' : selectedMethod || 'direct',
         proof_of_payment_url: proofPath,
         status: isFreeEvent ? 'confirmed' : 'pending'
       }));
@@ -416,45 +479,65 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </div>
           )}
 
-          {/* Payment info for paid events (manual payment only) */}
-          {!isSoldOut && !isFreeEvent && !useCardCheckout && hasPaymentInfo && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <p className="font-medium mb-2">Send ${totalAmount.toFixed(2)} to:</p>
-                <div className="space-y-1 text-sm">
-                  {paymentInfo.venmo && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">Venmo</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.venmo}</span>
+          {/* How would you like to pay? */}
+          {!isSoldOut && !isFreeEvent && paymentOptions.length > 0 && (
+            <div className="space-y-3">
+              <Label>How would you like to pay?</Label>
+              <RadioGroup
+                value={selectedMethod ?? undefined}
+                onValueChange={(value) => setSelectedMethod(value as PaymentMethodChoice)}
+                className="space-y-2"
+              >
+                {paymentOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    htmlFor={`pay-${option.value}`}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                      selectedMethod === option.value ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <RadioGroupItem value={option.value} id={`pay-${option.value}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{option.label}</p>
+                      <p className="text-xs text-muted-foreground">{option.hint}</p>
                     </div>
-                  )}
-                  {paymentInfo.cashapp && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">Cash App</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.cashapp}</span>
-                    </div>
-                  )}
-                  {paymentInfo.zelle && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">Zelle</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.zelle}</span>
-                    </div>
-                  )}
-                  {paymentInfo.paypal && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="w-20">PayPal</Badge>
-                      <span className="font-mono font-semibold">{paymentInfo.paypal}</span>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs mt-2">After sending payment, upload your proof below.</p>
-              </AlertDescription>
-            </Alert>
+                  </label>
+                ))}
+              </RadioGroup>
+
+              {selectedMethod && selectedMethod !== 'card' && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {selectedMethod === 'cash' ? (
+                      <p className="text-sm">
+                        Reserve your spot now and bring <span className="font-semibold">${totalAmount.toFixed(2)}</span>{' '}
+                        in cash to the venue. The organizer confirms you on arrival.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mb-2 font-medium">Send ${totalAmount.toFixed(2)} to:</p>
+                        {handles[selectedMethod] ? (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Badge variant="outline" className="w-20">
+                              {METHOD_LABELS[selectedMethod]}
+                            </Badge>
+                            <span className="font-mono font-semibold">{handles[selectedMethod]}</span>
+                          </div>
+                        ) : (
+                          <p className="text-sm">the organizer, using the details they shared with you.</p>
+                        )}
+                        <p className="mt-2 text-xs">After sending payment, upload your proof below.</p>
+                      </>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
           )}
 
-          {/* Proof of payment for paid events (manual payment only) */}
-          {!isSoldOut && !isFreeEvent && !useCardCheckout && (
+          {/* Proof of payment — only when paying the organizer directly */}
+          {!isSoldOut && needsProof && (
             <div className="space-y-2">
               <Label htmlFor="proof">Proof of Payment *</Label>
               <div className="flex items-center gap-3">
@@ -501,16 +584,17 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                     ? 'Event Has Passed'
                     : loading
                       ? 'Redirecting to secure checkout...'
-                      : `Buy Tickets · $${totalAmount.toFixed(2)}`}
+                      : `Pay by Card · $${totalAmount.toFixed(2)}`}
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                You'll pay securely on Stripe. Your tickets are confirmed once payment succeeds.
+                Card, Apple Pay and Google Pay are handled securely by Stripe. Your tickets are confirmed once
+                payment succeeds.
               </p>
             </div>
           ) : (
             <Button
               onClick={handleBooking}
-              disabled={loading || isPastEvent || isSoldOut || (!isFreeEvent && !proofFile) || !userProfile}
+              disabled={loading || isPastEvent || isSoldOut || (needsProof && !proofFile) || !userProfile}
               className="w-full"
             >
               {isSoldOut
@@ -521,7 +605,9 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                     ? 'Processing...'
                     : isFreeEvent
                       ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}`
-                      : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
+                      : selectedMethod === 'cash'
+                        ? `Reserve ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''} · Pay cash at the door`
+                        : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
             </Button>
           )}
         </div>
