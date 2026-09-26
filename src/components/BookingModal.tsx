@@ -69,7 +69,58 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
 
   // Card checkout is available when the organizer has finished Stripe setup
   const { chargesEnabled } = useOrganizerPayments(event.user_id);
-  const useCardCheckout = !isFreeEvent && chargesEnabled;
+  const { methods: organizerMethods } = useOrganizerPaymentMethods(event.user_id);
+
+  const handles: Record<string, string> = {
+    venmo: paymentInfo.venmo || organizerMethods?.venmo || '',
+    cashapp: paymentInfo.cashapp || organizerMethods?.cashapp || '',
+    zelle: paymentInfo.zelle || organizerMethods?.zelle || '',
+    paypal: paymentInfo.paypal || organizerMethods?.paypal || '',
+  };
+
+  const paymentOptions: { value: PaymentMethodChoice; label: string; hint: string }[] = [];
+  if (!isFreeEvent) {
+    if (chargesEnabled && organizerMethods?.accept_card !== false) {
+      paymentOptions.push({
+        value: 'card',
+        label: 'Card, Apple Pay or Google Pay',
+        hint: 'Pay securely online — confirmed instantly',
+      });
+    }
+    (['venmo', 'cashapp', 'zelle', 'paypal'] as const).forEach((key) => {
+      if (handles[key]) {
+        paymentOptions.push({
+          value: key,
+          label: METHOD_LABELS[key],
+          hint: 'Send payment directly, then upload proof',
+        });
+      }
+    });
+    if (organizerMethods?.accept_cash) {
+      paymentOptions.push({ value: 'cash', label: 'Cash at the door', hint: 'Reserve now, pay in person' });
+    }
+    if (paymentOptions.length === 0) {
+      paymentOptions.push({
+        value: 'direct',
+        label: 'Pay the organizer directly',
+        hint: 'Upload proof of your payment',
+      });
+    }
+  }
+
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodChoice | null>(null);
+  const firstOption = paymentOptions[0]?.value;
+  useEffect(() => {
+    if (isFreeEvent) {
+      setSelectedMethod(null);
+      return;
+    }
+    setSelectedMethod((prev) => (prev && paymentOptions.some((o) => o.value === prev) ? prev : firstOption ?? null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstOption, isFreeEvent, paymentOptions.length]);
+
+  const useCardCheckout = selectedMethod === 'card';
+  const needsProof = !isFreeEvent && !!selectedMethod && selectedMethod !== 'card' && selectedMethod !== 'cash';
 
   const handleCardCheckout = async () => {
     if (!user || !session) {
