@@ -14,6 +14,7 @@ import { Loader2, Upload, Music, Eye, Calendar, Settings as SettingsIcon, Moon, 
 import Nav from '@/components/Nav';
 import MyBookings from '@/components/MyBookings';
 import PaymentSettings from '@/components/PaymentSettings';
+import PaymentMethodsEditor from '@/components/PaymentMethodsEditor';
 import { useSettings } from '@/hooks/useSettings';
 import { useUserRoles, type UserRole } from '@/hooks/useUserRoles';
 
@@ -416,8 +417,13 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Payments (organizers & teachers) */}
-          {roles.some((r) => ['organizer', 'teacher', 'admin'].includes(r)) && <PaymentSettings />}
+          {/* Payments (organizers, artists & teachers) */}
+          {roles.some((r) => ['organizer', 'teacher', 'artist', 'admin'].includes(r)) && (
+            <>
+              <PaymentMethodsEditor />
+              <PaymentSettings />
+            </>
+          )}
 
 
           {/* Appearance Settings */}
@@ -531,8 +537,8 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* My Bookings */}
-          {user && <MyBookings userId={user.id} />}
+          {/* My Bookings — attendees only; hosts manage bookings from their events */}
+          {user && !roles.some((r) => ['organizer', 'teacher'].includes(r)) && <MyBookings userId={user.id} />}
         </div>
       </div>
     </>
