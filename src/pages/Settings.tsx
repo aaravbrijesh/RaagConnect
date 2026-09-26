@@ -22,7 +22,7 @@ const ROLE_PRIORITY: UserRole[] = ['admin', 'organizer', 'artist', 'teacher', 'v
 const SELF_SERVICE_ROLES: Exclude<UserRole, 'admin'>[] = ['viewer', 'artist', 'organizer', 'teacher'];
 
 export default function Settings() {
-  const { user, session } = useAuth();
+  const { user, session, authLoading } = useAuth();
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
   const { roles, loading: rolesLoading, refetch: refetchRoles } = useUserRoles(user?.id);
