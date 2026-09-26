@@ -82,7 +82,7 @@ export default function Settings() {
     };
 
     loadProfile();
-  }, [user, navigate]);
+  }, [user, navigate, authLoading]);
 
   useEffect(() => {
     if (rolesLoading) return;
