@@ -180,8 +180,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       return;
     }
 
-    // For paid events, require proof of payment
-    if (!isFreeEvent && !proofFile) {
+    // Only direct transfers need proof of payment
+    if (needsProof && !proofFile) {
       toast.error('Please upload proof of payment');
       return;
     }
