@@ -192,7 +192,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       let proofPath: string | null = null;
 
       // Upload proof of payment for paid events
-      if (!isFreeEvent && proofFile) {
+      if (proofFile) {
         const fileExt = proofFile.name.split('.').pop();
         const fileName = `${user.id}/${event.id}/${Date.now()}.${fileExt}`;
         
@@ -212,7 +212,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         attendee_name: userProfile.full_name,
         attendee_email: userProfile.email,
         amount: activePrice,
-        payment_method: isFreeEvent ? 'free' : 'direct',
+        payment_method: isFreeEvent ? 'free' : selectedMethod || 'direct',
         proof_of_payment_url: proofPath,
         status: isFreeEvent ? 'confirmed' : 'pending'
       }));
