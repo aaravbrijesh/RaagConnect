@@ -12,6 +12,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useOrganizerPayments } from '@/hooks/useOrganizerPayments';
+import { useOrganizerPaymentMethods } from '@/hooks/useOrganizerPaymentMethods';
+
+type PaymentMethodChoice = 'card' | 'venmo' | 'cashapp' | 'zelle' | 'paypal' | 'cash' | 'direct';
+
+const METHOD_LABELS: Record<string, string> = {
+  venmo: 'Venmo',
+  cashapp: 'Cash App',
+  zelle: 'Zelle',
+  paypal: 'PayPal',
+  cash: 'Cash',
+  direct: 'Direct',
+};
 
 interface PriceTier {
   id: string;
