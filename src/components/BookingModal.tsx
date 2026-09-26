@@ -453,8 +453,8 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
             </Alert>
           )}
 
-          {/* Proof of payment for paid events (manual payment only) */}
-          {!isSoldOut && !isFreeEvent && !useCardCheckout && (
+          {/* Proof of payment — only when paying the organizer directly */}
+          {!isSoldOut && needsProof && (
             <div className="space-y-2">
               <Label htmlFor="proof">Proof of Payment *</Label>
               <div className="flex items-center gap-3">
