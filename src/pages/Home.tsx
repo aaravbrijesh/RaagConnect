@@ -6,6 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Nav from '@/components/Nav';
 import { useNavigate } from 'react-router-dom';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import OrganizerDashboard from '@/components/OrganizerDashboard';
+import TeacherDashboard from '@/components/TeacherDashboard';
+import ArtistDashboard from '@/components/ArtistDashboard';
 
 interface AboutContent {
   heroDescription: string;
