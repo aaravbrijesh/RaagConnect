@@ -93,9 +93,20 @@ export default function Home() {
     { label: 'Classes', value: stats.classes, icon: GraduationCap },
   ];
 
+  // Signed-in hosts get a workspace instead of the public landing page
+  if (user && !rolesLoading && (isOrganizer || isTeacher || isArtist)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Nav />
+        {isOrganizer ? <OrganizerDashboard /> : isTeacher ? <TeacherDashboard /> : <ArtistDashboard />}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Nav />
+
 
       {/* Hero */}
       <section className="container mx-auto px-4 pt-16 pb-12 text-center max-w-3xl">
