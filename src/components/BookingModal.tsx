@@ -501,16 +501,17 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                     ? 'Event Has Passed'
                     : loading
                       ? 'Redirecting to secure checkout...'
-                      : `Buy Tickets · $${totalAmount.toFixed(2)}`}
+                      : `Pay by Card · $${totalAmount.toFixed(2)}`}
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                You'll pay securely on Stripe. Your tickets are confirmed once payment succeeds.
+                Card, Apple Pay and Google Pay are handled securely by Stripe. Your tickets are confirmed once
+                payment succeeds.
               </p>
             </div>
           ) : (
             <Button
               onClick={handleBooking}
-              disabled={loading || isPastEvent || isSoldOut || (!isFreeEvent && !proofFile) || !userProfile}
+              disabled={loading || isPastEvent || isSoldOut || (needsProof && !proofFile) || !userProfile}
               className="w-full"
             >
               {isSoldOut
@@ -521,7 +522,9 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                     ? 'Processing...'
                     : isFreeEvent
                       ? `Confirm ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''}`
-                      : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
+                      : selectedMethod === 'cash'
+                        ? `Reserve ${ticketCount} Ticket${ticketCount > 1 ? 's' : ''} · Pay cash at the door`
+                        : `Submit Booking (${ticketCount} Ticket${ticketCount > 1 ? 's' : ''})`}
             </Button>
           )}
         </div>
