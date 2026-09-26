@@ -38,6 +38,7 @@ export default function Settings() {
   const [updatingRole, setUpdatingRole] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate('/login');
       return;
