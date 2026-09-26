@@ -517,12 +517,16 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                     ) : (
                       <>
                         <p className="mb-2 font-medium">Send ${totalAmount.toFixed(2)} to:</p>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Badge variant="outline" className="w-20">
-                            {METHOD_LABELS[selectedMethod]}
-                          </Badge>
-                          <span className="font-mono font-semibold">{handles[selectedMethod]}</span>
-                        </div>
+                        {handles[selectedMethod] ? (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Badge variant="outline" className="w-20">
+                              {METHOD_LABELS[selectedMethod]}
+                            </Badge>
+                            <span className="font-mono font-semibold">{handles[selectedMethod]}</span>
+                          </div>
+                        ) : (
+                          <p className="text-sm">the organizer, using the details they shared with you.</p>
+                        )}
                         <p className="mt-2 text-xs">After sending payment, upload your proof below.</p>
                       </>
                     )}
