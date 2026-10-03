@@ -70,7 +70,7 @@ export default function EventVolunteers({ eventId, canManage }: Props) {
   };
 
   const filled = (roleId: string) =>
-    signups.filter((s) => s.role_id === roleId).reduce((sum, s) => sum + (s.quantity || 1), 0);
+    (roles.find((r) => r.id === roleId) as (VolunteerRole & { slots_filled?: number }) | undefined)?.slots_filled ?? 0;
 
   const handleAddRole = async () => {
     if (!newRole.title.trim()) {
