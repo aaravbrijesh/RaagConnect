@@ -84,8 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           supabase
             .from('events')
             .update({ user_id: session.user.id })
+            // Access rules only allow claiming events whose private guest email matches this verified account
             .is('user_id', null)
-            .eq('guest_email', session.user.email)
             .then(({ error }) => {
               if (error) console.error('Error claiming guest events:', error);
             });
