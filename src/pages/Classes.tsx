@@ -151,7 +151,7 @@ export default function Classes() {
     children: React.ReactNode;
   }) => (
     <div className="py-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{title}</h3>
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{title}</h2>
       <div className="space-y-1">{children}</div>
     </div>
   );

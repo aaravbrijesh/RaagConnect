@@ -1,3 +1,4 @@
+import Seo from '@/components/Seo';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { idColumn } from '@/lib/slug';
@@ -98,8 +99,30 @@ export default function EventDetail() {
   // Check if event is in the past
   const isPastEvent = new Date(`${event.date}T${event.time}`) < new Date();
 
+  const eventPath = `/events/${event.slug || event.id}`;
+  const eventJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'MusicEvent',
+    name: event.title,
+    startDate: `${event.date}T${event.time}`,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    url: `https://raagconnect.com${eventPath}`,
+    ...(event.image_url || event.flyer_url ? { image: [event.image_url || event.flyer_url] } : {}),
+    ...(event.location_name ? { location: { '@type': 'Place', name: event.location_name, address: event.location_name } } : {}),
+    ...(getArtistNames() !== 'TBA' ? { performer: getArtistNames().split(', ').map((n: string) => ({ '@type': 'Person', name: n })) } : {}),
+    ...(event.price != null ? { offers: { '@type': 'Offer', price: Number(event.price), priceCurrency: (event.currency || 'USD').toUpperCase(), url: `https://raagconnect.com${eventPath}` } } : {}),
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={`${event.title} — Raag Connect`}
+        description={`${event.title} on ${event.date}${event.location_name ? ` at ${event.location_name}` : ''}. Indian classical music concert — details and tickets on Raag Connect.`}
+        path={eventPath}
+        image={event.image_url || event.flyer_url}
+        jsonLd={eventJsonLd}
+      />
       <Nav />
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">

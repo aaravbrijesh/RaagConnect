@@ -156,6 +156,7 @@ export default function Tools() {
 
         <div className="grid gap-4 sm:grid-cols-2 mb-8">
           <Card>
+            <h2 className="sr-only">About the Raag Detector</h2>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2"><Info className="h-4 w-4 text-primary" /> What you can use</CardTitle>
             </CardHeader>
