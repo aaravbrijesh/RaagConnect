@@ -38,9 +38,6 @@ export default function OrganizerDashboard() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [bookingCount, setBookingCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [myBookings, setMyBookings] = useState<
-    { id: string; status: string; event: { id: string; slug: string | null; title: string; date: string; time: string; location_name: string | null } }[]
-  >([]);
   const { chargesEnabled } = useOrganizerPayments(user?.id);
   const { methods } = useOrganizerPaymentMethods(user?.id);
 
@@ -64,17 +61,6 @@ export default function OrganizerDashboard() {
         setBookingCount(count || 0);
       }
 
-      const { data: mine } = await supabase
-        .from('bookings')
-        .select('id, status, events(id, slug, title, date, time, location_name)')
-        .eq('user_id', user.id)
-        .neq('status', 'cancelled')
-        .neq('status', 'rejected');
-      setMyBookings(
-        ((mine as any[]) || [])
-          .filter((b) => b.events)
-          .map((b) => ({ id: b.id, status: b.status, event: b.events }))
-      );
       setLoading(false);
     };
     load();
@@ -83,9 +69,6 @@ export default function OrganizerDashboard() {
   const today = new Date().toISOString().split('T')[0];
   const upcoming = events.filter((e) => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const past = events.filter((e) => e.date < today);
-  const attending = myBookings
-    .filter((b) => b.event.date >= today)
-    .sort((a, b) => a.event.date.localeCompare(b.event.date));
 
   const paymentsReady = chargesEnabled || hasAnyManualMethod(methods);
 
