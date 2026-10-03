@@ -1,3 +1,5 @@
+import PaymentSettings from '@/components/PaymentSettings';
+import PaymentMethodsEditor from '@/components/PaymentMethodsEditor';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -180,6 +182,7 @@ export default function CreateClass() {
         location_lat: locationLat,
         location_lng: locationLng,
         price: price ? parseFloat(price) : null,
+        price_cents: price ? Math.round(parseFloat(price) * 100) : null,
         max_capacity: maxCapacity ? parseInt(maxCapacity) : null,
         contact_info: contactInfo.trim() || null,
         image_url: imageUrl || null,
@@ -384,6 +387,20 @@ export default function CreateClass() {
                   <Input id="capacity" type="number" min="1" value={maxCapacity} onChange={e => setMaxCapacity(e.target.value)} placeholder="Optional" />
                 </div>
               </div>
+
+              {price && parseFloat(price) > 0 && (
+                <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Getting paid</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Card, Apple Pay and Google Pay bookings are confirmed instantly — the same secure checkout used for events.
+                      You can also accept Venmo, Zelle, Cash App, PayPal or cash.
+                    </p>
+                  </div>
+                  <PaymentSettings />
+                  <PaymentMethodsEditor />
+                </div>
+              )}
 
               {/* Group class schedule */}
               {classMode === 'group' && (
