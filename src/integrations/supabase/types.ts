@@ -657,8 +657,6 @@ export type Database = {
           currency: string
           date: string
           flyer_url: string | null
-          guest_email: string | null
-          guest_name: string | null
           id: string
           image_url: string | null
           location_lat: number | null
@@ -686,8 +684,6 @@ export type Database = {
           currency?: string
           date: string
           flyer_url?: string | null
-          guest_email?: string | null
-          guest_name?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
@@ -715,8 +711,6 @@ export type Database = {
           currency?: string
           date?: string
           flyer_url?: string | null
-          guest_email?: string | null
-          guest_name?: string | null
           id?: string
           image_url?: string | null
           location_lat?: number | null
