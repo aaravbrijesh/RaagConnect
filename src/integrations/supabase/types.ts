@@ -561,6 +561,7 @@ export type Database = {
           event_id: string
           id: string
           kind: string
+          slots_filled: number
           slots_needed: number
           title: string
           updated_at: string
@@ -571,6 +572,7 @@ export type Database = {
           event_id: string
           id?: string
           kind?: string
+          slots_filled?: number
           slots_needed?: number
           title: string
           updated_at?: string
@@ -581,6 +583,7 @@ export type Database = {
           event_id?: string
           id?: string
           kind?: string
+          slots_filled?: number
           slots_needed?: number
           title?: string
           updated_at?: string
