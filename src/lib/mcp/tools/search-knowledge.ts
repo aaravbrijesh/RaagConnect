@@ -23,7 +23,7 @@ export default defineTool({
       .select("id, title, content, category, created_at")
       .order("created_at", { ascending: false })
       .limit(max);
-    const q = query?.trim();
+    const q = query?.trim().replace(/[,()."'\\%*:]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100);
     if (q) builder = builder.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
     if (category?.trim()) builder = builder.ilike("category", `%${category.trim()}%`);
     const { data, error } = await builder;

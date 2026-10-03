@@ -30,6 +30,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     let identity = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
+    let authed = false;
     if (authHeader?.startsWith('Bearer ')) {
       const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
@@ -39,7 +40,13 @@ serve(async (req) => {
       const token = authHeader.replace('Bearer ', '');
       const { data: claimsData } = await supabaseClient.auth.getClaims(token);
       const sub = claimsData?.claims?.sub;
-      if (sub) identity = `user:${sub}`;
+      if (sub) { identity = `user:${sub}`; authed = true; }
+    }
+    if (!authed) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Please sign in to use AI flyer scanning.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     if (rateLimited(identity)) {
