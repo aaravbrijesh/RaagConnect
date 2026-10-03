@@ -10,6 +10,8 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import OrganizerDashboard from '@/components/OrganizerDashboard';
 import TeacherDashboard from '@/components/TeacherDashboard';
 import ArtistDashboard from '@/components/ArtistDashboard';
+import AttendeeDashboard from '@/components/AttendeeDashboard';
+import { useViewMode, MODE_LABELS } from '@/hooks/useViewMode';
 
 interface AboutContent {
   heroDescription: string;
@@ -38,7 +40,8 @@ const defaultContent: AboutContent = {
 export default function Home() {
   const { needsRoleSelection, user } = useAuth();
   const navigate = useNavigate();
-  const { isOrganizer, isTeacher, isArtist, loading: rolesLoading } = useUserRoles(user?.id);
+  const { roles, loading: rolesLoading } = useUserRoles(user?.id);
+  const { mode, modes } = useViewMode(roles);
   const [content, setContent] = useState<AboutContent>(defaultContent);
   const [title, setTitle] = useState("Raag Connect");
   const [stats, setStats] = useState({ events: 0, artists: 0, classes: 0 });
@@ -93,12 +96,20 @@ export default function Home() {
     { label: 'Classes', value: stats.classes, icon: GraduationCap },
   ];
 
-  // Signed-in hosts get a workspace instead of the public landing page
-  if (user && !rolesLoading && (isOrganizer || isTeacher || isArtist)) {
+  // Signed-in users get a workspace for their current mode
+  if (user && !rolesLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Nav />
-        {isOrganizer ? <OrganizerDashboard /> : isTeacher ? <TeacherDashboard /> : <ArtistDashboard />}
+        {modes.length > 1 && (
+          <div className="border-b bg-secondary/50">
+            <div className="container mx-auto max-w-5xl px-4 py-2 text-sm">
+              You're in <span className="font-semibold">{MODE_LABELS[mode]} mode</span>
+              <span className="text-muted-foreground"> · switch using "Mode" at the top right</span>
+            </div>
+          </div>
+        )}
+        {mode === 'organizer' ? <OrganizerDashboard /> : mode === 'teacher' ? <TeacherDashboard /> : mode === 'artist' ? <ArtistDashboard /> : <AttendeeDashboard />}
       </div>
     );
   }

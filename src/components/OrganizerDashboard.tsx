@@ -180,31 +180,6 @@ export default function OrganizerDashboard() {
               </CardContent>
             </Card>
 
-            {attending.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-xl">Events you're attending</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {attending.map((b) => (
-                    <div key={b.id} className="flex flex-wrap items-center gap-4 rounded-lg border p-4 hover:bg-muted/40 transition-colors">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{b.event.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(`${b.event.date}T${b.event.time}`).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                          {b.event.location_name ? ` · ${b.event.location_name}` : ''}
-                        </p>
-                      </div>
-                      <Badge variant={b.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">{b.status}</Badge>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/events/${recordPath(b.event)}`)}>
-                        View
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
 
             {past.length > 0 && (
               <Card className="mt-6">
