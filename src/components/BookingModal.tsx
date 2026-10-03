@@ -104,12 +104,12 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
         paymentOptions.push({
           value: key,
           label: METHOD_LABELS[key],
-          hint: 'Send payment directly, then upload proof',
+          hint: 'Send payment, upload proof — organizer confirms by email or at the door',
         });
       }
     });
     if (organizerMethods?.accept_cash) {
-      paymentOptions.push({ value: 'cash', label: 'Cash at the door', hint: 'Reserve now, pay in person' });
+      paymentOptions.push({ value: 'cash', label: 'Cash at the door', hint: 'Reserve now — confirmed when you pay at the door' });
     }
     if (paymentOptions.length === 0) {
       paymentOptions.push({
@@ -310,9 +310,11 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
       const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatDateForGoogle(eventDate)}/${formatDateForGoogle(endDate)}&details=${encodeURIComponent(`Booking for ${event.title} (${ticketCount} ticket${ticketCount > 1 ? 's' : ''})`)}&location=${encodeURIComponent(event.location_name || '')}`;
 
       const ticketText = ticketCount > 1 ? `${ticketCount} tickets` : '1 ticket';
-      const successMessage = isFreeEvent 
-        ? `${ticketText} confirmed! 🎉` 
-        : `${ticketText} submitted! Awaiting organizer confirmation.`;
+      const successMessage = isFreeEvent
+        ? `${ticketText} confirmed! 🎉`
+        : selectedMethod === 'cash'
+          ? `${ticketText} reserved! Pay cash at the door to confirm.`
+          : `${ticketText} submitted! The organizer will confirm your payment by email or at the door.`;
 
       toast.success(
         <div>
@@ -527,7 +529,10 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
                         ) : (
                           <p className="text-sm">the organizer, using the details they shared with you.</p>
                         )}
-                        <p className="mt-2 text-xs">After sending payment, upload your proof below.</p>
+                        <p className="mt-2 text-xs">
+                          After sending payment, upload your proof below. The organizer will confirm your tickets
+                          by email or at the door.
+                        </p>
                       </>
                     )}
                   </AlertDescription>
