@@ -156,22 +156,6 @@ export default function OrganizerDashboard() {
           ))}
         </div>
 
-        {/* Payment call to action */}
-        {!paymentsReady && (
-          <Alert className="mt-8">
-            <CreditCard className="h-4 w-4" />
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>
-                <span className="font-medium">Want to charge for tickets?</span> Set up card payments or add Venmo,
-                Zelle, Cash App or cash. Optional — free events work without this.
-              </span>
-              <Button size="sm" onClick={() => navigate('/settings')} className="gap-1">
-                Set up payments <ArrowRight className="h-4 w-4" />
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {loading ? (
           <div className="mt-10 flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading your events…
