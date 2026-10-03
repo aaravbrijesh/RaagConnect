@@ -216,6 +216,10 @@ export default function CreateEvent() {
   };
 
   const analyzeFlyer = async (file: File) => {
+    if (!user) {
+      toast.info('Sign in to let AI fill in details from your flyer. You can still enter them yourself.');
+      return;
+    }
     setAnalyzingFlyer(true);
     
     try {
