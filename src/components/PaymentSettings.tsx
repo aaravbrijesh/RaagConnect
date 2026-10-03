@@ -133,7 +133,7 @@ export default function PaymentSettings() {
                 {STATUS_LABEL[status]}
               </Badge>
 
-              <Button onClick={startOnboarding} disabled={working} className="gap-2">
+              <Button type="button" onClick={startOnboarding} disabled={working} className="gap-2">
                 {working ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
                 {status === 'not_configured' ? 'Set Up Payments' : status === 'enabled' ? 'Update payment details' : 'Finish setup'}
               </Button>

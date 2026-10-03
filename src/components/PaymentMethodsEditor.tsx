@@ -150,7 +150,7 @@ export default function PaymentMethodsEditor() {
               approve their booking.
             </p>
 
-            <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
+            <Button type="button" onClick={save} disabled={saving} className="w-full sm:w-auto">
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save payment options
             </Button>
