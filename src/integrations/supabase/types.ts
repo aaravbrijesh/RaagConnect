@@ -1167,7 +1167,6 @@ export type Database = {
       }
     }
     Functions: {
-      claim_guest_events: { Args: never; Returns: number }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       slugify: { Args: { _txt: string }; Returns: string }
       unique_slug: {
