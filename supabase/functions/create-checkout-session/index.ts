@@ -6,6 +6,7 @@ const BodySchema = z.object({
   kind: z.enum(["event", "class"]),
   id: z.string().uuid(),
   quantity: z.number().int().min(1).max(20).default(1),
+  tier_id: z.string().max(100).optional(),
   class_booking_ids: z.array(z.string().uuid()).max(12).optional(),
   origin: z.string().url().optional(),
 });
@@ -35,7 +36,7 @@ serve(async (req) => {
     if (kind === "event") {
       const { data: ev } = await admin
         .from("events")
-        .select("id, user_id, title, price, price_cents, currency")
+        .select("id, user_id, title, price, price_cents, currency, price_tiers")
         .eq("id", id)
         .maybeSingle();
       if (!ev) return json({ error: "Event not found" }, 404);
@@ -43,6 +44,21 @@ serve(async (req) => {
       title = ev.title;
       unitAmount = ev.price_cents ?? Math.round(Number(ev.price ?? 0) * 100);
       currency = ev.currency ?? currency;
+
+      // Honor the ticket tier the buyer picked — validated server-side.
+      if (parsed.data.tier_id && Array.isArray(ev.price_tiers)) {
+        const tier = (ev.price_tiers as { id?: string; name?: string; price?: string; endDate?: string }[])
+          .find((t) => t.id === parsed.data.tier_id);
+        if (!tier) return json({ error: "Ticket type not found" }, 400);
+        if (tier.endDate && new Date(tier.endDate) < new Date()) {
+          return json({ error: "This ticket type is no longer available" }, 400);
+        }
+        const tierCents = Math.round(parseFloat(tier.price ?? "0") * 100);
+        if (Number.isFinite(tierCents)) {
+          unitAmount = tierCents;
+          title = `${ev.title} — ${tier.name ?? "ticket"}`;
+        }
+      }
     } else {
       const { data: cls } = await admin
         .from("classes")

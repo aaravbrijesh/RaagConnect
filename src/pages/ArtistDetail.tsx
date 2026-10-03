@@ -218,7 +218,7 @@ export default function ArtistDetail() {
       if (error) throw error;
       
       toast.success('Artist profile deleted successfully');
-      navigate('/artists');
+      navigate('/events');
     } catch (error: any) {
       toast.error('Failed to delete artist profile');
       console.error(error);
@@ -243,7 +243,7 @@ export default function ArtistDetail() {
         <div className="container mx-auto px-4 py-8">
           <p className="text-center text-muted-foreground">Artist not found</p>
           <div className="text-center mt-4">
-            <Button onClick={() => navigate('/artists')}>
+            <Button onClick={() => navigate('/events')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Artists
             </Button>
@@ -260,7 +260,7 @@ export default function ArtistDetail() {
       <div className="container mx-auto px-4 py-8">
         <Button 
           variant="ghost" 
-          onClick={() => navigate('/artists')}
+          onClick={() => navigate('/events')}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />

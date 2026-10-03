@@ -538,8 +538,8 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* My Bookings — attendees only; hosts manage bookings from their events */}
-          {user && !roles.some((r) => ['organizer', 'teacher'].includes(r)) && <MyBookings userId={user.id} />}
+          {/* My Bookings — everyone's own ticket bookings */}
+          {user && <MyBookings userId={user.id} />}
         </div>
       </div>
     </>
