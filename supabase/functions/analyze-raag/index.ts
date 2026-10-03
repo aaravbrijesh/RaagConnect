@@ -36,7 +36,9 @@ serve(async (req) => {
       );
     }
 
-    const { audioBase64, mimeType } = await req.json();
+    const { audioBase64, mimeType, source } = await req.json();
+    const mt = String(mimeType || '').toLowerCase();
+    const audioFormat = mt.includes('wav') ? 'wav' : mt.includes('webm') ? 'webm' : mt.includes('ogg') ? 'ogg' : mt.includes('mp4') || mt.includes('m4a') || mt.includes('aac') ? 'm4a' : mt.includes('flac') ? 'flac' : 'mp3';
 
     if (!audioBase64) {
       return new Response(
@@ -77,7 +79,13 @@ serve(async (req) => {
 
 Listen carefully to the audio provided. Identify the notes (swaras) being used, their patterns, characteristic phrases, and the overall melodic movement. Based on this analysis, determine which Hindustani raag the music is in.
 
-Be thorough in your analysis. If you're uncertain between multiple raags, explain why and rank them by likelihood.`
+The audio may be classical music, a Bollywood/film song, a bhajan, or someone humming. Film songs are often raag-based but may borrow notes freely — say so when relevant.
+
+Always explain WHICH specific notes (swaras) and phrases led you to the raag — e.g. "the komal Re and teevra Ma together with the Ni–Re–Ga movement point to Marwa". List them in key_notes_evidence.
+
+Songs often change raag between sections (e.g. the mukhda/first stanza in one raag and an antara/second stanza in another, or a ragamala). Listen to each part separately. If different parts use different raags, fill the sections array with one entry per part and clearly call this out in the analysis. If the whole recording is one raag, return a single section.
+
+Be thorough. If you're uncertain between multiple raags, explain why and rank them by likelihood.`
           },
           {
             role: 'user',
@@ -90,7 +98,7 @@ Be thorough in your analysis. If you're uncertain between multiple raags, explai
                 type: 'input_audio',
                 input_audio: {
                   data: audioBase64,
-                  format: mimeType === 'audio/wav' ? 'wav' : 'mp3'
+                  format: audioFormat
                 }
               }
             ]
@@ -117,7 +125,22 @@ Be thorough in your analysis. If you're uncertain between multiple raags, explai
                   mood: { type: 'string', description: 'The rasa/mood associated with this raag' },
                   notes_detected: { type: 'string', description: 'The specific swaras/notes detected in the audio' },
                   analysis: { type: 'string', description: 'Detailed explanation of why this raag was identified, including musical evidence' },
-                  alternative_raags: { type: 'string', description: 'Other possible raags it could be, if uncertain' }
+                  alternative_raags: { type: 'string', description: 'Other possible raags it could be, if uncertain' },
+                  key_notes_evidence: { type: 'string', description: 'The specific notes and phrases heard that led to the identification, and why they point to this raag' },
+                  multiple_raags: { type: 'boolean', description: 'True if different sections of the recording are in different raags' },
+                  sections: {
+                    type: 'array',
+                    description: 'One entry per distinct part of the recording (e.g. first stanza, second stanza)',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        section: { type: 'string', description: 'e.g. "Opening / first stanza (0:00-0:40)"' },
+                        raag: { type: 'string' },
+                        notes: { type: 'string', description: 'Notes/phrases in this section that indicate the raag' }
+                      },
+                      required: ['section', 'raag', 'notes']
+                    }
+                  }
                 },
                 required: ['raag_name', 'confidence', 'analysis']
               }
@@ -158,6 +181,20 @@ Be thorough in your analysis. If you're uncertain between multiple raags, explai
     if (toolCall && toolCall.function?.arguments) {
       const raagResult = JSON.parse(toolCall.function.arguments);
       console.log('Identified raag:', raagResult.raag_name);
+      const { data: saved, error: saveErr } = await supabaseClient
+        .from('raag_detections')
+        .insert({
+          user_id: claimsData.claims.sub,
+          raag_name: String(raagResult.raag_name || 'Unknown').slice(0, 200),
+          confidence: String(raagResult.confidence || 'low'),
+          analysis: String(raagResult.analysis || ''),
+          result: raagResult,
+          source: typeof source === 'string' ? source.slice(0, 200) : null,
+        })
+        .select('id')
+        .single();
+      if (saveErr) console.error('Failed to save detection:', saveErr);
+      raagResult.detection_id = saved?.id ?? null;
 
       return new Response(
         JSON.stringify({ success: true, data: raagResult }),

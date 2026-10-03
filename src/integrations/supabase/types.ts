@@ -982,6 +982,39 @@ export type Database = {
         }
         Relationships: []
       }
+      raag_detections: {
+        Row: {
+          analysis: string
+          confidence: string
+          created_at: string
+          id: string
+          raag_name: string
+          result: Json
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis: string
+          confidence: string
+          created_at?: string
+          id?: string
+          raag_name: string
+          result?: Json
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis?: string
+          confidence?: string
+          created_at?: string
+          id?: string
+          raag_name?: string
+          result?: Json
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_content: {
         Row: {
           content: Json

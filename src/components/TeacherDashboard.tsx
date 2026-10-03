@@ -96,21 +96,6 @@ export default function TeacherDashboard() {
           ))}
         </div>
 
-        {!paymentsReady && (
-          <Alert className="mt-8">
-            <CreditCard className="h-4 w-4" />
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>
-                <span className="font-medium">Charging for lessons?</span> Set up card payments or add Venmo, Zelle,
-                Cash App or cash. Optional — free classes work without this.
-              </span>
-              <Button size="sm" onClick={() => navigate('/settings')} className="gap-1">
-                Set up payments <ArrowRight className="h-4 w-4" />
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
         <Card className="mt-8">
           <CardHeader>
             <CardTitle className="text-xl">Your classes</CardTitle>

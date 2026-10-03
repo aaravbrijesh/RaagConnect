@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -24,6 +24,7 @@ import Classes from "./pages/Classes";
 import CreateClass from "./pages/CreateClass";
 import ClassDetail from "./pages/ClassDetail";
 import Tools from "./pages/Tools";
+import RaagHistory from "./pages/RaagHistory";
 import Knowledge from "./pages/Knowledge";
 import OAuthConsent from "./pages/OAuthConsent";
 import PaymentSuccess from "./pages/PaymentSuccess";
@@ -52,7 +53,9 @@ const App = () => (
             <Route path="/classes" element={<Classes />} />
             <Route path="/classes/create" element={<CreateClass />} />
             <Route path="/classes/:id" element={<ClassDetail />} />
-            <Route path="/tools" element={<Tools />} />
+            <Route path="/raag-detector" element={<Tools />} />
+            <Route path="/raag-detector/history" element={<RaagHistory />} />
+            <Route path="/tools" element={<Navigate to="/raag-detector" replace />} />
             <Route path="/knowledge" element={<Knowledge />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
