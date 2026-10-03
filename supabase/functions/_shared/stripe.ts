@@ -93,3 +93,24 @@ export async function syncAccountState(
     requirements_due: requirementsDue,
   };
 }
+
+const ALLOWED_ORIGINS = [
+  /^https:\/\/(www\.)?raagconnect\.com$/,
+  /^https:\/\/raagconnect\.lovable\.app$/,
+  /^https:\/\/[a-z0-9-]+--34bde0ab-c9ee-4c85-b8e3-99cb52380d6b\.lovable\.app$/,
+  /^https:\/\/34bde0ab-c9ee-4c85-b8e3-99cb52380d6b\.lovableproject\.com$/,
+  /^http:\/\/localhost(:\d+)?$/,
+];
+const DEFAULT_ORIGIN = "https://raagconnect.com";
+
+/** Returns a trusted origin for Stripe return URLs; never a caller-chosen untrusted site. */
+export function safeOrigin(...candidates: (string | null | undefined)[]): string {
+  for (const c of candidates) {
+    if (!c) continue;
+    try {
+      const o = new URL(c).origin;
+      if (ALLOWED_ORIGINS.some((r) => r.test(o))) return o;
+    } catch { /* ignore */ }
+  }
+  return DEFAULT_ORIGIN;
+}

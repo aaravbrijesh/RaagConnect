@@ -146,7 +146,12 @@ export default function ClassDetail() {
         }
       }
 
-      const { data: inserted, error } = await supabase.from('class_bookings').insert(bookings).select('id');
+      const isPaidClass = (cls.price_cents ?? (cls.price != null ? Math.round(Number(cls.price) * 100) : 0)) > 0;
+      const bookingStatus = isPaidClass ? 'pending' : 'confirmed';
+      const { data: inserted, error } = await supabase
+        .from('class_bookings')
+        .insert(bookings.map((b) => ({ ...b, status: bookingStatus })))
+        .select('id');
       if (error) throw error;
 
       // Paid class with card payments enabled: send the student to Stripe Checkout.

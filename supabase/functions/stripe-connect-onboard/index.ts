@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { adminClient, corsHeaders, getStripe, getUser, json, syncAccountState } from "../_shared/stripe.ts";
+import { adminClient, corsHeaders, getStripe, getUser, json, safeOrigin, syncAccountState } from "../_shared/stripe.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -9,9 +9,10 @@ serve(async (req) => {
     if (!user) return json({ error: "Not authenticated" }, 401);
 
     const body = await req.json().catch(() => ({}));
-    const origin = typeof body.origin === "string" && body.origin.startsWith("http")
-      ? body.origin
-      : req.headers.get("origin") ?? "";
+    const origin = safeOrigin(
+      typeof body.origin === "string" ? body.origin : null,
+      req.headers.get("origin"),
+    );
 
     const stripe = getStripe();
     const admin = adminClient();

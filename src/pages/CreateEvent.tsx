@@ -216,6 +216,10 @@ export default function CreateEvent() {
   };
 
   const analyzeFlyer = async (file: File) => {
+    if (!user) {
+      toast.info('Sign in to let AI fill in details from your flyer. You can still enter them yourself.');
+      return;
+    }
     setAnalyzingFlyer(true);
     
     try {
@@ -435,14 +439,20 @@ export default function CreateEvent() {
           .insert({
             ...eventData,
             user_id: asOwner && user ? user.id : null,
-            guest_name: asOwner ? null : guestInfo.guestName.trim(),
-            guest_email: asOwner ? null : guestInfo.guestEmail.trim()
           })
           .select('id')
           .single();
 
         if (error) throw error;
         eventId = newEvent.id;
+        if (!asOwner) {
+          const { error: contactError } = await supabase.from('event_guest_contacts').insert({
+            event_id: eventId,
+            guest_name: guestInfo.guestName.trim().slice(0, 200),
+            guest_email: guestInfo.guestEmail.trim().toLowerCase().slice(0, 320),
+          });
+          if (contactError) console.error('Error saving guest contact:', contactError);
+        }
         toast.success('Event created successfully!');
       }
 

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
-import { adminClient, corsHeaders, getPlatformSettings, getStripe, getUser, json } from "../_shared/stripe.ts";
+import { adminClient, corsHeaders, getPlatformSettings, getStripe, getUser, json, safeOrigin } from "../_shared/stripe.ts";
 
 const BodySchema = z.object({
   kind: z.enum(["event", "class"]),
@@ -22,7 +22,7 @@ serve(async (req) => {
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const { kind, id, quantity, class_booking_ids } = parsed.data;
 
-    const origin = parsed.data.origin ?? req.headers.get("origin") ?? "";
+    const origin = safeOrigin(parsed.data.origin, req.headers.get("origin"));
     const admin = adminClient();
     const stripe = getStripe();
     const settings = await getPlatformSettings(admin);
