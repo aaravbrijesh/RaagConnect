@@ -487,6 +487,35 @@ export type Database = {
           },
         ]
       }
+      event_guest_contacts: {
+        Row: {
+          created_at: string
+          event_id: string
+          guest_email: string
+          guest_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          guest_email: string
+          guest_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          guest_email?: string
+          guest_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_guest_contacts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_schedule: {
         Row: {
           created_at: string
