@@ -89,9 +89,9 @@ export default function Register() {
         className="w-full max-w-md"
       >
         <div className="bg-card rounded-xl p-8 shadow-lg border border-border">
-          <h2 className="text-2xl font-semibold text-center mb-1">
+          <h1 className="text-2xl font-semibold text-center mb-1">
             Create an account
-          </h2>
+          </h1>
           <p className="text-center text-muted-foreground mb-6 text-sm">
             Join the classical music community
           </p>
@@ -117,6 +117,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -135,6 +136,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

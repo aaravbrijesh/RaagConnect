@@ -80,9 +80,9 @@ export default function Login() {
         className="w-full max-w-md"
       >
         <div className="bg-card rounded-xl p-8 shadow-lg border border-border">
-          <h2 className="text-2xl font-semibold text-center mb-1">
+          <h1 className="text-2xl font-semibold text-center mb-1">
             Welcome back
-          </h2>
+          </h1>
           <p className="text-center text-muted-foreground mb-6 text-sm">
             Sign in to Raag Connect
           </p>
@@ -108,6 +108,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

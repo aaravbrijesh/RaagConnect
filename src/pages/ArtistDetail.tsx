@@ -1,3 +1,4 @@
+import Seo from '@/components/Seo';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { idColumn, recordPath } from '@/lib/slug';
@@ -255,6 +256,22 @@ export default function ArtistDetail() {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        title={`${artist.name} — ${artist.genre} Artist | Raag Connect`}
+        description={artist.bio ? String(artist.bio) : `${artist.name}, ${artist.genre} artist${artist.location_name ? ` based in ${artist.location_name}` : ''}. Upcoming concerts on Raag Connect.`}
+        path={`/artists/${artist.slug || artist.id}`}
+        image={artist.image_url}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          name: artist.name,
+          jobTitle: 'Musician',
+          genre: artist.genre,
+          url: `https://raagconnect.com/artists/${artist.slug || artist.id}`,
+          ...(artist.image_url ? { image: artist.image_url } : {}),
+          ...(artist.bio ? { description: String(artist.bio).slice(0, 300) } : {}),
+        }}
+      />
       <Nav />
       
       <div className="container mx-auto px-4 py-8">
