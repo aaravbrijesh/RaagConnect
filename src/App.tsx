@@ -40,6 +40,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <RouteSeo />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/artists/:id" element={<ArtistDetail />} />
