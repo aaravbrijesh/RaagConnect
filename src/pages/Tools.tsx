@@ -8,6 +8,8 @@ import { Mic, Square, Upload, Music, Loader2, AlertCircle, Volume2 } from "lucid
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { Link } from "react-router-dom";
+import { History, Info, ShieldAlert } from "lucide-react";
 
 interface RaagResult {
   raag_name: string;
@@ -23,6 +25,9 @@ interface RaagResult {
   notes_detected?: string;
   analysis: string;
   alternative_raags?: string;
+  key_notes_evidence?: string;
+  multiple_raags?: boolean;
+  sections?: { section: string; raag: string; notes: string }[];
 }
 
 export default function Tools() {
@@ -109,7 +114,7 @@ export default function Tools() {
       const mimeType = audioBlob.type || 'audio/webm';
 
       const { data, error } = await supabase.functions.invoke('analyze-raag', {
-        body: { audioBase64: base64, mimeType },
+        body: { audioBase64: base64, mimeType, source: audioBlob instanceof File ? audioBlob.name : 'Mic recording' },
       });
 
       if (error) throw error;
@@ -136,8 +141,39 @@ export default function Tools() {
       <Nav />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Tools</h1>
-          <p className="text-muted-foreground">AI-powered tools for Hindustani classical music</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Raag Detector</h1>
+              <p className="text-muted-foreground">Find out which Hindustani raag a piece of music is built on — and why.</p>
+            </div>
+            {isAuthenticated && (
+              <Button asChild variant="outline" className="gap-2">
+                <Link to="/raag-detector/history"><History className="h-4 w-4" /> My history</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 mb-8">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2"><Info className="h-4 w-4 text-primary" /> What you can use</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>Any music works — a classical recording, a <strong>Bollywood or film song</strong>, a bhajan, or just <strong>hum or sing a tune</strong> into your mic.</p>
+              <p>We'll tell you the raag and the <strong>notes and phrases</strong> we heard that point to it.</p>
+              <p>Songs often change raag along the way — the first stanza may be in one raag and the second in another. When that happens, we call out each part separately.</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-primary" /> For learning only</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>This tool is for <strong>educational purposes</strong> only. Your audio is analyzed and not published or shared — this is not a place to host or stream music.</p>
+              <p>Please only upload short clips you have the right to use. RaagConnect is not responsible for copyright infringement in content you upload.</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="mb-8">
@@ -147,7 +183,7 @@ export default function Tools() {
                 <Music className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle>Raag Identifier</CardTitle>
+                <CardTitle>Identify a raag</CardTitle>
                 <CardDescription>
                   Record or upload audio and our AI will identify the Hindustani raag, including scale, characteristic phrases, and mood.
                 </CardDescription>
@@ -283,6 +319,30 @@ export default function Tools() {
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{result.analysis}</p>
                 </div>
 
+                {result.multiple_raags && result.sections && result.sections.length > 1 && (
+                  <div className="p-4 rounded-lg border border-primary/40 bg-primary/5">
+                    <p className="text-sm font-semibold text-foreground">This recording moves between raags</p>
+                    <p className="text-sm text-muted-foreground">Different parts of the song use different raags — see the breakdown below.</p>
+                  </div>
+                )}
+                {result.key_notes_evidence && (
+                  <div className="p-4 rounded-lg border bg-card">
+                    <p className="text-sm font-semibold text-foreground mb-1">Notes that gave it away</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">{result.key_notes_evidence}</p>
+                  </div>
+                )}
+                {result.sections && result.sections.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">Section by section</p>
+                    {result.sections.map((sec, i) => (
+                      <div key={i} className="p-3 rounded-lg border bg-card">
+                        <p className="text-xs text-muted-foreground">{sec.section}</p>
+                        <p className="text-sm font-medium text-foreground">Raag {sec.raag}</p>
+                        <p className="text-sm text-muted-foreground">{sec.notes}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {result.alternative_raags && (
                   <div className="p-4 rounded-lg border border-yellow-200 bg-yellow-50/50 dark:bg-yellow-900/10 dark:border-yellow-800">
                     <div className="flex items-start gap-2">
@@ -299,7 +359,7 @@ export default function Tools() {
 
             {!isAuthenticated && (
               <div className="text-center p-6 rounded-lg border border-dashed">
-                <p className="text-muted-foreground">Sign in to use the Raag Identifier</p>
+                <p className="text-muted-foreground">Sign in to use the Raag Detector</p>
               </div>
             )}
           </CardContent>

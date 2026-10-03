@@ -94,15 +94,15 @@ export default function Nav() {
               </NavLink>
               <NavLink to="/events" className={navLinkClass}>
                 <Calendar className="h-4 w-4" />
-                Discover
+                Events
               </NavLink>
               <NavLink to="/classes" className={navLinkClass}>
                 <GraduationCap className="h-4 w-4" />
                 Classes
               </NavLink>
-              <NavLink to="/tools" className={navLinkClass}>
+              <NavLink to="/raag-detector" className={navLinkClass}>
                 <Wrench className="h-4 w-4" />
-                Tools
+                Raag Detector
               </NavLink>
               <NavLink to="/knowledge" className={navLinkClass}>
                 <BookOpen className="h-4 w-4" />
@@ -148,7 +148,7 @@ export default function Nav() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Calendar className="h-5 w-5" />
-                    Discover
+                    Events
                   </NavLink>
                   <NavLink 
                     to="/classes" 
@@ -159,12 +159,12 @@ export default function Nav() {
                     Classes
                   </NavLink>
                   <NavLink 
-                    to="/tools" 
+                    to="/raag-detector" 
                     className={mobileNavLinkClass}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Wrench className="h-5 w-5" />
-                    Tools
+                    Raag Detector
                   </NavLink>
                   <NavLink 
                     to="/knowledge" 
