@@ -144,7 +144,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { kind: 'event', id: event.id, quantity: ticketCount, origin: window.location.origin },
+        body: { kind: 'event', id: event.id, quantity: ticketCount, tier_id: selectedTier, origin: window.location.origin },
       });
       if (error) throw error;
       if (data?.error) throw new Error(typeof data.error === 'string' ? data.error : 'Checkout unavailable');
@@ -384,7 +384,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
               <p className="text-sm text-muted-foreground">{userProfile?.email || 'Loading...'}</p>
             </div>
             <p className="text-xs text-muted-foreground">
-              Update your info in <button className="text-primary hover:underline" onClick={() => { onOpenChange(false); navigate('/account'); }}>Account Settings</button>
+              Update your info in <button className="text-primary hover:underline" onClick={() => { onOpenChange(false); navigate('/settings'); }}>Account Settings</button>
             </p>
           </div>
 
