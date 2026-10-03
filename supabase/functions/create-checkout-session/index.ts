@@ -6,6 +6,7 @@ const BodySchema = z.object({
   kind: z.enum(["event", "class"]),
   id: z.string().uuid(),
   quantity: z.number().int().min(1).max(20).default(1),
+  tier_id: z.string().max(100).optional(),
   class_booking_ids: z.array(z.string().uuid()).max(12).optional(),
   origin: z.string().url().optional(),
 });
