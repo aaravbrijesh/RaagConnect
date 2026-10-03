@@ -176,6 +176,38 @@ export default function Tools() {
           </Card>
         </div>
 
+        <div className="grid gap-4 sm:grid-cols-2 mb-8">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2"><Mic className="h-4 w-4 text-primary" /> How to hum a song</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Find a quiet spot and hold your phone or laptop about an arm's length away.</li>
+                <li>Tap <strong>Start Recording</strong> and hum or sing "aa" — words aren't needed.</li>
+                <li>Hum the main tune slowly for 20–60 seconds. Include the parts that go up and come back down.</li>
+                <li>Stay on one steady pitch for your starting note (your "Sa") now and then.</li>
+                <li>Tap <strong>Stop</strong>, listen back, then <strong>Identify Raag</strong>.</li>
+              </ol>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2"><Music className="h-4 w-4 text-primary" /> What the AI listens for</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong>Notes used</strong> — which swaras appear, and which are komal (flat) or teevra (sharp).</li>
+                <li><strong>Going up and down</strong> — the aroh and avroh, including notes skipped in one direction.</li>
+                <li><strong>Key phrases</strong> — the pakad, the signature turns that make a raag recognizable.</li>
+                <li><strong>Important notes</strong> — the vadi and samvadi it lingers on most.</li>
+                <li><strong>Changes</strong> — whether a later part of the song moves into a different raag.</li>
+              </ul>
+              <p className="mt-2">Every result is saved to <Link to="/raag-detector/history" className="text-primary underline-offset-4 hover:underline">My history</Link>.</p>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center gap-3">
