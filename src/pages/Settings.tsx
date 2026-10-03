@@ -177,6 +177,28 @@ export default function Settings() {
     }
   };
 
+  const toggleProfile = async (role: 'organizer' | 'teacher' | 'artist', on: boolean) => {
+    if (!user) return;
+    setUpdatingRole(true);
+    try {
+      const { error } = on
+        ? await supabase.from('user_roles').insert({ user_id: user.id, role })
+        : await supabase.from('user_roles').delete().eq('user_id', user.id).eq('role', role);
+      if (error) throw error;
+      await refetchRoles();
+      toast.success(on ? `${role[0].toUpperCase() + role.slice(1)} profile added` : 'Profile removed');
+      if (on && role === 'artist') {
+        toast.info('Create your artist profile?', {
+          action: { label: 'Create Profile', onClick: () => navigate('/create-artist-profile') },
+        });
+      }
+    } catch (error: any) {
+      toast.error('Could not update profiles: ' + error.message);
+    } finally {
+      setUpdatingRole(false);
+    }
+  };
+
   const handleUpdateRole = async () => {
     if (!user || newRole === currentEditableRole) return;
 
@@ -349,72 +371,45 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Role Settings Card */}
+          {/* Profiles Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Role</CardTitle>
-              <CardDescription>Your current role on Raag Connect</CardDescription>
+              <CardTitle>Your profiles</CardTitle>
+              <CardDescription>
+                Everyone can attend events and classes. Turn on extra profiles if you also host — you can then switch modes at the top right.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground">
-                Current role: <span className="font-medium text-foreground capitalize">{currentRole}</span>
-              </div>
-              {roles.includes('admin') && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Your admin access stays unchanged. You can update your regular user role below.
-                </p>
-              )}
-
-              <div className="mt-5 space-y-4">
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Choose your role</Label>
-                  <RadioGroup
-                    value={newRole}
-                    onValueChange={(value: 'viewer' | 'artist' | 'organizer' | 'teacher') => setNewRole(value)}
-                    className="flex flex-col gap-3"
-                  >
-                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
-                      <RadioGroupItem value="viewer" id="role-viewer" />
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor="role-viewer" className="flex-1 cursor-pointer">
-                        Viewer
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
-                      <RadioGroupItem value="artist" id="role-artist" />
-                      <Music className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor="role-artist" className="flex-1 cursor-pointer">
-                        Artist
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
-                      <RadioGroupItem value="organizer" id="role-organizer" />
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor="role-organizer" className="flex-1 cursor-pointer">
-                        Organizer
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
-                      <RadioGroupItem value="teacher" id="role-teacher" />
-                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor="role-teacher" className="flex-1 cursor-pointer">
-                        Teacher
-                      </Label>
-                    </div>
-                  </RadioGroup>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-3 rounded-lg border p-3">
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Attendee</p>
+                  <p className="text-xs text-muted-foreground">Book events and classes — always on</p>
                 </div>
-
-                <Button onClick={handleUpdateRole} disabled={updatingRole || newRole === currentEditableRole} className="w-full">
-                  {updatingRole ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating role...
-                    </>
-                  ) : (
-                    'Save Role'
-                  )}
-                </Button>
+                <Switch checked disabled aria-label="Attendee" />
               </div>
+              {([
+                { r: 'organizer', label: 'Organizer', desc: 'Create and manage events', Icon: Calendar },
+                { r: 'teacher', label: 'Teacher', desc: 'List and manage music classes', Icon: GraduationCap },
+                { r: 'artist', label: 'Artist', desc: 'Showcase your music and performances', Icon: Music },
+              ] as const).map(({ r, label, desc, Icon }) => (
+                <div key={r} className="flex items-center gap-3 rounded-lg border p-3">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{label}</p>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                  <Switch
+                    checked={roles.includes(r)}
+                    disabled={updatingRole}
+                    onCheckedChange={(on) => toggleProfile(r, on)}
+                    aria-label={label}
+                  />
+                </div>
+              ))}
+              {roles.includes('admin') && (
+                <p className="text-xs text-muted-foreground">You also have admin access.</p>
+              )}
             </CardContent>
           </Card>
 
