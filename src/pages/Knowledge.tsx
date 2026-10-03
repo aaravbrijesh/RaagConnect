@@ -185,7 +185,7 @@ export default function Knowledge() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg text-foreground leading-tight">{post.title}</h3>
+                      <h2 className="font-semibold text-lg text-foreground leading-tight">{post.title}</h2>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         {instrumentForForm(post.category) && (
                           <Badge variant="outline" className="bg-secondary text-secondary-foreground border-secondary">

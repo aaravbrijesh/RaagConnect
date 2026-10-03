@@ -35,6 +35,8 @@ export default function RouteSeo() {
   const { pathname } = useLocation();
   const page = PAGES[pathname];
   if (page) return <Seo {...page} path={pathname} />;
+  // Detail pages render their own <Seo>; don't render a fallback that would override it.
+  if (/^\/(events|classes|artists)\/[^/]+/.test(pathname)) return null;
   return (
     <Seo
       title="Raag Connect"

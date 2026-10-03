@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { idColumn } from '@/lib/slug';
+import Seo from '@/components/Seo';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -241,6 +242,21 @@ export default function ClassDetail() {
   return (
     <div className="min-h-screen bg-background">
       <Nav />
+      <Seo
+        title={`${cls.title}${teacherName ? ` with ${teacherName}` : ''} — Raag Connect`}
+        description={`${cls.genre ? `${cls.genre} class` : 'Indian classical music class'}${cls.skill_level ? ` for ${cls.skill_level} level` : ''}${cls.location_name ? ` in ${cls.location_name}` : ''}. ${(cls.description || '').slice(0, 100)}`.slice(0, 160)}
+        path={`/classes/${cls.slug || cls.id}`}
+        image={cls.image_url || undefined}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Course',
+          name: cls.title,
+          description: cls.description || cls.title,
+          url: `https://raagconnect.com/classes/${cls.slug || cls.id}`,
+          provider: teacherName ? { '@type': 'Person', name: teacherName } : undefined,
+          offers: cls.price ? { '@type': 'Offer', price: cls.price, priceCurrency: 'USD' } : { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+        }}
+      />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => navigate('/classes')}>

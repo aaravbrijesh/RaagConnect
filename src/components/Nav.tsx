@@ -233,7 +233,7 @@ export default function Nav() {
             {session && user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  <button aria-label="Account menu" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={avatarUrl} alt={fullName || "User"} />
                       <AvatarFallback>

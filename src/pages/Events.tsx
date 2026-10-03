@@ -218,7 +218,7 @@ export default function Events() {
                   
                   <div className="flex-1 p-4">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="font-medium line-clamp-1">{event.title}</h3>
+                      <h2 className="font-medium line-clamp-1 text-base">{event.title}</h2>
                       <Badge variant={event.price ? "default" : "secondary"} className="text-xs shrink-0">
                         {event.price ? `$${event.price}` : 'Free'}
                       </Badge>
