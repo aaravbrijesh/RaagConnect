@@ -28,6 +28,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<'viewer' | 'artist' | 'organizer' | 'teacher'>('viewer');
+  const [showHostOptions, setShowHostOptions] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -141,74 +142,41 @@ export default function Register() {
             </div>
 
             <div className="space-y-2 pt-2">
-              <Label className="text-sm">I am a...</Label>
-              <RadioGroup value={role} onValueChange={(value) => setRole(value as 'viewer' | 'artist' | 'organizer' | 'teacher')}>
-                <div className="space-y-2">
-                  <label 
-                    htmlFor="viewer"
-                    className={`cursor-pointer transition-all rounded-lg border block ${role === 'viewer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="viewer" id="viewer" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                          Viewer
-                        </span>
-                        <p className="text-xs text-muted-foreground">Discover and book events</p>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label 
-                    htmlFor="artist"
-                    className={`cursor-pointer transition-all rounded-lg border block ${role === 'artist' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="artist" id="artist" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <Music className="h-4 w-4 text-muted-foreground" />
-                          Artist
-                        </span>
-                        <p className="text-xs text-muted-foreground">Create your profile and showcase music</p>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label 
-                    htmlFor="organizer"
-                    className={`cursor-pointer transition-all rounded-lg border block ${role === 'organizer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="organizer" id="organizer" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          Organizer
-                        </span>
-                        <p className="text-xs text-muted-foreground">Create and manage events</p>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label 
-                    htmlFor="teacher"
-                    className={`cursor-pointer transition-all rounded-lg border block ${role === 'teacher' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  >
-                    <div className="p-3 flex items-center gap-3">
-                      <RadioGroupItem value="teacher" id="teacher" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                          Teacher
-                        </span>
-                        <p className="text-xs text-muted-foreground">List and manage music classes</p>
-                      </div>
-                    </div>
-                  </label>
+              <p className="text-sm text-muted-foreground">
+                You'll be able to discover and book events and classes.
+              </p>
+              {!showHostOptions ? (
+                <button
+                  type="button"
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                  onClick={() => setShowHostOptions(true)}
+                >
+                  I also organize events, teach or perform
+                </button>
+              ) : (
+                <div className="space-y-2 rounded-lg border p-3">
+                  <Label className="text-sm">Also set up a profile as (optional)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      { v: 'organizer', label: 'Organizer', Icon: Calendar },
+                      { v: 'teacher', label: 'Teacher', Icon: GraduationCap },
+                      { v: 'artist', label: 'Artist', Icon: Music },
+                    ] as const).map(({ v, label, Icon }) => (
+                      <Button
+                        key={v}
+                        type="button"
+                        size="sm"
+                        variant={role === v ? 'default' : 'outline'}
+                        className="gap-1"
+                        onClick={() => setRole(role === v ? 'viewer' : v)}
+                      >
+                        <Icon className="h-4 w-4" /> {label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">You can add more profiles later in Settings.</p>
                 </div>
-              </RadioGroup>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={authLoading}>

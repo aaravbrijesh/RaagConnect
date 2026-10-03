@@ -38,9 +38,6 @@ export default function OrganizerDashboard() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [bookingCount, setBookingCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [myBookings, setMyBookings] = useState<
-    { id: string; status: string; event: { id: string; slug: string | null; title: string; date: string; time: string; location_name: string | null } }[]
-  >([]);
   const { chargesEnabled } = useOrganizerPayments(user?.id);
   const { methods } = useOrganizerPaymentMethods(user?.id);
 
@@ -64,17 +61,6 @@ export default function OrganizerDashboard() {
         setBookingCount(count || 0);
       }
 
-      const { data: mine } = await supabase
-        .from('bookings')
-        .select('id, status, events(id, slug, title, date, time, location_name)')
-        .eq('user_id', user.id)
-        .neq('status', 'cancelled')
-        .neq('status', 'rejected');
-      setMyBookings(
-        ((mine as any[]) || [])
-          .filter((b) => b.events)
-          .map((b) => ({ id: b.id, status: b.status, event: b.events }))
-      );
       setLoading(false);
     };
     load();
@@ -83,9 +69,6 @@ export default function OrganizerDashboard() {
   const today = new Date().toISOString().split('T')[0];
   const upcoming = events.filter((e) => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const past = events.filter((e) => e.date < today);
-  const attending = myBookings
-    .filter((b) => b.event.date >= today)
-    .sort((a, b) => a.event.date.localeCompare(b.event.date));
 
   const paymentsReady = chargesEnabled || hasAnyManualMethod(methods);
 
@@ -179,31 +162,6 @@ export default function OrganizerDashboard() {
                 )}
               </CardContent>
             </Card>
-
-            {attending.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-xl">Events you're attending</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {attending.map((b) => (
-                    <div key={b.id} className="flex flex-wrap items-center gap-4 rounded-lg border p-4 hover:bg-muted/40 transition-colors">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{b.event.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(`${b.event.date}T${b.event.time}`).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                          {b.event.location_name ? ` · ${b.event.location_name}` : ''}
-                        </p>
-                      </div>
-                      <Badge variant={b.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">{b.status}</Badge>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/events/${recordPath(b.event)}`)}>
-                        View
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
 
 
             {past.length > 0 && (

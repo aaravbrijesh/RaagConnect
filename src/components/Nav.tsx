@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import ModeSwitcher from "@/components/ModeSwitcher";
 
 export default function Nav() {
   const { user, session, signOut } = useAuth();
@@ -124,6 +125,7 @@ export default function Nav() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ModeSwitcher />
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
