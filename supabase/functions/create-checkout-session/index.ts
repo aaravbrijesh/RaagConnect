@@ -84,6 +84,13 @@ serve(async (req) => {
     if (!acct?.stripe_account_id || !acct.charges_enabled) {
       return json({ error: "The organizer has not finished setting up card payments" }, 400);
     }
+    // Stored accounts from another sandbox must not be used for checkout.
+    try {
+      const account = await stripe.accounts.retrieve(acct.stripe_account_id);
+      if (!account.charges_enabled) return json({ error: 'The organizer must complete Stripe sandbox payment setup' }, 400);
+    } catch {
+      return json({ error: 'The organizer payment account is unavailable in this Stripe sandbox. Sandbox onboarding is required.' }, 400);
+    }
 
     // Validate any class bookings actually belong to this buyer and class.
     let bookingIds: string[] = [];
