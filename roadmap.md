@@ -1,7 +1,7 @@
 # Payment verification
-- [ ] Separate sandbox and live webhook secrets without overwriting existing production credentials.
-- [ ] Enforce test-only Stripe operation and reliable exactly-once booking fulfillment.
+- [x] Separate sandbox and live webhook secrets without overwriting existing production credentials.
+- [x] Enforce test-only Stripe operation and transactional booking fulfillment; test/live guard tests pass.
 - [ ] Verify published page metadata.
-- [ ] Confirm a class card booking through payment and booking confirmation; blocked until webhook delivery is verified.
+- [ ] Confirm a class card booking exactly once; blocked because the previous organizer account is absent from the new sandbox, and signed webhook delivery is unverified.
 - [x] Verify Stripe operates in test mode using Stripe's checkout and endpoint records, without reading secret values.
-- [ ] Verify webhook signing configuration; blocked because no signed deliveries have reached the function and the replacement secret form was cancelled.
+- [ ] Verify signed sandbox webhook HTTP 200; new secret saved, but no signed deliveries have reached the function. User must send a sandbox test event to the configured destination.

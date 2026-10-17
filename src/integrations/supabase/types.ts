@@ -103,6 +103,8 @@ export type Database = {
           payment_method: string
           proof_of_payment_url: string | null
           status: string
+          stripe_payment_id: string | null
+          stripe_ticket_index: number | null
           updated_at: string
           user_id: string
         }
@@ -116,6 +118,8 @@ export type Database = {
           payment_method?: string
           proof_of_payment_url?: string | null
           status?: string
+          stripe_payment_id?: string | null
+          stripe_ticket_index?: number | null
           updated_at?: string
           user_id: string
         }
@@ -129,6 +133,8 @@ export type Database = {
           payment_method?: string
           proof_of_payment_url?: string | null
           status?: string
+          stripe_payment_id?: string | null
+          stripe_ticket_index?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -138,6 +144,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_stripe_payment_id_fkey"
+            columns: ["stripe_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]
@@ -233,6 +246,7 @@ export type Database = {
           notes: string | null
           start_time: string
           status: string
+          stripe_payment_id: string | null
           student_email: string
           student_name: string
           updated_at: string
@@ -249,6 +263,7 @@ export type Database = {
           notes?: string | null
           start_time: string
           status?: string
+          stripe_payment_id?: string | null
           student_email: string
           student_name: string
           updated_at?: string
@@ -265,6 +280,7 @@ export type Database = {
           notes?: string | null
           start_time?: string
           status?: string
+          stripe_payment_id?: string | null
           student_email?: string
           student_name?: string
           updated_at?: string
@@ -283,6 +299,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_bookings_stripe_payment_id_fkey"
+            columns: ["stripe_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]
@@ -1165,6 +1188,18 @@ export type Database = {
     }
     Functions: {
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      fulfill_stripe_checkout: {
+        Args: {
+          _amount: number
+          _booking_ids: string[]
+          _currency: string
+          _event_id: string
+          _event_type: string
+          _payment_intent: string
+          _session_id: string
+        }
+        Returns: boolean
+      }
       slugify: { Args: { _txt: string }; Returns: string }
       unique_slug: {
         Args: { _base: string; _id: string; _table: string }

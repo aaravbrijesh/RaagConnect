@@ -1,0 +1,3 @@
+# Payment architecture
+- Stripe backend helpers use explicitly named sandbox credentials and reject live events; legacy/live secrets are never fallback credentials, preventing accidental live payment activation.
+- Successful Stripe checkout fulfillment runs in a service-role-only database transaction with a payment row lock and payment-linked bookings, so retries cannot partially fulfill or duplicate a purchase.
