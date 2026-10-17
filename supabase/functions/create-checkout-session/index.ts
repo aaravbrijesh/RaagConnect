@@ -90,12 +90,16 @@ serve(async (req) => {
     if (kind === "class" && class_booking_ids?.length) {
       const { data: rows } = await admin
         .from("class_bookings")
-        .select("id")
+        .select("id, status, stripe_payment_id")
         .in("id", class_booking_ids)
         .eq("class_id", id)
         .eq("user_id", user.id);
-      bookingIds = (rows ?? []).map((r: { id: string }) => r.id);
+      if (!rows || rows.length !== new Set(class_booking_ids).size || rows.some((r) => r.status !== 'pending' || r.stripe_payment_id)) {
+        return json({ error: 'Choose unpaid class reservations before checkout' }, 400);
+      }
+      bookingIds = rows.map((r: { id: string }) => r.id);
     }
+    if (kind === 'class' && !bookingIds.length) return json({ error: 'Choose a class session before paying' }, 400);
 
     const effectiveQuantity = kind === "class" && bookingIds.length ? bookingIds.length : quantity;
     const gross = unitAmount * effectiveQuantity;

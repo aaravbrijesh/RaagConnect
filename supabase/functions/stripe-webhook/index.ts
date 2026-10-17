@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { adminClient, getStripe } from "../_shared/stripe.ts";
+import { isSandboxEvent } from '../_shared/stripe-mode.ts';
 
 serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
-  const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET_TEST");
   if (!secret) return new Response("Webhook secret not configured", { status: 500 });
 
   const signature = req.headers.get("stripe-signature");
@@ -17,19 +18,12 @@ serve(async (req) => {
   let event;
   try {
     event = await stripe.webhooks.constructEventAsync(raw, signature, secret);
-  } catch (err) {
-    console.error("Signature verification failed", (err as Error).message);
+  } catch {
+    console.error("Signature verification failed");
     return new Response("Invalid signature", { status: 400 });
   }
 
-  // Idempotency: record the event id first; duplicates exit immediately.
-  const { error: dupError } = await admin
-    .from("stripe_webhook_events")
-    .insert({ id: event.id, type: event.type });
-  if (dupError) {
-    console.log("Duplicate or unrecordable event", event.id, dupError.message);
-    return new Response(JSON.stringify({ received: true, duplicate: true }), { status: 200 });
-  }
+  if (!isSandboxEvent(event)) return new Response('Live payments are disabled', { status: 400 });
 
   try {
     switch (event.type) {
@@ -37,7 +31,13 @@ serve(async (req) => {
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Record<string, unknown>;
         if (session.payment_status === "paid") {
-          await fulfill(admin, session);
+          const ids = ((session.metadata as Record<string, string> | null)?.class_booking_ids ?? '').split(',').filter(Boolean);
+          const { error } = await admin.rpc('fulfill_stripe_checkout', {
+            _event_id: event.id, _event_type: event.type,
+            _session_id: session.id, _payment_intent: session.payment_intent,
+            _amount: session.amount_total, _currency: session.currency, _booking_ids: ids,
+          });
+          if (error) throw error;
         }
         break;
       }
@@ -111,63 +111,9 @@ serve(async (req) => {
     return new Response("Handler error", { status: 500 });
   }
 
+  console.log('Sandbox webhook processed', event.id, event.type);
   return new Response(JSON.stringify({ received: true }), { status: 200 });
 });
-
-async function fulfill(admin: ReturnType<typeof adminClient>, session: Record<string, unknown>) {
-  const sessionId = session.id as string;
-  const { data: payment } = await admin
-    .from("payments")
-    .select("*")
-    .eq("stripe_checkout_session_id", sessionId)
-    .maybeSingle();
-
-  if (!payment) {
-    console.error("No payment row for session", sessionId);
-    return;
-  }
-
-  await admin
-    .from("payments")
-    .update({
-      payment_status: "paid",
-      stripe_payment_intent_id: (session.payment_intent as string) ?? payment.stripe_payment_intent_id,
-    })
-    .eq("id", payment.id);
-
-  // Only fulfil once.
-  if (payment.fulfilled_at) return;
-
-  if (payment.event_id) {
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("full_name, email")
-      .eq("user_id", payment.user_id)
-      .maybeSingle();
-
-    const rows = Array.from({ length: payment.quantity }, () => ({
-      event_id: payment.event_id,
-      user_id: payment.user_id,
-      attendee_name: profile?.full_name ?? payment.buyer_name ?? "Ticket holder",
-      attendee_email: profile?.email ?? payment.buyer_email ?? "",
-      amount: payment.gross_amount / payment.quantity / 100,
-      payment_method: "stripe",
-      status: "confirmed",
-    }));
-    await admin.from("bookings").insert(rows);
-  }
-
-  if (payment.class_id) {
-    const ids = ((session.metadata as Record<string, string> | null)?.class_booking_ids ?? "")
-      .split(",")
-      .filter(Boolean);
-    if (ids.length) {
-      await admin.from("class_bookings").update({ status: "confirmed" }).in("id", ids);
-    }
-  }
-
-  await admin.from("payments").update({ fulfilled_at: new Date().toISOString() }).eq("id", payment.id);
-}
 
 async function cancelFulfillment(
   admin: ReturnType<typeof adminClient>,

@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { requireTestKey } from './stripe-mode.ts';
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,8 +12,7 @@ export const corsHeaders = {
 export const STRIPE_API_VERSION = "2025-08-27.basil";
 
 export function getStripe() {
-  const key = Deno.env.get("STRIPE_SECRET_KEY");
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  const key = requireTestKey(Deno.env.get("STRIPE_SECRET_KEY_TEST"));
   return new Stripe(key, { apiVersion: STRIPE_API_VERSION, httpClient: Stripe.createFetchHttpClient() });
 }
 
