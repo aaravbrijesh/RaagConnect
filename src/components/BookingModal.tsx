@@ -144,7 +144,7 @@ export default function BookingModal({ event, open, onOpenChange }: BookingModal
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { kind: 'event', id: event.id, quantity: ticketCount, tier_id: selectedTier, origin: window.location.origin },
+        body: { kind: 'event', id: event.id, quantity: ticketCount, ...(selectedTier ? { tier_id: selectedTier } : {}), origin: window.location.origin },
       });
       if (error) throw error;
       if (data?.error) throw new Error(typeof data.error === 'string' ? data.error : 'Checkout unavailable');
